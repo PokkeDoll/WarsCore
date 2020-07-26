@@ -1,0 +1,8 @@
+name: 'WarsCore'
+version: '0.1'
+main: hm.moe.pokkedoll.warscore.WarsCore
+authors: [Emorard]
+
+commands:
+
+permission:
