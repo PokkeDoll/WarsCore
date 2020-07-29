@@ -8,11 +8,14 @@ import org.bukkit.{Bukkit, World, WorldCreator}
 import scala.util.control.Breaks
 
 /**
- * Warsから持ってきた
+ * Warsから持ってきた.<br>
+ * 単体でも利用可能.
+ *
+ * @author Emorard
  */
 object WorldLoader {
 
-  def load(name: String): World = {
+  private def load(name: String): World = {
     val wc = if(name.startsWith("!"))
       new WorldCreator(name.substring(1)).generateStructures(false).environment(World.Environment.THE_END)
     else if(name.startsWith("^"))
@@ -25,7 +28,7 @@ object WorldLoader {
     w
   }
 
-  def unload(name: String): Boolean = {
+  private def unload(name: String): Boolean = {
     Option(Bukkit.getWorld(name)) match {
       case Some(world) =>
         if (world.getPlayers.size() != 0) {
@@ -42,7 +45,7 @@ object WorldLoader {
   import java.io.{BufferedInputStream, BufferedOutputStream, FileOutputStream}
   import java.util.zip.ZipFile
 
-  def unzip(zipFileFullPath: String, unzipPath: String): Boolean = {
+  private def unzip(zipFileFullPath: String, unzipPath: String): Boolean = {
     val breaks = new Breaks
     import breaks.{break, breakable}
     var zipFile: ZipFile = null
@@ -88,7 +91,7 @@ object WorldLoader {
     }
   }
 
-  def delete(file: File): Boolean = {
+  private def delete(file: File): Boolean = {
     if (file.exists()) {
       if (file.isFile) {
         if (file.delete()) {
@@ -108,7 +111,7 @@ object WorldLoader {
     } else false
   }
 
-  def reSession(session: File): Boolean = {
+  private def reSession(session: File): Boolean = {
     session.delete()
     try {
       session.createNewFile()
@@ -124,13 +127,19 @@ object WorldLoader {
   }
 
   /**
-   * 同期的にワールドの解凍=>読み込みの処理をおこなう
-   * "/server/warfare/sample.zip"のように
-   *
+   * 同期的にワールドの解凍=>読み込みの処理をおこなう <br>
    * より安全に読み込むようになった
    *
-   * @param path 解凍したいワールドのパス
-   * @return
+   * @param path 解凍するワールドまでの相対パス.  .zipは不要
+   * @param world 解凍先のワールド名.
+   * @return ファイルを解凍してワールドが読み込めたらSome
+   *
+   * {{{
+   *   WorldLoader.syncLoadWorld("worlds/from", to) match {
+   *       case Some(world) => ...
+   *       case None => ...
+   *   }
+   * }}}
    */
   def syncLoadWorld(path: String, world: String): Option[World] = {
     // すでにワールドが読み込まれている場合
@@ -149,6 +158,10 @@ object WorldLoader {
     if (unzip(s"/server/$path.zip", world)) Option(load(world)) else None
   }
 
+  /**
+   * 同期的にワールドとそのファイルを削除する
+   * @param name ワールド名
+   */
   def syncUnloadWorld(name: String): Unit = if (Bukkit.getWorld(name) != null) {
     if(unload(name)) delete(new File(s"./$name"))
   }

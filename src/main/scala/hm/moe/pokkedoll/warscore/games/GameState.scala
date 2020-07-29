@@ -1,8 +1,8 @@
 package hm.moe.pokkedoll.warscore.games
 
 /**
+ * ゲームの状態を表す
  * @author Emorard
- * @version 1.0
  */
 object GameState {
   case object DISABLE extends GameState("disable", "無効化", false)
@@ -14,4 +14,4 @@ object GameState {
   case object END extends GameState("end", "終了", false)
 }
 
-sealed abstract class GameState(val name: String, val title: String, val join: Boolean)
+protected sealed abstract class GameState(val name: String, val title: String, val join: Boolean)

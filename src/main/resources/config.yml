@@ -1,0 +1,23 @@
+mapinfo:
+    tdm:
+        mongol:
+            mapName: モンゴリアン
+            authors: 'watasi'
+            location:
+                spawn: -3,10.5,50,180,0
+                red: 77.0,6.5,-31.0,90,0
+                blue: -8,4.5,39,-90,0
+        iseki:
+            mapName: ブエプパ遺跡
+            authors: 'watasi'
+            location:
+                spawn: 66,20.5,301,0,0
+                red: 8.0,13.5,260,0,0
+                blue: 68.5,13.5,352.5,180,0
+        iseki2:
+            mapName: セン・スー遺跡
+            authors: 'watasi'
+            location:
+                spawn: 1090.5,49.5,481.5,0,0
+                red: 1145,20.5,468,0,0
+                blue: 1052,23.5,565,180,0

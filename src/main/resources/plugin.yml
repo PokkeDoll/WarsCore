@@ -1,8 +1,12 @@
 name: 'WarsCore'
-version: '0.1'
+version: '0.5'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
 
 commands:
+  game:
+    permission: pokkedoll.command.game
 
 permission:
+  pokkedoll.command.game:
+    default: true

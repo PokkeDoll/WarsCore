@@ -2,7 +2,6 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.event.{EventHandler, Listener}
 
 class PlayerListener(plugin: WarsCore) extends Listener {

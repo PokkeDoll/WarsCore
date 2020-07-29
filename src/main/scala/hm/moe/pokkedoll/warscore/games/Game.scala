@@ -16,6 +16,8 @@ import scala.collection.mutable
  * @version 1.0
  */
 trait Game {
+
+  var loaded = false
   /**
    * ゲームの識別ID
    */
@@ -82,13 +84,13 @@ trait Game {
 
   def delete(): Unit
 
-  def join(wp: WPlayer): Unit
+  def join(wp: WPlayer): Boolean
 
   /**
    * Playerバージョン
    * @param p
    */
-  def join(p: Player): Unit = join(WarsCoreAPI.getWPlayer(p))
+  def join(p: Player): Boolean = join(WarsCoreAPI.getWPlayer(p))
 
   def hub(wp: WPlayer): Unit
 
