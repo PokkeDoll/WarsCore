@@ -1,14 +1,16 @@
 package hm.moe.pokkedoll.warscore.commands
 
+import java.util
+
 import hm.moe.pokkedoll.warscore.WarsCoreAPI
-import org.bukkit.command.{Command, CommandExecutor, CommandSender}
+import org.bukkit.command.{Command, CommandExecutor, CommandSender, TabCompleter}
 import org.bukkit.entity.Player
 
 /**
  * ゲームのメインとなるコマンド
  * @author Emorard
  */
-class GameCommand extends CommandExecutor {
+class GameCommand extends CommandExecutor with TabCompleter {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {
       case player: Player =>
@@ -38,5 +40,22 @@ class GameCommand extends CommandExecutor {
       case _ =>
     }
     true
+  }
+
+  import collection.JavaConverters._
+
+  override def onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array[String]): util.List[String] = {
+    if(command.getName.equalsIgnoreCase("game")) {
+      sender match {
+        case player: Player =>
+          if(args.length == 0) {
+            return util.Arrays.asList("join", "leave", "info")
+          }
+          if(args(0).startsWith("join")) {
+            return WarsCoreAPI.games.keys.toList.asJava
+          }
+      }
+    }
+    null
   }
 }

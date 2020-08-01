@@ -1,9 +1,13 @@
 package hm.moe.pokkedoll.warscore
 
-import hm.moe.pokkedoll.warscore.games.{Game, TeamDeathMatch}
-import hm.moe.pokkedoll.warscore.utils.MapInfo
+import java.net.InetSocketAddress
+import java.util.UUID
+
+import hm.moe.pokkedoll.warscore.games.{Game, Tactics, TeamDeathMatch}
+import hm.moe.pokkedoll.warscore.utils.{MapInfo, WorldLoader}
 import org.bukkit.configuration.ConfigurationSection
-import org.bukkit.entity.Player
+import org.bukkit.entity.{Player, Projectile}
+import org.bukkit.event.entity.{EntityDamageByEntityEvent, EntityDamageEvent}
 import org.bukkit.{Bukkit, Location}
 import org.bukkit.scoreboard.{Scoreboard, Team}
 
@@ -37,6 +41,11 @@ object WarsCoreAPI {
 
   /** マップ情報 */
   var mapinfo = Seq.empty[MapInfo]
+
+  /**
+   * リソースパック情報
+   */
+  var rsInfo = mutable.HashMap.empty[String, String]
 
   /**
    * チームの設定をまとめたもの
@@ -123,5 +132,56 @@ object WarsCoreAPI {
 
     games.put("tdm-test-1", new TeamDeathMatch("tdm-test-1"))
     games.put("tdm-test-2", new TeamDeathMatch("tdm-test-2"))
+
+    games.put("tactics-test-1", new Tactics("tactics-test-1"))
+
+    if(Bukkit.getWorld("tdm-test-1") != null) WorldLoader.syncUnloadWorld("tdm-test-1")
+    if(Bukkit.getWorld("tdm-test-2") != null) WorldLoader.syncUnloadWorld("tdm-test-2")
+
+    if(Bukkit.getWorld("tactics-test-1") != null) WorldLoader.syncUnloadWorld("tactics-test-1")
+  }
+
+  /**
+   * リソースパックの情報を読み込む
+   */
+  def reloadRs(cs: ConfigurationSection): Unit = {
+    rsInfo.clear()
+    cs.getKeys(false).forEach(key => {
+      rsInfo.put(key, cs.getString(key, ""))
+    })
+  }
+
+  /**
+   * プレイヤーの所持している武器名を取得する
+   * @param player
+   * @return
+   */
+  def getAttackerWeaponName(player: Player): Option[String] = {
+    val item = player.getInventory.getItemInMainHand
+    if (item == null) None
+    else {
+      val meta = item.getItemMeta
+      if (meta.hasDisplayName) Some(meta.getDisplayName) else Some(item.getType.toString)
+    }
+  }
+
+  @Deprecated
+  def getAttacker(event: EntityDamageEvent): Option[Player] = {
+    event match {
+      case event: EntityDamageByEntityEvent =>
+        event.getDamager match {
+          case player: Player =>
+            Some(player)
+          case projectile: Projectile =>
+            projectile.getShooter match {
+              case player: Player =>
+                Some(player)
+              case _ =>
+                None
+            }
+          case _ => None
+        }
+      case _ => None
+    }
   }
 }

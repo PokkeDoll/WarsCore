@@ -13,7 +13,6 @@ import scala.collection.mutable
 /**
  * ゲームのコア部分のトレイト
  * @author Emorard
- * @version 1.0
  */
 trait Game {
 
@@ -78,8 +77,6 @@ trait Game {
 
   def play(): Unit
 
-  def play2(): Unit
-
   def end(): Unit
 
   def delete(): Unit
@@ -95,8 +92,6 @@ trait Game {
   def hub(wp: WPlayer): Unit
 
   def hub(p: Player): Unit = hub(WarsCoreAPI.getWPlayer(p))
-
-  def respawn(e: PlayerRespawnEvent): Unit
 
   def death(e: PlayerDeathEvent): Unit
 

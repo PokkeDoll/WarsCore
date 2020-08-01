@@ -1,13 +1,25 @@
 package hm.moe.pokkedoll.warscore.lisners
 
+import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.event.player.{PlayerJoinEvent, PlayerQuitEvent}
 import org.bukkit.event.{EventHandler, Listener}
+import org.bukkit.scheduler.BukkitRunnable
 
 class LoginListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onJoin(e: PlayerJoinEvent): Unit = {
     WarsCoreAPI.getWPlayer(e.getPlayer)
+    // データ送信
+    plugin.getLogger.info("1: event called")
+    e.getPlayer.sendMessage("§9クライアントのバージョンを取得しています...")
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val out = ByteStreams.newDataOutput
+        out.writeUTF("PlayerVersion")
+        e.getPlayer.sendPluginMessage(plugin, "pokkedoll:torus", out.toByteArray)
+      }
+    }.runTaskLater(plugin, 20L)
   }
 
   @EventHandler
@@ -19,11 +31,4 @@ class LoginListener(plugin: WarsCore) extends Listener {
       case _ =>
     }
   }
-/*
-  @EventHandler
-  def onHandshake(e: PlayerHandshakeEvent): Unit = {
-    //plugin.getLogger.info("e.getOriginalHandshake:" + e.getOriginalHandshake)
-    //plugin.getLogger.info("e.getPropertiesJson: " + e.getPropertiesJson)
-  }
- */
 }

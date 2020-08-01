@@ -74,6 +74,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     locationData = (new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5), new Location(world, red._1, red._2, red._3, red._4, red._5), new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5))
   }
 
+  @Deprecated
   private def getAttackerWeaponName(player: Player): Option[String] = {
     val item = player.getInventory.getItemInMainHand
     if(item == null) None
@@ -219,8 +220,6 @@ class TeamDeathMatch(override val id: String) extends Game {
     }.runTaskTimer(WarsCore.instance, 0, 20L)
   }
 
-  override def play2(): Unit = {}
-
   override def end(): Unit = {
     state = GameState.END
     world.setPVP(false)
@@ -264,9 +263,9 @@ class TeamDeathMatch(override val id: String) extends Game {
         case _ =>
       }
     })
+    bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
-        bossbar.removeAll()
         delete()
       }
     }.runTaskLater(WarsCore.instance, 100L)
@@ -281,12 +280,6 @@ class TeamDeathMatch(override val id: String) extends Game {
     }.runTaskLater(WarsCore.instance, 100L)
   }
 
-  /**
-   * 抜きで試してみる
-   * @param e
-   */
-  override def respawn(e: PlayerRespawnEvent): Unit = {}
-
   override def death(e: PlayerDeathEvent): Unit = {
     e.setCancelled(true)
     val victim = e.getEntity
@@ -294,7 +287,8 @@ class TeamDeathMatch(override val id: String) extends Game {
     if(state == GameState.PLAY || state == GameState.PLAY2) {
       val vData: TDMData = data(victim)
       vData.death += 1
-      Option(victim.getKiller) match {
+      // WarsCoreAPI.getAttacker(victim.getLastDamageCause)
+       Option(victim.getKiller) match {
         case Some(attacker) =>
           val aData = data(attacker)
           aData.kill += 1
@@ -305,7 +299,7 @@ class TeamDeathMatch(override val id: String) extends Game {
           e.setDeathSoundVolume(2f)
           if(redTeam.hasEntry(attacker.getName)) {
             redPoint += 1
-            getAttackerWeaponName(attacker) match {
+            WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §c${attacker.getName} §f[${name}§f] §7-> §0Killed §7-> §9${victim.getName}")
               case None =>
@@ -313,10 +307,10 @@ class TeamDeathMatch(override val id: String) extends Game {
             }
           } else {
             bluePoint += 1
-            getAttackerWeaponName(attacker) match {
+            WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §9${attacker.getName} §f[${name}§f] §7-> §0Killed §7-> §c${victim.getName}")
-              case None => 
+              case None =>
                 sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
             }
           }
@@ -337,7 +331,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   private def spawn(player: Player, coolTime: Boolean = false): Unit = {
     if(coolTime) player.setGameMode(GameMode.SPECTATOR)
     player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 100, 5), true)
-    var spawnTime: Int = (1.1 * data(player).death + 4).toInt
+    var spawnTime: Int = 5
     new BukkitRunnable {
       override def run(): Unit = {
         if(redTeam.hasEntry(player.getName)) {
@@ -356,7 +350,7 @@ class TeamDeathMatch(override val id: String) extends Game {
                   cancel()
                 } else {
                   player.sendActionBar(s"§bリスポーンするまであと§a$spawnTime§b秒")
-                  if(spawnTime <= 5) player.playSound(player.getLocation(), Sound.BLOCK_NOTE_HARP, 1f, 2f)
+                  player.playSound(player.getLocation(), Sound.BLOCK_NOTE_HARP, 1f, 2f)
                   spawnTime -= 1
                 }
               } else {
