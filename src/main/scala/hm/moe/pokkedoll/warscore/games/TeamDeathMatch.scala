@@ -37,7 +37,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   /**
    * ゲームの説明分
    */
-  override val description: String = ""
+  override val description: String = "説明不要！とにかく敵を倒そう"
   /**
    * 受け入れる最大人数
    */

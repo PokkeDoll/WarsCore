@@ -45,6 +45,11 @@ class WarsCore extends JavaPlugin {
     WarsCoreAPI.reloadGame(null)
     WarsCoreAPI.reloadRs(getConfig.getConfigurationSection("resourcepacks"))
   }
+
+  override def onDisable(): Unit = {
+    lazy val board = Bukkit.getScoreboardManager.getMainScoreboard
+    WarsCoreAPI.scoreboards.keys.foreach(_.setScoreboard(board))
+  }
 }
 
 object WarsCore {

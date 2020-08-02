@@ -15,6 +15,7 @@ class GameCommand extends CommandExecutor with TabCompleter {
     sender match {
       case player: Player =>
         if(args.length == 0) {
+          WarsCoreAPI.showGameInventory(player)
         } else if(args(0) == "list") {
           val sb = new StringBuilder("§bゲームリスト")
           WarsCoreAPI.games.values.foreach(game => {
