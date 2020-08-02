@@ -10,6 +10,7 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{Player, Projectile}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, EntityDamageEvent}
 import org.bukkit.inventory.ItemStack
+import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, ChatColor, Location, Material}
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Scoreboard, ScoreboardManager, Team}
 
@@ -64,7 +65,7 @@ object WarsCoreAPI {
     team.setAllowFriendlyFire(false)
     team.setCanSeeFriendlyInvisibles(true)
     team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER)
-    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OTHER_TEAMS)
+    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM)
   }
 
   /**
@@ -97,7 +98,6 @@ object WarsCoreAPI {
     player.setFlying(false)
     player.setWalkSpeed(event.walkSpeed)
     player.setFlySpeed(event.flySpeed)
-
   }
 
   /**
@@ -207,7 +207,7 @@ object WarsCoreAPI {
     player.openInventory(inv)
   }
 
-  def setScoreBoard(player: Player): Unit = {
+  def addScoreBoard(player: Player): Unit = {
     val board = scoreboardManager.getNewScoreboard
     val obj = board.registerNewObjective("status", "dummy")
 
@@ -223,7 +223,52 @@ object WarsCoreAPI {
     val etc = obj.getScore("§6etc.")
     etc.setScore(3)
 
+    // 名前の下に書くやつ
+    val tag = board.registerNewObjective("tag", "dummy")
+    tag.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&a(ここにTAG) &f0"))
+    tag.getScore(player.getName).setScore(0)
+    tag.setDisplaySlot(DisplaySlot.BELOW_NAME)
+
     player.setScoreboard(board)
+
+    /* 自分 */
+    val team = board.registerNewTeam(player.getName)
+    team.setPrefix(ChatColor.translateAlternateColorCodes('&', "&7[&a000&7]&r "))
+    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+    team.addEntry(player.getName)
+
+    scoreboards.foreach(f => {
+      WarsCore.instance.getLogger.info(s"WarsCoreAPI.addScoreboard(${player.getName})")
+      /* タグの問題 */
+      val oTag = f._2.getObjective("tag")
+      if(oTag!=null)
+        oTag.getScore(player.getName).setScore(0)
+      else
+        WarsCore.instance.getLogger.info(s"oTag is null! ${f._2}")
+      /* 他プレイヤーに対して */
+      val oTeam = f._2.registerNewTeam(player.getName)
+      oTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', "&7[&a000&7]&r "))
+      oTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+      oTeam.addEntry(player.getName)
+
+      /* 自分に対して */
+      // tag.getScore(f._1.getName).setScore(f._2.getObjective("tag").getScore(f._1.getName).getScore)
+      tag.getScore(f._1.getName).setScore(0)
+
+      val mTeam = board.registerNewTeam(f._1.getName)
+      mTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', "&7[&a000&7]&r "))
+      mTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+      mTeam.addEntry(f._1.getName)
+    })
+
     scoreboards.put(player, board)
+  }
+
+  def removeScoreboard(player: Player): Unit = {
+    scoreboards.remove(player)
+    scoreboards.values.foreach(b => {
+      Option(b.getTeam(player.getName)).foreach(_.unregister())
+      b.resetScores(player.getName)
+    })
   }
 }

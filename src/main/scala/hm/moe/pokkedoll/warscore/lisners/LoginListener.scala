@@ -19,14 +19,14 @@ class LoginListener(plugin: WarsCore) extends Listener {
         out.writeUTF("PlayerVersion")
         e.getPlayer.sendPluginMessage(plugin, "pokkedoll:torus", out.toByteArray)
 
-        WarsCoreAPI.setScoreBoard(e.getPlayer)
+        WarsCoreAPI.addScoreBoard(e.getPlayer)
       }
     }.runTaskLater(plugin, 20L)
   }
 
   @EventHandler
   def onQuit(e: PlayerQuitEvent): Unit = {
-    WarsCoreAPI.scoreboards.remove(e.getPlayer)
+    WarsCoreAPI.removeScoreboard(e.getPlayer)
     val wp = WarsCoreAPI.getWPlayer(e.getPlayer)
     wp.game match {
       case Some(game) =>

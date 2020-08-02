@@ -146,7 +146,7 @@ class Tactics(override val id: String) extends Game {
   private def turnEnd(): Unit = {
     world.setPVP(false)
     state = GameState.END
-    if (first >= 3 | second >= 3) {
+    if (Math.abs(first - second) >= 3) {
       end()
     } else {
       turn += 1

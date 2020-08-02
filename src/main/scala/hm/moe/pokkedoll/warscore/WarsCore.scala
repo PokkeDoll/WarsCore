@@ -44,6 +44,10 @@ class WarsCore extends JavaPlugin {
     WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))
     WarsCoreAPI.reloadGame(null)
     WarsCoreAPI.reloadRs(getConfig.getConfigurationSection("resourcepacks"))
+
+    if(Bukkit.getOnlinePlayers.size()!=0) {
+      Bukkit.getOnlinePlayers.forEach(f => WarsCoreAPI.addScoreBoard(f))
+    }
   }
 
   override def onDisable(): Unit = {
