@@ -200,8 +200,6 @@ class TeamDeathMatch(override val id: String) extends Game {
           members.length < 2 ||     // メンバーが一人
           redTeam.getSize <= 0 ||   // チーム0人
           blueTeam.getSize <= 0 ||  //
-          redPoint >= 50 ||         // 得点勝ち
-          bluePoint >= 50 ||        //
           time <= 0 ||              // 時間切れ
           disable                   // 何か原因があって無効化
         ) {
@@ -260,6 +258,8 @@ class TeamDeathMatch(override val id: String) extends Game {
           )
           // ゲーム情報のリセット
           wp.game = None
+          // スコアボードのリセット
+          wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
         case _ =>
       }
     })
@@ -386,6 +386,7 @@ class TeamDeathMatch(override val id: String) extends Game {
           "§a/invite <player>§fで他プレイヤーを招待することができます!"
       )
       wp.game = Some(this)
+      wp.player.setScoreboard(WarsCoreAPI.scoreboard)
       data.put(wp.player, new TDMData)
       bossbar.addPlayer(wp.player)
       members = members :+ wp
@@ -428,6 +429,8 @@ class TeamDeathMatch(override val id: String) extends Game {
       bossbar.removePlayer(wp.player)
       // ゲーム情報をリセット
       wp.game = None
+      // スコアボード情報をリセット
+      wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
       sendMessage(s"${wp.player.getName} が退出しました")
       if(wp.player.isOnline) {
         wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)

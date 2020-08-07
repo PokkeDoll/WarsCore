@@ -15,6 +15,15 @@ class WPlayer(val player: Player) {
    */
   var play, win, kill, death, assist, damage: Int = _
 
+  /**
+   * タグ情報
+   */
+  var showTag: Boolean = false
+
+  var currentTag: String = _
+
+  var storageTag: Set[String] = _
+
   def sendMessage(string: String): Unit = {
     player.sendMessage(string: String)
   }

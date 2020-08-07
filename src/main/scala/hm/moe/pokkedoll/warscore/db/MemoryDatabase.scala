@@ -51,4 +51,26 @@ class MemoryDatabase extends Database {
   override def insert(uuid: UUID): Boolean = {
     player.put(uuid, new WPlayer(Bukkit.getPlayer(uuid))).isDefined
   }
+
+  /**
+   * インスタンス作成時に呼び出されるメソッド
+   */
+  override def init(): Unit = ???
+
+  /**
+   * データベースから一つのInt型のデータを取得する
+   *
+   * @return
+   */
+  override def getInt(table: String, column: String, uuid: String): Option[Int] = ???
+
+  /**
+   * ストレージを取得する<br>
+   *
+   * @note データベースが返すのはItemStack型ではない。Array[Byte]->String->YamlConfiguration->Array[ItemStack]の手順が必要
+   * @param id
+   * @param uuid
+   * @return
+   */
+  override def getStorage(id: Int, uuid:  String): Option[Array[Byte]] = ???
 }

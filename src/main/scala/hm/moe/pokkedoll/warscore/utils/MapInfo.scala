@@ -1,7 +1,5 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import org.bukkit.configuration.ConfigurationSection
-
 import scala.collection.mutable
 
 /**

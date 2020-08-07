@@ -174,6 +174,7 @@ class Tactics(override val id: String) extends Game {
         WarsCoreAPI.unfreeze(wp.player)
       }
       wp.game = None
+      wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
     })
     /* ワールド削除処理 */
     new BukkitRunnable {
@@ -214,6 +215,7 @@ class Tactics(override val id: String) extends Game {
           "§a/invite <player>§fで他プレイヤーを招待することができます!"
       )
       wp.game = Some(this)
+      wp.player.setScoreboard(WarsCoreAPI.scoreboard)
       bossbar.addPlayer(wp.player)
       members = members :+ wp
       sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a${maxMember}§f)")
@@ -237,6 +239,8 @@ class Tactics(override val id: String) extends Game {
     bossbar.removePlayer(wp.player)
     // ゲーム情報をリセット
     wp.game = None
+    // スコアボードをリセット
+    wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
     sendMessage(s"${wp.player.getName} が退出しました")
     if(wp.player.isOnline) {
       wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)

@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '0.13C'
+version: '0.14'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
 softdepend: [Vault]
@@ -12,6 +12,8 @@ commands:
   resourcepack:
     aliases: [rs]
     permission: pokkedoll.command.resourcepack
+  stats:
+    permission: pokkedoll.command,stats
 
 permission:
   pokkedoll.command.game:
@@ -19,4 +21,6 @@ permission:
   pokkedoll.command.invite:
     default: true
   pokkedoll.command.resourcepack:
+    default: true
+  pokkedoll.command.stats:
     default: true

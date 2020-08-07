@@ -6,12 +6,13 @@ import java.util.UUID
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
 import hm.moe.pokkedoll.warscore.games.{Game, Tactics, TeamDeathMatch}
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, WorldLoader}
+import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder}
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{Player, Projectile}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, EntityDamageEvent}
-import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{Bukkit, ChatColor, Location, Material}
+import org.bukkit.{Bukkit, ChatColor, Location, Material, Statistic}
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Scoreboard, ScoreboardManager, Team}
 
 import scala.collection.mutable
@@ -179,6 +180,10 @@ object WarsCoreAPI {
 
   val GAME_INVENTORY_TITLE = "§aゲーム一覧！"
 
+
+  @Deprecated
+  def showGameInventory(player: Player): Unit = {}
+
   /**
    * ゲーム情報GUI版<br>
    * 重み:<br>
@@ -186,8 +191,8 @@ object WarsCoreAPI {
    * tactics: 1(暫定)
    * @param player
    */
-  def showGameInventory(player: Player): Unit = {
-    val inv = Bukkit.createInventory(null, 54, GAME_INVENTORY_TITLE)
+  def openGameInventory(player: Player): Unit = {
+    val inv = Bukkit.createInventory(null, 18, GAME_INVENTORY_TITLE)
     var slot = (-1, 8, 17)
     games.foreach(f => {
       val weight = if(f._1.startsWith("tdm")) {
@@ -199,8 +204,8 @@ object WarsCoreAPI {
       } else slot._3
       val icon = ((damage => new ItemStack(Material.INK_SACK, f._2.members.size + 1, damage)): Short => ItemStack)(if(f._2.state.join) 10 else 8)
       val meta = icon.getItemMeta
-      meta.setDisplayName((if(f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._2.title}")
-      meta.setLore(java.util.Arrays.asList(s"§e${f._2.description}", s"§a${f._2.members.size} §7/ §a${f._2.maxMember} プレイ中", s"§a${f._2.state.title}", "//TODO ほかにも追加"))
+      meta.setDisplayName((if(f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._1}")
+      meta.setLore(java.util.Arrays.asList(s"§f${f._2.title}", s"§e${f._2.description}", s"§a${f._2.members.size} §7/ §a${f._2.maxMember} プレイ中", s"§a${f._2.state.title}", "//TODO ほかにも追加"))
       icon.setItemMeta(meta)
       inv.setItem(weight, icon)
     })
@@ -252,7 +257,6 @@ object WarsCoreAPI {
       oTeam.addEntry(player.getName)
 
       /* 自分に対して */
-      // tag.getScore(f._1.getName).setScore(f._2.getObjective("tag").getScore(f._1.getName).getScore)
       tag.getScore(f._1.getName).setScore(0)
 
       val mTeam = board.registerNewTeam(f._1.getName)
@@ -271,4 +275,51 @@ object WarsCoreAPI {
       b.resetScores(player.getName)
     })
   }
+
+  /**
+   * 統計
+   * @param player
+   * @param target
+   */
+  def openStatsInventory(player: Player, target: Player): Unit = {
+    val inv = Bukkit.createInventory(null, 18, s"${target.getName}'s stats'")
+    val wp = getWPlayer(target)
+    val tdmIcon = new ItemStack(Material.IRON_SWORD)
+    val tdmIconMeta = tdmIcon.getItemMeta
+    tdmIconMeta.setDisplayName(ChatColor.YELLOW + "TDM")
+    tdmIconMeta.setLore(java.util.Arrays.asList(
+      ChatColor.GRAY + "プレイした記録: " + -1,
+      ChatColor.GRAY + "勝利した回数: " + -1,
+      ChatColor.GRAY + "敵を倒した回数: " + -1,
+      ChatColor.GRAY + "死んだ回数: " + -1,
+      ChatColor.GRAY + "与えたダメージ: " + -1,
+      ChatColor.GRAY + "*",
+      ChatColor.GRAY + "占領に成功した回数: " + -1,
+      ChatColor.GRAY + "Kill MVPを取得した回数: " + -1,
+      ChatColor.GRAY + "Damage MVPを取得した回数: " * -1
+    ))
+    tdmIconMeta.setUnbreakable(true)
+    tdmIconMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE)
+    tdmIcon.setItemMeta(tdmIconMeta)
+
+    val tacticsIcon = new ItemStack(Material.REDSTONE, 1)
+    val tacticsIconMeta = tacticsIcon.getItemMeta
+    tacticsIconMeta.setDisplayName(ChatColor.DARK_AQUA + "Tactics")
+    tacticsIconMeta.setLore(java.util.Arrays.asList(
+      "",
+      "",
+      ""
+    ))
+  }
+  import net.md_5.bungee.api.ChatColor
+
+  val NEWS: Array[BaseComponent] =
+    new ComponentBuilder("= = = = = = = = お知らせ = = = = = = = =\n").color(ChatColor.GREEN)
+    .append("*").color(ChatColor.WHITE)
+      .append("開発進捗や計画はすべてGitLabで公開されています\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll-mc/-/boards"))
+    .append("*").color(ChatColor.WHITE)
+      .append("バージョン判定されてるけどまだ1.12.2のリソースパックを送信しています")
+    .append("*")
+      .append("Discordに参加しよう！ こちらメッセージをクリックしてください！")
+    .create()
 }
