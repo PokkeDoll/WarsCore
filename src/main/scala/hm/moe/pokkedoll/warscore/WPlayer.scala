@@ -10,6 +10,8 @@ class WPlayer(val player: Player) {
 
   var game: Option[Game] = None
 
+  var changeInventory = true
+
   /**
    * TDMの情報ッッッッ！
    */

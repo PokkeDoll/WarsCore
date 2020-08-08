@@ -322,4 +322,13 @@ object WarsCoreAPI {
     .append("*")
       .append("Discordに参加しよう！ こちらメッセージをクリックしてください！")
     .create()
+
+  def setChangeInventory(wp: WPlayer): Unit = {
+    wp.changeInventory = true
+    new BukkitRunnable {
+      override def run(): Unit = {
+        wp.changeInventory = false
+      }
+    }.runTaskLaterAsynchronously(WarsCore.instance, 100L)
+  }
 }

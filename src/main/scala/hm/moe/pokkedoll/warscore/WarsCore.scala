@@ -1,8 +1,5 @@
 package hm.moe.pokkedoll.warscore
 
-import com.comphenix.protocol.PacketType.Protocol
-import com.comphenix.protocol.{PacketType, ProtocolLibrary}
-import com.comphenix.protocol.events.{ListenerPriority, PacketAdapter, PacketEvent}
 import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, RsCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, MemoryDatabase}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}

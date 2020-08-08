@@ -251,9 +251,9 @@ class TeamDeathMatch(override val id: String) extends Game {
             "§7= = = = = = = = &b戦績 §7= = = = = = = =\n" +
             s"* §cRed §7Team: &a${redPoint} §7| §9Blue Team: &a${bluePoint}\n" +
             s"* §7Kill: &a${d.kill}\n" +
-            s"* §7Death: &a%{game::death::%loop-value%}%\n" +
-            s"* §7K/D: &a%{game::kill::%loop-value%} / {game::death::%loop-value%}%\n" +
-            s"* §7Money: &a%{game::money::%loop-value%}%\n" +
+            s"* §7Death: &a${d.death}" +
+            s"* §7K/D: &a%${d.kill/d.death}\n" +
+            s"* §7Money: &a${d.money}\n" +
             "§b5秒後にロビーに戻ります..."
           )
           // ゲーム情報のリセット
@@ -334,10 +334,14 @@ class TeamDeathMatch(override val id: String) extends Game {
     var spawnTime: Int = 5
     new BukkitRunnable {
       override def run(): Unit = {
-        if(redTeam.hasEntry(player.getName)) {
-          player.teleport(locationData._2)
-        } else {
-          player.teleport(locationData._3)
+        if(!coolTime) {
+          if(redTeam.hasEntry(player.getName)) {
+            player.teleport(locationData._2)
+          } else {
+            player.teleport(locationData._3)
+          }
+        } else if (player.getKiller != null) {
+          player.setSpectatorTarget(player.getKiller)
         }
         if(coolTime) {
           WarsCoreAPI.freeze(player)
@@ -355,6 +359,12 @@ class TeamDeathMatch(override val id: String) extends Game {
                 }
               } else {
                 WarsCoreAPI.unfreeze(player)
+                if(redTeam.hasEntry(player.getName)) {
+                  player.teleport(locationData._2)
+                } else {
+                  player.teleport(locationData._3)
+                }
+                WarsCoreAPI.setChangeInventory(WarsCoreAPI.getWPlayer(player))
                 player.setGameMode(GameMode.SURVIVAL)
                 cancel()
               }
