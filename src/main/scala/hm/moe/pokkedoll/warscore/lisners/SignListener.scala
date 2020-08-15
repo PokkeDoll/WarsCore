@@ -1,7 +1,9 @@
 package hm.moe.pokkedoll.warscore.lisners
 
+import hm.moe.pokkedoll.warscore.utils.EnderChestManager
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
-import org.bukkit.block.Sign
+import org.bukkit.Sound
+import org.bukkit.block.{EnderChest, Sign}
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.{EventHandler, Listener}
@@ -34,6 +36,8 @@ class SignListener(plugin: WarsCore) extends Listener {
             case e: NullPointerException =>
               e.printStackTrace()
           }
+        case enderchest: EnderChest if e.getAction == Action.RIGHT_CLICK_BLOCK =>
+          EnderChestManager.openEnderChestMenu(e.getPlayer)
         case _ =>
       }
     }

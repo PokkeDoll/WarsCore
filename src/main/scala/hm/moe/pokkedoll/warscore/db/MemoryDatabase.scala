@@ -73,4 +73,25 @@ class MemoryDatabase extends Database {
    * @return
    */
   override def getStorage(id: Int, uuid:  String): Option[Array[Byte]] = ???
+
+  /**
+   * rankテーブルに保存されているデータを取得する
+   *
+   * @param uuid
+   * @return
+   */
+  override def getRankData(uuid: String): Option[(Int, Int)] = ???
+
+  override def updateTDM(): Boolean = ???
+
+  /**
+   * ストレージを保存する
+   *
+   * @param id
+   * @param uuid
+   * @param item
+   */
+  override def setStorage(id: Int, uuid: String, item: Array[Byte]): Unit = ???
+
+  override def close(): Unit = ???
 }

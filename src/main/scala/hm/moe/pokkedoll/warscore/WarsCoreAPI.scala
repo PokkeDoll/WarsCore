@@ -10,9 +10,9 @@ import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder}
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{Player, Projectile}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, EntityDamageEvent}
-import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{Bukkit, ChatColor, Location, Material, Statistic}
+import org.bukkit.{Bukkit, ChatColor, Location, Material, Sound, Statistic}
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Scoreboard, ScoreboardManager, Team}
 
 import scala.collection.mutable
@@ -66,11 +66,11 @@ object WarsCoreAPI {
     team.setAllowFriendlyFire(false)
     team.setCanSeeFriendlyInvisibles(true)
     team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER)
-    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM)
+    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OTHER_TEAMS)
   }
 
   /**
-   * テストコード
+   * APIにキャッシュされているインスタンスを返す。ないなら作る
    * @param player
    * @return
    */
@@ -219,13 +219,13 @@ object WarsCoreAPI {
     obj.setDisplayName("ハローユーチューブ")
     obj.setDisplaySlot(DisplaySlot.SIDEBAR)
 
-    val rank = obj.getScore("§9Rank: -")
+    val rank = obj.getScore(ChatColor.BLUE + "Rank: -")
     rank.setScore(5)
 
-    val exp = obj.getScore("§9EXP: -1 / -1")
+    val exp = obj.getScore(ChatColor.BLUE + "§9EXP: -1 / -1")
     exp.setScore(4)
 
-    val etc = obj.getScore("§6etc.")
+    val etc = obj.getScore(ChatColor.BLUE + "§6etc.")
     etc.setScore(3)
 
     // 名前の下に書くやつ
@@ -311,17 +311,6 @@ object WarsCoreAPI {
       ""
     ))
   }
-  import net.md_5.bungee.api.ChatColor
-
-  val NEWS: Array[BaseComponent] =
-    new ComponentBuilder("= = = = = = = = お知らせ = = = = = = = =\n").color(ChatColor.GREEN)
-    .append("*").color(ChatColor.WHITE)
-      .append("開発進捗や計画はすべてGitLabで公開されています\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll-mc/-/boards"))
-    .append("*").color(ChatColor.WHITE)
-      .append("バージョン判定されてるけどまだ1.12.2のリソースパックを送信しています")
-    .append("*")
-      .append("Discordに参加しよう！ こちらメッセージをクリックしてください！")
-    .create()
 
   def setChangeInventory(wp: WPlayer): Unit = {
     wp.changeInventory = true
@@ -331,4 +320,17 @@ object WarsCoreAPI {
       }
     }.runTaskLaterAsynchronously(WarsCore.instance, 100L)
   }
+
+  import net.md_5.bungee.api.ChatColor
+
+  val NEWS: Array[BaseComponent] =
+    new ComponentBuilder("= = = = = = = = お知らせ = = = = = = = =\n").color(ChatColor.GREEN)
+      .append("*").color(ChatColor.WHITE)
+      .append("開発進捗や計画はすべてGitLabで公開されています\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll-mc/-/boards"))
+      .append("*").color(ChatColor.WHITE)
+      .append("バージョン判定されてるけどまだ1.12.2のリソースパックを送信しています\n")
+      .append("*")
+      .append("Discordに参加しよう！ こちらメッセージをクリックしてください！").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://discordapp.com/invite/TJ3bkkY"))
+      .create()
+
 }

@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, RsCommand}
-import hm.moe.pokkedoll.warscore.db.{Database, MemoryDatabase}
+import hm.moe.pokkedoll.warscore.db.{Database, MemoryDatabase, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin
 class WarsCore extends JavaPlugin {
 
 
-  private var database: Database = _
+  protected[warscore] var database: Database = _
 
   override def onEnable(): Unit = {
     WarsCore.instance = this
@@ -23,7 +23,7 @@ class WarsCore extends JavaPlugin {
     // BungeeCordに送信するのに必要
     getServer.getMessenger.registerOutgoingPluginChannel(this, "pokkedoll:torus")
 
-    database = new MemoryDatabase
+    database = new SQLite(this)
 
     Bukkit.getPluginManager.registerEvents(new LoginListener(this), this)
     Bukkit.getPluginManager.registerEvents(new PlayerListener(this), this)
@@ -50,6 +50,7 @@ class WarsCore extends JavaPlugin {
   override def onDisable(): Unit = {
     lazy val board = Bukkit.getScoreboardManager.getMainScoreboard
     WarsCoreAPI.scoreboards.keys.foreach(_.setScoreboard(board))
+    database.close()
   }
 }
 

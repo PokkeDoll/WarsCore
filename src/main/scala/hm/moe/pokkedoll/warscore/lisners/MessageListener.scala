@@ -55,6 +55,7 @@ class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
     490->("1.14.3", 4),
     498->("1.14.4", 4),
     578->("1.15.2", 5),
-    731->("1.16.1", 5)
+    731->("1.16", 5),
+    736->("1.16.1", 5)
   )
 }

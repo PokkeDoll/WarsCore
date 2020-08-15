@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.db
 
+import java.rmi.server.UnicastRemoteObject
 import java.util.UUID
 
 import hm.moe.pokkedoll.warscore.WPlayer
@@ -29,10 +30,12 @@ trait Database {
   def hasUUID(player: Player): Boolean = hasUUID(player.getUniqueId)
 
   /**
-   * テーブルからデータを読み込むメソッド
+   * テーブルからデータを読み込むメソッド <br>
+   * 0.17より方針上の都合のため非推奨化
    * @param wp
-   * @return 読み込みエラーが発生したらNone
+   * @return 必ずNone
    */
+  @Deprecated
   def loadWPlayer(wp: WPlayer): Option[WPlayer]
 
   /**
@@ -66,4 +69,23 @@ trait Database {
    * @return
    */
   def getStorage(id: Int, uuid: String): Option[Array[Byte]]
+
+  /**
+   * ストレージを保存する
+   * @param id
+   * @param uuid
+   * @param item
+   */
+  def setStorage(id: Int, uuid: String, item: Array[Byte]): Unit
+
+  /**
+   * rankテーブルに保存されているデータを取得する
+   * @param uuid
+   * @return
+   */
+  def getRankData(uuid: String): Option[(Int, Int)]
+
+  def updateTDM(): Boolean
+
+  def close(): Unit
 }
