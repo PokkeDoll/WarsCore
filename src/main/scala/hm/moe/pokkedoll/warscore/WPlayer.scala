@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.games.Game
+import org.bukkit.ChatColor
 import org.bukkit.entity.Player
 
 /**
@@ -13,6 +14,6 @@ class WPlayer(val player: Player) {
   var changeInventory = true
 
   def sendMessage(string: String): Unit = {
-    player.sendMessage(string: String)
+    player.sendMessage(ChatColor.translateAlternateColorCodes('&', string))
   }
 }

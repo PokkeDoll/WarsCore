@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '0.20.8'
+version: '0.21'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
 softdepend: [Vault]
@@ -16,6 +16,14 @@ commands:
     permission: pokkedoll.command.stats
   whelp:
     permission: pokkedoll.command.whelp
+  tag:
+    permission: pokkedoll.command.tag
+  killsound:
+    aliases: [ks]
+    permission: pokkedoll.command.killsound
+  killeffect:
+    aliases: [ke]
+    permission: pokkedoll.command.killeffect
 
 permission:
   pokkedoll.command.game:
@@ -28,3 +36,8 @@ permission:
     default: true
   pokkedoll.command.whelp:
     default: false
+
+  pokkedoll.user:
+    default: true
+  pokkedoll.admin:
+    default: op

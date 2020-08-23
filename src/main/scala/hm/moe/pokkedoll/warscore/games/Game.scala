@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.games
 
 import hm.moe.pokkedoll.warscore.utils.MapInfo
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
-import org.bukkit.World
+import org.bukkit.{ChatColor, World}
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -96,6 +96,6 @@ trait Game {
   def death(e: PlayerDeathEvent): Unit
 
   def sendMessage(string: String): Unit = {
-    world.getPlayers.forEach(_.sendMessage(string))
+    world.getPlayers.forEach(_.sendMessage(ChatColor.translateAlternateColorCodes('&', string)))
   }
 }

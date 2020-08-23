@@ -4,6 +4,7 @@ import java.sql.SQLException
 import java.util.UUID
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import hm.moe.pokkedoll.warscore.games.{Game, TeamDeathMatch}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore}
 import org.bukkit.entity.Item
 import org.bukkit.inventory.ItemStack
@@ -255,7 +256,29 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
-  override def updateTDM(): Boolean = ???
+  override def updateTDM(game: TeamDeathMatch): Boolean = {
+    val c = hikari.getConnection()
+    val ps = c.prepareStatement("UPDATE tdm SET kill=kill+?, death=death+?, assist=assist+?, damage=damage+?, win=win+?, play=play+1 WHERE uuid=?")
+    try {
+      game.data.map(f => (f._1.getUniqueId.toString, f._2)).foreach(f => {
+        ps.setInt(1, f._2.kill)
+        ps.setInt(2, f._2.death)
+        ps.setInt(3, f._2.assist)
+        ps.setInt(4, f._2.damage)
+        ps.setInt(5, if(f._2.win) 1 else 0)
+        ps.setString(6, f._1)
+        ps.executeUpdate()
+      })
+      true
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        false
+    } finally {
+      ps.close()
+      c.close()
+    }
+  }
 
   override def close(): Unit = hikari.close()
 }

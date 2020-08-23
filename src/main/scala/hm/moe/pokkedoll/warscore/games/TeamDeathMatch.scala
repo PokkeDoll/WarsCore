@@ -172,7 +172,7 @@ class TeamDeathMatch(override val id: String) extends Game {
       var count = 40
       override def run(): Unit = {
         if(members.length < 2) {
-          sendMessage("§c人数が足りないため待機状態に戻ります")
+          sendMessage("&c人数が足りないため待機状態に戻ります")
           state = GameState.WAIT
           cancel()
         } else if (count <= 0) {
@@ -234,9 +234,9 @@ class TeamDeathMatch(override val id: String) extends Game {
               members.map(_.player).foreach(_.sendActionBar(
                 // 赤が優勢
                 if(centerCount > 50) {
-                  ChatColor.RED + "赤チームが中央を占拠しています... " + ChatColor.BOLD + ((centerCount-50)/50.0)*100.0 + "%"
+                  s"&c赤チームが中央を占拠しています... &l${((centerCount-50)/50.0)*100.0}%"
                 } else if (50 > centerCount) {
-                  ChatColor.BLUE + "青チームが中央を占拠しています... " + ChatColor.BOLD + ((50-centerCount)/50.0)*100 + "%"
+                  s"&9青チームが中央を占拠しています... &l${((50-centerCount)/50.0)*100}%"
                 } else ""
               ))
             })
@@ -272,14 +272,14 @@ class TeamDeathMatch(override val id: String) extends Game {
     // ここで勝敗を決める
     val winner = if(redPoint > bluePoint) "red" else if (redPoint < bluePoint) "blue" else "draw"
     sendMessage(
-      "§7==========================================\n" +
-      "§7                Game Over!                \n" +
+      "&7==========================================\n" +
+      "&7                Game Over!                \n" +
       (
-        if(winner=="red") "              §cRed Team §7won!                \n"
-        else if (winner=="blue") "              §9Blue Team §7won!                \n"
-        else "                §fDraw                \n"
+        if(winner=="red") "              &cRed Team §7won!                \n"
+        else if (winner=="blue") "              &9Blue Team §7won!                \n"
+        else "                &fDraw                \n"
       ) +
-      "§7==========================================\n"
+      "&7==========================================\n"
     )
     // TODO Skriptに沿ってMVPを決定する
     sendMessage("// TODO MVP作成")
@@ -288,25 +288,17 @@ class TeamDeathMatch(override val id: String) extends Game {
         case Some(d) =>
           if((winner=="red" && redTeam.hasEntry(wp.player.getName)) && (winner=="blue" && blueTeam.hasEntry(wp.player.getName))) {
             d.money += 500
-            /*
-            wp.win += 1
-             */
+            d.win = true
           }
-          /*
-          // 統計処理
-          wp.kill += d.kill
-          wp.death += d.death
-          wp.assist += d.assist
-          wp.damage += d.damage
-           */
           wp.sendMessage(
-            "§7= = = = = = = = &b戦績 §7= = = = = = = =\n" +
-            s"* §cRed §7Team: &a${redPoint} §7| §9Blue Team: &a${bluePoint}\n" +
-            s"* §7Kill: &a${d.kill}\n" +
-            s"* §7Death: &a${d.death}" +
-            s"* §7K/D: &a%${d.kill/(d.death + 1)}\n" +
-            s"* §7Money: &a${d.money}\n" +
-            "§b5秒後にロビーに戻ります..."
+            "&7= = = = = = = = &b戦績 &7= = = = = = = =\n" +
+            s"* &cRed &7Team: &a${redPoint} &7| &9Blue Team: &a${bluePoint}\n" +
+            s"* &7Kill: &a${d.kill}\n" +
+            s"* &7Death: &a${d.death}" +
+            s"* &7K/D: &a${d.kill/(d.death + 1)}\n" +
+            s"* &7Assist: &a${d.assist}\n" +
+            s"* &7Damage: &a${d.damage}" +
+            s"* &7Money: &a${d.money}\n"
           )
           // ゲーム情報のリセット
           wp.game = None
@@ -315,6 +307,8 @@ class TeamDeathMatch(override val id: String) extends Game {
         case _ =>
       }
     })
+    WarsCore.instance.database.updateTDMAsync(this)
+    sendMessage("&b5秒後にロビーに戻ります...")
     bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
@@ -503,6 +497,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   class TDMData {
     // 順に, 金！, キル, デス, アシスト, ダメージ量, 受けたダメージ量
     var money, kill, death, assist, damage: Int = 0
+    var win = false
     var damaged = mutable.Set.empty[Player]
   }
 }

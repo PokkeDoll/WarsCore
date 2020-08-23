@@ -1,15 +1,16 @@
 package hm.moe.pokkedoll.warscore.lisners
 
-import hm.moe.pokkedoll.warscore.utils.EnderChestManager
+import hm.moe.pokkedoll.warscore.utils.{EnderChestManager, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
-import org.bukkit.{Bukkit, ChatColor, GameMode}
-import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
+import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
+import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryCloseEvent, InventoryType}
-import org.bukkit.event.player.PlayerTeleportEvent
+import org.bukkit.event.player.{PlayerInteractEvent, PlayerTeleportEvent}
 import org.bukkit.event.{EventHandler, Listener}
+import org.bukkit.inventory.EquipmentSlot
 
 class PlayerListener(plugin: WarsCore) extends Listener {
 
@@ -81,5 +82,17 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onTeleport(e: PlayerTeleportEvent): Unit = {
     if (e.getCause == PlayerTeleportEvent.TeleportCause.SPECTATE) e.setCancelled(true)
+  }
+
+  @EventHandler
+  def onInteract(e: PlayerInteractEvent): Unit = {
+    if(e.getAction == Action.RIGHT_CLICK_AIR && e.getHand == EquipmentSlot.HAND) {
+      val item = e.getItem
+      if(item != null && item.getType == Material.NAME_TAG) {
+        e.setCancelled(true)
+        val t = TagUtil.getTagIdFromItemStack(item)
+        e.getPlayer.sendMessage(s"$t を獲得しました！(大嘘)")
+      }
+    }
   }
 }

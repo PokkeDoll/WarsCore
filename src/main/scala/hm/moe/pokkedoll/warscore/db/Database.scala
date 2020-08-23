@@ -3,9 +3,11 @@ package hm.moe.pokkedoll.warscore.db
 import java.rmi.server.UnicastRemoteObject
 import java.util.UUID
 
-import hm.moe.pokkedoll.warscore.WPlayer
+import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore}
+import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import org.bukkit.scheduler.BukkitRunnable
 
 /**
  *  データベースとのデータをやり取りするトレイト
@@ -85,7 +87,18 @@ trait Database {
    */
   def getRankData(uuid: String): Option[(Int, Int)]
 
-  def updateTDM(): Boolean
+  /**
+   * TDMの戦績を更新する
+   * @param game
+   * @return
+   */
+  def updateTDM(game: TeamDeathMatch): Boolean
+
+  def updateTDMAsync(game: TeamDeathMatch): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = updateTDM(game)
+    }.runTaskAsynchronously(WarsCore.instance)
+  }
 
   def close(): Unit
 }
