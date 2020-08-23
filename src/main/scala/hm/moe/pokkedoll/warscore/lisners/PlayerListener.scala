@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore.lisners
 import hm.moe.pokkedoll.warscore.utils.EnderChestManager
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
-import org.bukkit.{ChatColor, GameMode}
+import org.bukkit.{Bukkit, ChatColor, GameMode}
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryType.SlotType
@@ -19,6 +19,10 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       case Some(game) =>
         game.death(e)
       case _ =>
+        e.setCancelled(true)
+        if(e.getEntity.getWorld == Bukkit.getWorlds.get(0)) {
+          e.getEntity.teleport(e.getEntity.getWorld.getSpawnLocation)
+        }
     }
   }
 

@@ -25,9 +25,9 @@ object EnderChestManager {
   val ENDER_CHEST_MENU: Inventory = {
     val inv = Bukkit.createInventory(null, 9, ChatColor.LIGHT_PURPLE + "EnderChest Menu")
     lazy val createIcon = (slot => {
-      val i = new ItemStack(Material.ENDER_CHEST, if(slot==0) -1 else slot)
+      val i = new ItemStack(Material.ENDER_CHEST, slot + 1)
       val m = i.getItemMeta
-      m.setDisplayName(ChatColor.YELLOW + "Ender Chest" + ChatColor.GRAY + ": " + ChatColor.LIGHT_PURPLE + slot)
+      m.setDisplayName(ChatColor.YELLOW + "Ender Chest" + ChatColor.GRAY + ": " + ChatColor.LIGHT_PURPLE + (slot + 1))
       i.setItemMeta(m)
       i
     }): Int => ItemStack
@@ -54,23 +54,20 @@ object EnderChestManager {
     val inv = Bukkit.createInventory(null, 54, ChatColor.DARK_PURPLE + player.getName + "'s Chest " + id)
     new BukkitRunnable {
       override def run(): Unit = {
-        cache.get(player.getUniqueId.toString + "-" + id).orElse(
-          db.getStorage(id, player.getUniqueId.toString)
-        ) match {
-          case Some(bytes) =>
-            val str = new String(bytes, StandardCharsets.UTF_8)
+        db.getStorage(id, player.getUniqueId.toString) match {
+          case Some(str) =>
             val yaml = new YamlConfiguration()
             try {
               yaml.loadFromString(str)
               (0 to 53).foreach(i => {
-                inv.setItem(id, yaml.getItemStack(i.toString, new ItemStack(Material.AIR)))
+                inv.setItem(i, yaml.getItemStack(i.toString, new ItemStack(Material.AIR)))
               })
             } catch {
               case e: Exception =>
                 player.sendMessage(ChatColor.RED + s"エラーが発生しました。管理者に報告してください (${e.getMessage})")
             }
           case None =>
-
+            player.sendMessage(ChatColor.RED + "データは空です！")
         }
       }
     }.runTaskAsynchronously(WarsCore.instance)
@@ -78,7 +75,7 @@ object EnderChestManager {
   }
 
   def closeEnderChest(player: HumanEntity, id: Int, content: Array[ItemStack]): Unit = {
-    db.setStorage(id, player.getUniqueId.toString, i2s(content).getBytes)
+    db.setStorage(id, player.getUniqueId.toString, i2s(content))
   }
 
 

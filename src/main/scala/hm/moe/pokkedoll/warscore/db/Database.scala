@@ -68,7 +68,7 @@ trait Database {
    * @param uuid
    * @return
    */
-  def getStorage(id: Int, uuid: String): Option[Array[Byte]]
+  def getStorage(id: Int, uuid: String): Option[String]
 
   /**
    * ストレージを保存する
@@ -76,7 +76,7 @@ trait Database {
    * @param uuid
    * @param item
    */
-  def setStorage(id: Int, uuid: String, item: Array[Byte]): Unit
+  def setStorage(id: Int, uuid: String, item: String): Unit
 
   /**
    * rankテーブルに保存されているデータを取得する

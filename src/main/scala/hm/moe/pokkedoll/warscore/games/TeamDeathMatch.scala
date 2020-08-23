@@ -250,16 +250,18 @@ class TeamDeathMatch(override val id: String) extends Game {
   }
 
   private def occupy(team: String, prefix: String, color: Color, material: Material): Unit = {
-    center = team
-    sendMessage(prefix + ChatColor.WHITE + "が中央を占拠しました！！")
-    val fw = world.spawnEntity(locationData._4, EntityType.FIREWORK).asInstanceOf[Firework]
-    val meta = fw.getFireworkMeta
-    meta.addEffect(FireworkEffect.builder().withColor(color).`with`(FireworkEffect.Type.CREEPER).build())
-    fw.setFireworkMeta(meta)
-    val loc = locationData._4.add(0, -1, 0)
-    for(i <- -1 to 1) {
-      for(j <- -1 to 1) {
-        loc.add(i, 0, j).getBlock.setType(material)
+    if(center == "none") {
+      center = team
+      sendMessage(prefix + ChatColor.WHITE + "が中央を占拠しました！！")
+      val fw = world.spawnEntity(locationData._4, EntityType.FIREWORK).asInstanceOf[Firework]
+      val meta = fw.getFireworkMeta
+      meta.addEffect(FireworkEffect.builder().withColor(color).`with`(FireworkEffect.Type.CREEPER).build())
+      fw.setFireworkMeta(meta)
+      val loc = locationData._4.add(0, -1, 0)
+      for(i <- -1 to 1) {
+        for(j <- -1 to 1) {
+          loc.add(i.toDouble, 0d, j.toDouble).getBlock.setType(material)
+        }
       }
     }
   }

@@ -30,6 +30,7 @@ class SQLite(plugin: WarsCore) extends Database {
       val st = c.createStatement()
       /* 基本情報これさえあれば困らないデータ */
       // TDM... play, win, kill, death, assist, damage: Int = _
+
       st.execute(
         """
           |CREATE TABLE IF NOT EXISTS player (
@@ -109,7 +110,7 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
-  init()
+  //init()
 
   /**
    * UUID(=データ、つまりテーブル)があるか確認するメソッド
@@ -121,6 +122,7 @@ class SQLite(plugin: WarsCore) extends Database {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("SELECT uuid FROM player WHERE uuid=?")
     try {
+      ps.setString(1, uuid.toString)
       val rs = ps.executeQuery()
       rs.next()
     } catch {
@@ -156,12 +158,12 @@ class SQLite(plugin: WarsCore) extends Database {
     val c = hikari.getConnection()
     val s = c.createStatement()
     try {
-      val execute = (table: String) => s.execute(s"INSERT INTO $table(uuid) VALUES(${uuid.toString})")
-      execute("player")
-      execute("rank")
-      execute("enderchest")
-      execute("tdm")
-      execute("tactics")
+      val build = (table: String) => s"INSERT INTO $table(`uuid`) VALUES('${uuid.toString}')"
+      s.executeUpdate(build("player"))
+      s.executeUpdate(build("rank"))
+      s.executeUpdate(build("enderchest"))
+      s.executeUpdate(build("tdm"))
+      s.executeUpdate(build("tactics"))
       true
     } catch {
       case e: SQLException =>
@@ -194,14 +196,15 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
-  override def getStorage(id: Int, uuid: String): Option[Array[Byte]] = {
+  override def getStorage(id: Int, uuid: String): Option[String] = {
+    val col = s"s$id"
     val c = hikari.getConnection
-    val ps = c.prepareStatement(s"SELECT s${id} FROM `enderchest` WHERE uuid=?")
+    val ps = c.prepareStatement(s"SELECT $col FROM `enderchest` WHERE uuid=?")
     try {
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
       if(rs.next()) {
-        Option(rs.getBytes(0))
+        Option(rs.getString(col))
       } else {
         None
       }
@@ -215,11 +218,11 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
-  override def setStorage(id: Int, uuid: String, item: Array[Byte]): Unit = {
+  override def setStorage(id: Int, uuid: String, item: String): Unit = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement(s"UPDATE `enderchest` SET `s$id`=? WHERE `uuid`=?")
     try {
-      ps.setBytes(1, item)
+      ps.setString(1, item)
       ps.setString(2, uuid)
       ps.executeUpdate()
     } catch {

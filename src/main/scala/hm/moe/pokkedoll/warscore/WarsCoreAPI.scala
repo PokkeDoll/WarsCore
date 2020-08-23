@@ -5,7 +5,8 @@ import java.util.UUID
 
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
 import hm.moe.pokkedoll.warscore.games.{Game, Tactics, TeamDeathMatch}
-import hm.moe.pokkedoll.warscore.utils.{MapInfo, WorldLoader}
+import hm.moe.pokkedoll.warscore.utils.RankManager.plugin
+import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, WorldLoader}
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder}
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{Player, Projectile}
@@ -143,15 +144,15 @@ object WarsCoreAPI {
   def reloadGame(cs: ConfigurationSection): Unit = {
     games.clear()
 
-    games.put("tdm-test-1", new TeamDeathMatch("tdm-test-1"))
-    games.put("tdm-test-2", new TeamDeathMatch("tdm-test-2"))
+    (1 to 9) foreach (id => {
+      games.put(s"tdm-test-$id", new TeamDeathMatch(s"tdm-test-$id"))
+      if(Bukkit.getWorld(s"tdm-test-$id") != null) WorldLoader.syncUnloadWorld(s"tdm-test-$id")
+    })
 
-    games.put("tactics-test-1", new Tactics("tactics-test-1"))
-
-    if(Bukkit.getWorld("tdm-test-1") != null) WorldLoader.syncUnloadWorld("tdm-test-1")
-    if(Bukkit.getWorld("tdm-test-2") != null) WorldLoader.syncUnloadWorld("tdm-test-2")
-
-    if(Bukkit.getWorld("tactics-test-1") != null) WorldLoader.syncUnloadWorld("tactics-test-1")
+    (1 to 4) foreach (id => {
+      games.put(s"tactics-test-$id", new Tactics(s"tactics-test-$id"))
+      if(Bukkit.getWorld(s"tactics-test-$id") != null) WorldLoader.syncUnloadWorld(s"tactics-test-$id")
+    })
   }
 
   /**
@@ -213,59 +214,56 @@ object WarsCoreAPI {
   }
 
   def addScoreBoard(player: Player): Unit = {
+    val test = new Test()
     val board = scoreboardManager.getNewScoreboard
-    val obj = board.registerNewObjective("status", "dummy")
 
-    obj.setDisplayName("ハローユーチューブ")
-    obj.setDisplaySlot(DisplaySlot.SIDEBAR)
+    WarsCore.instance.database.getRankData(player.getUniqueId.toString) match {
+      case Some(data) =>
 
-    val rank = obj.getScore(ChatColor.BLUE + "Rank: -")
-    rank.setScore(5)
+        RankManager.updateSidebar(board, data)
 
-    val exp = obj.getScore(ChatColor.BLUE + "§9EXP: -1 / -1")
-    exp.setScore(4)
+        // 名前の下に書くやつ
+        val tag = board.registerNewObjective("tag", "dummy")
+        tag.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&a(ここにTAG) &f0"))
+        tag.getScore(player.getName).setScore(0)
+        tag.setDisplaySlot(DisplaySlot.BELOW_NAME)
 
-    val etc = obj.getScore(ChatColor.BLUE + "§6etc.")
-    etc.setScore(3)
+        player.setScoreboard(board)
 
-    // 名前の下に書くやつ
-    val tag = board.registerNewObjective("tag", "dummy")
-    tag.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&a(ここにTAG) &f0"))
-    tag.getScore(player.getName).setScore(0)
-    tag.setDisplaySlot(DisplaySlot.BELOW_NAME)
+        /* 自分 */
+        val team = board.registerNewTeam(player.getName)
+        team.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${data._1}&7]&r "))
+        team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+        team.addEntry(player.getName)
 
-    player.setScoreboard(board)
+        scoreboards.foreach(f => {
+          WarsCore.instance.getLogger.info(s"WarsCoreAPI.addScoreboard(${player.getName})")
+          /* タグの問題 */
+          val oTag = f._2.getObjective("tag")
+          if(oTag!=null)
+            oTag.getScore(player.getName).setScore(0)
+          else
+            WarsCore.instance.getLogger.info(s"oTag is null! ${f._2}")
+          /* 他プレイヤーに対して */
+          val oTeam = f._2.registerNewTeam(player.getName)
+          oTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${data._1}&7]&r "))
+          oTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+          oTeam.addEntry(player.getName)
 
-    /* 自分 */
-    val team = board.registerNewTeam(player.getName)
-    team.setPrefix(ChatColor.translateAlternateColorCodes('&', "&7[&a000&7]&r "))
-    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-    team.addEntry(player.getName)
+          /* 自分に対して */
+          tag.getScore(f._1.getName).setScore(0)
 
-    scoreboards.foreach(f => {
-      WarsCore.instance.getLogger.info(s"WarsCoreAPI.addScoreboard(${player.getName})")
-      /* タグの問題 */
-      val oTag = f._2.getObjective("tag")
-      if(oTag!=null)
-        oTag.getScore(player.getName).setScore(0)
-      else
-        WarsCore.instance.getLogger.info(s"oTag is null! ${f._2}")
-      /* 他プレイヤーに対して */
-      val oTeam = f._2.registerNewTeam(player.getName)
-      oTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', "&7[&a000&7]&r "))
-      oTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-      oTeam.addEntry(player.getName)
-
-      /* 自分に対して */
-      tag.getScore(f._1.getName).setScore(0)
-
-      val mTeam = board.registerNewTeam(f._1.getName)
-      mTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', "&7[&a000&7]&r "))
-      mTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-      mTeam.addEntry(f._1.getName)
-    })
+          val mTeam = board.registerNewTeam(f._1.getName)
+          mTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${data._1}&7]&r "))
+          mTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+          mTeam.addEntry(f._1.getName)
+        })
+      case None =>
+    }
 
     scoreboards.put(player, board)
+
+    test.log("WarsCoreAPI.addScoreboard()")
   }
 
   def removeScoreboard(player: Player): Unit = {

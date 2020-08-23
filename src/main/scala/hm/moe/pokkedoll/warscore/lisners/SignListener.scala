@@ -37,6 +37,7 @@ class SignListener(plugin: WarsCore) extends Listener {
               e.printStackTrace()
           }
         case enderchest: EnderChest if e.getAction == Action.RIGHT_CLICK_BLOCK =>
+          e.setCancelled(true)
           EnderChestManager.openEnderChestMenu(e.getPlayer)
         case _ =>
       }

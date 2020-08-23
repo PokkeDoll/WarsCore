@@ -34,8 +34,6 @@ class LoginListener(plugin: WarsCore) extends Listener {
         player.sendMessage(WarsCoreAPI.NEWS: _*)
 
         WarsCoreAPI.addScoreBoard(player)
-
-        RankManager.updateScoreboard(player)
       }
     }.runTaskLater(plugin, 5L)
   }
