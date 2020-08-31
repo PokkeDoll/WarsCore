@@ -24,39 +24,6 @@ object RankManager {
   def getNextExp(rank: Int): Int = (100 * Math.pow(1.05, rank)).toInt
 
   /**
-   * 自身のスコアボードの横部分を更新する
-   */
-  @Deprecated
-  def updateSidebar(player: Player, sb: Scoreboard): Unit = {
-    val test = new Test()
-    if(sb.getObjective(DisplaySlot.SIDEBAR)!=null) sb.getObjective(DisplaySlot.SIDEBAR).unregister()
-    val obj = sb.registerNewObjective("sidebar", "dummy")
-    obj.setDisplayName("ハローユーチューブ")
-    obj.setDisplaySlot(DisplaySlot.SIDEBAR)
-    plugin.database.getRankData(player.getUniqueId.toString) match {
-      case Some(data) =>
-        val rank = obj.getScore(ChatColor.BLUE + s"Rank: ${data._1}")
-        rank.setScore(5)
-
-        val exp = obj.getScore(ChatColor.BLUE + s"§9EXP: ${data._2} / (${getNextExp(data._1)})")
-        exp.setScore(4)
-
-        val etc = obj.getScore(ChatColor.BLUE + "§6etc.")
-        etc.setScore(3)
-      case None =>
-        val rank = obj.getScore(ChatColor.BLUE + "Rank: -1")
-        rank.setScore(5)
-
-        val exp = obj.getScore(ChatColor.BLUE + "§9EXP: -1 / -1")
-        exp.setScore(4)
-
-        val etc = obj.getScore(ChatColor.BLUE + "§6etc.")
-        etc.setScore(3)
-    }
-    test.log("RankManager.updateSidebar()")
-  }
-
-  /**
    * データを直接渡すため高速
    * @param sb
    * @param data

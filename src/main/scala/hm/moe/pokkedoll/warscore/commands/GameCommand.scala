@@ -22,7 +22,7 @@ class GameCommand extends CommandExecutor with TabCompleter {
             sb.append(s"§a${game.id}§7: §f${game.title}§7: §f${game.mapInfo.mapName}§7: §f${game.members.size} / ${game.maxMember}\n")
           })
           player.sendMessage(sb.toString())
-        } else if(args(0).length >= 1 && args(0) == "leave") {
+        } else if(args(0).length >= 1 && (args(0) == "leave" || args(0) == "quit")) {
           val wp = WarsCoreAPI.getWPlayer(player)
           wp.game match {
             case Some(game) =>

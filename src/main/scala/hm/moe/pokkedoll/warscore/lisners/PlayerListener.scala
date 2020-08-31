@@ -8,7 +8,7 @@ import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryCloseEvent, InventoryType}
-import org.bukkit.event.player.{PlayerInteractEvent, PlayerTeleportEvent}
+import org.bukkit.event.player.{PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
 

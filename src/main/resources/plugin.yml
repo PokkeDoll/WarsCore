@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '0.21'
+version: '0.23.2'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
 softdepend: [Vault]
@@ -24,6 +24,14 @@ commands:
   killeffect:
     aliases: [ke]
     permission: pokkedoll.command.killeffect
+  warscore:
+    aliases: [wc, wars]
+    permission: pokkedoll.command.warscore
+  item:
+    permission: pokkedoll.command.item
+  upgrade:
+    aliases: [upg]
+    permission: pokkedoll.command.upgrade
 
 permission:
   pokkedoll.command.game:
@@ -36,7 +44,12 @@ permission:
     default: true
   pokkedoll.command.whelp:
     default: false
-
+  pokkedoll.command.warscore:
+    default: false
+  pokkedoll.command.item:
+    default: false
+  pokkedoll.command.upgrade:
+    default: false
   pokkedoll.user:
     default: true
   pokkedoll.admin:

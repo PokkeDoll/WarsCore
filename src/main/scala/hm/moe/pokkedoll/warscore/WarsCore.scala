@@ -1,8 +1,9 @@
 package hm.moe.pokkedoll.warscore
 
-import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, RsCommand, WhelpCommand}
+import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, RsCommand, UpgradeCommand, WarsCoreCommand, WhelpCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
+import hm.moe.pokkedoll.warscore.utils.{ItemUtil, UpgradeUtil}
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -36,6 +37,9 @@ class WarsCore extends JavaPlugin {
     getCommand("invite").setExecutor(new InviteCommand)
     getCommand("resourcepack").setExecutor(new RsCommand)
     getCommand("whelp").setExecutor(new WhelpCommand)
+    getCommand("warscore").setExecutor(new WarsCoreCommand)
+    getCommand("item").setExecutor(new ItemCommand)
+    getCommand("upgrade").setExecutor(new UpgradeCommand)
 
     saveDefaultConfig()
     WarsCoreAPI.DEFAULT_SPAWN = Bukkit.getWorlds.get(0).getSpawnLocation
@@ -43,6 +47,8 @@ class WarsCore extends JavaPlugin {
     WarsCoreAPI.reloadGame(null)
     WarsCoreAPI.reloadRs(getConfig.getConfigurationSection("resourcepacks"))
 
+    ItemUtil.reloadItem()
+    UpgradeUtil.reload()
     if(Bukkit.getOnlinePlayers.size()!=0) {
       Bukkit.getOnlinePlayers.forEach(f => WarsCoreAPI.addScoreBoard(f))
     }

@@ -10,7 +10,7 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.potion.{PotionEffect, PotionEffectType}
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.scoreboard.Team
+import org.bukkit.scoreboard.{DisplaySlot, Team}
 import org.bukkit.{Bukkit, ChatColor, Color, FireworkEffect, GameMode, Location, Material, Sound, World, scheduler}
 
 import scala.collection.mutable
@@ -52,10 +52,16 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   override val time: Int = 600
 
-  var redTeam: Team = WarsCoreAPI.scoreboard.registerNewTeam(s"$id-red")
+  private val scoreboard = Bukkit.getScoreboardManager.getNewScoreboard
+
+  val sidebar = scoreboard.registerNewObjective("sidebar", "dummy")
+  sidebar.setDisplayName(ChatColor.GOLD +  "戦況")
+  sidebar.setDisplaySlot(DisplaySlot.SIDEBAR)
+
+  var redTeam: Team = scoreboard.registerNewTeam(s"$id-red")
   redTeam.setColor(ChatColor.RED)
 
-  val blueTeam: Team = WarsCoreAPI.scoreboard.registerNewTeam(s"$id-blue")
+  val blueTeam: Team = scoreboard.registerNewTeam(s"$id-blue")
   blueTeam.setColor(ChatColor.BLUE)
 
   WarsCoreAPI.setBaseTeam(redTeam); WarsCoreAPI.setBaseTeam(blueTeam)
@@ -152,6 +158,14 @@ class TeamDeathMatch(override val id: String) extends Game {
     redTeam.getEntries.forEach(f => redTeam.removeEntry(f))
     blueTeam.getEntries.forEach(f => blueTeam.removeEntry(f))
     redPoint = 0; bluePoint = 0
+
+    center = "none"
+    centerCount = 50
+
+    sidebar.getScore(ChatColor.RED + "赤チーム キル数(仮):").setScore(0)
+    sidebar.getScore(ChatColor.RED + "赤チーム 占領率(仮):").setScore(0)
+    sidebar.getScore(ChatColor.BLUE + "青チーム キル数(仮):").setScore(0)
+    sidebar.getScore(ChatColor.BLUE + "青チーム 占領率(仮):").setScore(0)
 
     setLocationData()
 
@@ -436,13 +450,13 @@ class TeamDeathMatch(override val id: String) extends Game {
       false
     } else {
       wp.sendMessage(
-        s"マップ名: §a${mapInfo.mapName}\n" +
-          s"製作者: §a${mapInfo.authors}\n" +
-          s"退出する場合は§a/hub§もしくは§a/game leave\n" +
-          "§a/invite <player>§fで他プレイヤーを招待することができます!"
+        s"マップ名: &a${mapInfo.mapName}\n" +
+          s"製作者: &a${mapInfo.authors}\n" +
+          s"退出する場合は&a/game quit&7もしくは&a/game leave\n" +
+          "&a/invite <player>&fで他プレイヤーを招待することができます!"
       )
       wp.game = Some(this)
-      wp.player.setScoreboard(WarsCoreAPI.scoreboard)
+      wp.player.setScoreboard(scoreboard)
       data.put(wp.player, new TDMData)
       bossbar.addPlayer(wp.player)
       members = members :+ wp

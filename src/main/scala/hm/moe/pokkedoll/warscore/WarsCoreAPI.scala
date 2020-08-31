@@ -9,11 +9,11 @@ import hm.moe.pokkedoll.warscore.utils.RankManager.plugin
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, WorldLoader}
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder}
 import org.bukkit.configuration.ConfigurationSection
-import org.bukkit.entity.{Player, Projectile}
+import org.bukkit.entity.{EntityType, Firework, Player, Projectile}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, EntityDamageEvent}
 import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{Bukkit, ChatColor, Location, Material, Sound, Statistic}
+import org.bukkit.{Bukkit, ChatColor, Color, FireworkEffect, Location, Material, Sound, Statistic}
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Scoreboard, ScoreboardManager, Team}
 
 import scala.collection.mutable
@@ -220,6 +220,8 @@ object WarsCoreAPI {
     WarsCore.instance.database.getRankData(player.getUniqueId.toString) match {
       case Some(data) =>
 
+        // ついでに更新
+        WarsCoreAPI.wplayers(player).rank = data._1
         RankManager.updateSidebar(board, data)
 
         // 名前の下に書くやつ
@@ -319,6 +321,16 @@ object WarsCoreAPI {
     }.runTaskLaterAsynchronously(WarsCore.instance, 100L)
   }
 
+  def randomChance(chance: Double): Boolean = (chance / 100.0) > Math.random()
+
+  def spawnFirework(location: Location): Unit = {
+    val firework: Firework = location.getWorld.spawnEntity(location, EntityType.FIREWORK).asInstanceOf[Firework]
+    val meta = firework.getFireworkMeta
+    val effect: FireworkEffect = FireworkEffect.builder().`with`(FireworkEffect.Type.BALL).withColor(Color.YELLOW).build()
+    meta.addEffect(effect)
+    firework.setFireworkMeta(meta)
+  }
+
   import net.md_5.bungee.api.ChatColor
 
   val NEWS: Array[BaseComponent] =
@@ -330,5 +342,6 @@ object WarsCoreAPI {
       .append("*")
       .append("Discordに参加しよう！ こちらメッセージをクリックしてください！").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://discordapp.com/invite/TJ3bkkY"))
       .create()
+
 
 }

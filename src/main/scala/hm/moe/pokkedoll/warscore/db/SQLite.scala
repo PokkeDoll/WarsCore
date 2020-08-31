@@ -4,13 +4,13 @@ import java.sql.SQLException
 import java.util.UUID
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import hm.moe.pokkedoll.warscore.games.{Game, TeamDeathMatch}
+import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore}
-import org.bukkit.entity.Item
-import org.bukkit.inventory.ItemStack
 
-import scala.util.Try
-
+/**
+ * SQLite3でのDatabase実装
+ * @param plugin
+ */
 class SQLite(plugin: WarsCore) extends Database {
 
   private val path = "database.db"
