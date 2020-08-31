@@ -51,7 +51,10 @@ class WarsCore extends JavaPlugin {
     ItemUtil.reloadItem()
     UpgradeUtil.reload()
     if(Bukkit.getOnlinePlayers.size()!=0) {
-      Bukkit.getOnlinePlayers.forEach(f => WarsCoreAPI.addScoreBoard(f))
+      Bukkit.getOnlinePlayers.forEach(f => {
+        WarsCoreAPI.getWPlayer(f)
+        WarsCoreAPI.addScoreBoard(f)
+      })
     }
   }
 
