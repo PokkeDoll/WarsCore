@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore
 
-import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, RsCommand, UpgradeCommand, WarsCoreCommand, WhelpCommand}
+import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand, WhelpCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, UpgradeUtil}
@@ -40,6 +40,7 @@ class WarsCore extends JavaPlugin {
     getCommand("warscore").setExecutor(new WarsCoreCommand)
     getCommand("item").setExecutor(new ItemCommand)
     getCommand("upgrade").setExecutor(new UpgradeCommand)
+    getCommand("merchant").setExecutor(new MerchantCommand)
 
     saveDefaultConfig()
     WarsCoreAPI.DEFAULT_SPAWN = Bukkit.getWorlds.get(0).getSpawnLocation
