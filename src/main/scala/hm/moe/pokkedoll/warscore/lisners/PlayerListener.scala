@@ -73,10 +73,12 @@ class PlayerListener(plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onCInventoryClose(e: InventoryCloseEvent): Unit = {
-    if (e.getInventory != null && e.getPlayer != null) {
-      if (e.getInventory.getTitle.contains(ChatColor.DARK_PURPLE + e.getPlayer.getName + "'s Chest")) {
-        val id = e.getInventory.getTitle.replaceAll(ChatColor.DARK_PURPLE + e.getPlayer.getName + "'s Chest ", "").toInt
-        EnderChestManager.closeEnderChest(e.getPlayer, id, e.getInventory.getContents)
+    val inv = e.getInventory
+    val player = e.getPlayer
+    if (inv != null && player != null) {
+      if (inv.getTitle.contains(ChatColor.DARK_PURPLE + player.getName + "'s Chest")) {
+        val id = inv.getTitle.replaceAll(ChatColor.DARK_PURPLE + player.getName + "'s Chest ", "").toInt
+        EnderChestManager.closeEnderChest(player, id, inv.getContents)
       }
     }
   }
@@ -100,9 +102,10 @@ class PlayerListener(plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onInteractAtEntity(e: PlayerInteractAtEntityEvent): Unit = {
-    if(e.getHand == EquipmentSlot.HAND && e.getRightClicked != null && e.getRightClicked.getCustomName != null) {
-      if(MerchantUtil.hasName(e.getRightClicked.getCustomName)) {
-        MerchantUtil.openMerchantInventory(e.getPlayer, e.getRightClicked.getCustomName)
+    if(e.getHand == EquipmentSlot.HAND && e.getRightClicked != null) {
+      val name = e.getRightClicked.getCustomName
+      if(name!=null && MerchantUtil.hasName(name)) {
+        MerchantUtil.openMerchantInventory(e.getPlayer, name)
       }
     }
   }

@@ -215,6 +215,10 @@ class TeamDeathMatch(override val id: String) extends Game {
         p.sendTitle("§7YOU ARE §9BLUE §7TEAM!", "- §6TDM §f- Kill §cRed §fteam!", 30, 20, 20)
       }
     })
+
+    // 効率化のため割り算を先に計算する
+    val div = 1/50.0
+
     new BukkitRunnable {
       var time: Int = TIME
       override def run(): Unit = {
@@ -248,9 +252,9 @@ class TeamDeathMatch(override val id: String) extends Game {
               members.map(_.player).foreach(_.sendActionBar(
                 // 赤が優勢
                 if(centerCount > 50) {
-                  s"&c赤チームが中央を占拠しています... &l${((centerCount-50)/50.0)*100.0}%"
+                  s"&c赤チームが中央を占拠しています... &l${((centerCount-50)*div)*100.0}%"
                 } else if (50 > centerCount) {
-                  s"&9青チームが中央を占拠しています... &l${((50-centerCount)/50.0)*100}%"
+                  s"&9青チームが中央を占拠しています... &l${((50-centerCount)*div)*100}%"
                 } else ""
               ))
             })

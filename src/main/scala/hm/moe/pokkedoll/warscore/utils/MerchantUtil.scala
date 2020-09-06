@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore.utils
 
 import hm.moe.pokkedoll.warscore.{Test, WarsCore}
+import org.apache.commons.lang3.StringUtils
 import org.bukkit.entity.Player
 import org.bukkit.inventory.{Merchant, MerchantRecipe}
 import org.bukkit.{Bukkit, ChatColor}
@@ -26,12 +27,14 @@ object MerchantUtil {
     val cs = plugin.getConfig.getConfigurationSection("merchants")
     if(cs.contains(key)) {
       val list = cs.getStringList(key).asScala
-        .map(_.split(","))
+        //.map(_.split(","))
+        .map(StringUtils.split(_, ','))
         .filter(_.length == 3)
         .flatMap(arr => new MerchantData(arr(1), arr(2), arr(0)).build())
         .asJava
       if(list==null || list.size()==0) None else Some(list)
     } else None
+    
   }
 
   def openMerchantInventory(player: Player, name: String): Unit = {
