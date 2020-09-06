@@ -1,13 +1,26 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import hm.moe.pokkedoll.warscore.WarsCore
-import org.bukkit.inventory.MerchantRecipe
+import hm.moe.pokkedoll.warscore.{Test, WarsCore}
+import org.bukkit.entity.Player
+import org.bukkit.inventory.{Merchant, MerchantRecipe}
+import org.bukkit.{Bukkit, ChatColor}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
+/**
+ * 村人と取引をするための拡張オブジェクト
+ * 村人以外に対してもできるように
+ * @author Emorard
+ * @since 0.24.0
+ */
 object MerchantUtil {
 
   private lazy val plugin = WarsCore.instance
+
+  private val merchantCache = mutable.HashMap.empty[String, Merchant]
+
+  def hasName(name: String): Boolean = plugin.getConfig.contains(s"merchants.$name")
 
   def getMerchantRecipes(key: String): Option[java.util.List[MerchantRecipe]] = {
     val cs = plugin.getConfig.getConfigurationSection("merchants")
@@ -19,6 +32,26 @@ object MerchantUtil {
         .asJava
       if(list==null || list.size()==0) None else Some(list)
     } else None
+  }
+
+  def openMerchantInventory(player: Player, name: String): Unit = {
+    val test = new Test("openMerchantInventory")
+    merchantCache.get(name) match {
+      case Some(mer) =>
+        player.openMerchant(mer, true)
+      case None =>
+        getMerchantRecipes(name) match {
+          case Some(recipes) =>
+            val mer = Bukkit.createMerchant(name)
+            mer.setRecipes(recipes)
+            // キャッシュ
+            merchantCache.put(name, mer)
+            player.openMerchant(mer, true)
+          case None =>
+            player.sendMessage(ChatColor.RED + "取引が見つかりません！")
+        }
+    }
+    test.log(1L)
   }
 
   class MerchantData(item1: String, item2: String, result: String) {

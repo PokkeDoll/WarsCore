@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.lisners
 
-import hm.moe.pokkedoll.warscore.utils.{BankManager, EnderChestManager, TagUtil}
+import hm.moe.pokkedoll.warscore.utils.{BankManager, EnderChestManager, MerchantUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
 import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
@@ -8,7 +8,7 @@ import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryCloseEvent, InventoryType}
-import org.bukkit.event.player.{PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent}
+import org.bukkit.event.player.{PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
 
@@ -94,6 +94,15 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         e.setCancelled(true)
         val t = TagUtil.getTagIdFromItemStack(item)
         e.getPlayer.sendMessage(s"$t を獲得しました！(大嘘)")
+      }
+    }
+  }
+
+  @EventHandler
+  def onInteractAtEntity(e: PlayerInteractAtEntityEvent): Unit = {
+    if(e.getHand == EquipmentSlot.HAND && e.getRightClicked != null && e.getRightClicked.getCustomName != null) {
+      if(MerchantUtil.hasName(e.getRightClicked.getCustomName)) {
+        MerchantUtil.openMerchantInventory(e.getPlayer, e.getRightClicked.getCustomName)
       }
     }
   }
