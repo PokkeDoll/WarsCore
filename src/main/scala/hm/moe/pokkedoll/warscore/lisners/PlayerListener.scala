@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.lisners
 
-import hm.moe.pokkedoll.warscore.utils.{EnderChestManager, TagUtil}
+import hm.moe.pokkedoll.warscore.utils.{BankManager, EnderChestManager, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
 import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
@@ -58,6 +58,8 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       if (e.getCurrentItem != null) {
         EnderChestManager.openEnderChest(e.getWhoClicked, e.getCurrentItem.getAmount)
       }
+    } else if (e.getView.getTitle == BankManager.BANK_MENU.getTitle) {
+      BankManager.onClick(e)
     } else {
       val wp = WarsCoreAPI.getWPlayer(e.getWhoClicked.asInstanceOf[Player])
       if (wp.game.isDefined) {

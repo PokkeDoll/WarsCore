@@ -1,20 +1,15 @@
 package hm.moe.pokkedoll.warscore
 
-import java.net.InetSocketAddress
-import java.util.UUID
-
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
 import hm.moe.pokkedoll.warscore.games.{Game, Tactics, TeamDeathMatch}
-import hm.moe.pokkedoll.warscore.utils.RankManager.plugin
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, WorldLoader}
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder}
 import org.bukkit.configuration.ConfigurationSection
-import org.bukkit.entity.{EntityType, Firework, Player, Projectile}
-import org.bukkit.event.entity.{EntityDamageByEntityEvent, EntityDamageEvent}
-import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
+import org.bukkit.entity.{EntityType, Firework, Player}
+import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{Bukkit, ChatColor, Color, FireworkEffect, Location, Material, Sound, Statistic}
-import org.bukkit.scoreboard.{DisplaySlot, Objective, Scoreboard, ScoreboardManager, Team}
+import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
+import org.bukkit._
 
 import scala.collection.mutable
 import scala.util.Random

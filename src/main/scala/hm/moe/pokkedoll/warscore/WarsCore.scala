@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore
 
-import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand, WhelpCommand}
+import hm.moe.pokkedoll.warscore.commands.{BankCommand, GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand, WhelpCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, UpgradeUtil}
@@ -12,7 +12,6 @@ import org.bukkit.plugin.java.JavaPlugin
  * @author Emorard
  */
 class WarsCore extends JavaPlugin {
-
 
   protected[warscore] var database: Database = _
 
@@ -41,7 +40,7 @@ class WarsCore extends JavaPlugin {
     getCommand("item").setExecutor(new ItemCommand)
     getCommand("upgrade").setExecutor(new UpgradeCommand)
     getCommand("merchant").setExecutor(new MerchantCommand)
-
+    getCommand("bank").setExecutor(new BankCommand)
     saveDefaultConfig()
     WarsCoreAPI.DEFAULT_SPAWN = Bukkit.getWorlds.get(0).getSpawnLocation
     WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))
@@ -61,6 +60,8 @@ class WarsCore extends JavaPlugin {
   override def onDisable(): Unit = {
     lazy val board = Bukkit.getScoreboardManager.getMainScoreboard
     WarsCoreAPI.scoreboards.keys.foreach(_.setScoreboard(board))
+    getServer.getMessenger.unregisterIncomingPluginChannel(this, "pokkedoll:torus")
+    getServer.getMessenger.unregisterOutgoingPluginChannel(this, "pokkedoll:torus")
     database.close()
   }
 }
