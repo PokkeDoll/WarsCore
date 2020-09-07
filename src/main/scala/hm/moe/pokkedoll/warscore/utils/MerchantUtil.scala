@@ -19,7 +19,7 @@ object MerchantUtil {
 
   private lazy val plugin = WarsCore.instance
 
-  private val merchantCache = mutable.HashMap.empty[String, Merchant]
+  val merchantCache = mutable.HashMap.empty[String, Merchant]
 
   def hasName(name: String): Boolean = plugin.getConfig.contains(s"merchants.$name")
 

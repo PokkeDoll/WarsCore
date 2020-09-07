@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore.commands
 
-import hm.moe.pokkedoll.warscore.utils.EconomyUtil
+import hm.moe.pokkedoll.warscore.WarsCore
+import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MerchantUtil}
 import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
@@ -33,6 +34,12 @@ class WarsCoreCommand extends CommandExecutor {
                 case e: NumberFormatException =>
                   e.printStackTrace()
               }
+            }
+          } else if (args(0) == "config" || args(0) == "conf") {
+            if(args.length > 1 && (args(1) == "reload")) {
+              WarsCore.instance.reloadConfig()
+              player.sendMessage(ChatColor.BLUE + "リロードしました。")
+              MerchantUtil.merchantCache.clear()
             }
           }
         }

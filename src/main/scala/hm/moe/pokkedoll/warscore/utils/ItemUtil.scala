@@ -12,12 +12,14 @@ object ItemUtil {
   val invalid = new ItemStack(Material.STONE, 1)
 
   private lazy val plugin = WarsCore.instance
+
   def reloadItem(): Unit = {
     items.clear()
     plugin.reloadConfig()
-    if (plugin.getConfig.isConfigurationSection("items")) {
-      plugin.getConfig.getConfigurationSection("items").getKeys(false).forEach(key => {
-        items.put(key, plugin.getConfig.getItemStack(s"items.$key", invalid))
+    val config = plugin.getConfig
+    if (config.isConfigurationSection("items")) {
+      config.getConfigurationSection("items").getKeys(false).forEach(key => {
+        items.put(key, config.getItemStack(s"items.$key", invalid))
       })
     }
   }
