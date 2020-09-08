@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore
 import hm.moe.pokkedoll.warscore.commands.{BankCommand, GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand, WhelpCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
-import hm.moe.pokkedoll.warscore.utils.{ItemUtil, UpgradeUtil}
+import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, UpgradeUtil}
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -48,6 +48,7 @@ class WarsCore extends JavaPlugin {
     WarsCoreAPI.reloadRs(getConfig.getConfigurationSection("resourcepacks"))
 
     ItemUtil.reloadItem()
+    MerchantUtil.reload()
     UpgradeUtil.reload()
     if(Bukkit.getOnlinePlayers.size()!=0) {
       Bukkit.getOnlinePlayers.forEach(f => {
