@@ -3,6 +3,7 @@ package hm.moe.pokkedoll.warscore.commands
 import java.util.Optional
 
 import hm.moe.pokkedoll.warscore.utils.MerchantUtil
+import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.{ChatColor, Material}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.{Player, Villager}
@@ -14,49 +15,72 @@ class MerchantCommand extends CommandExecutor {
         val send = sendMessage(player, _)
         if(args.length == 0) {
           send(
-            "&f/merchant &aapply &c<merchant-key>&f: Configからmerchant-keyに指定された取引セットを半径1mの村人一人に設定する\n" +
-            "&f/merchant &a(head | helmet)&f: 手に持っているアイテム半径1mの村人一人に取り付ける\n" +
-            "&f/merchant &aname &f: 半径1mの村人一人の名前を変更する\n"
+            "&f/merchant <list|add|del|mod>\n"
           )
-        } else if (args(0) == "apply") {
-          val key = if(args.length > 1) args(1) else return true
-          val target = getVillager(player)
-          if(target.isEmpty) {
-            player.sendMessage("空")
-          } else {
-            target.ifPresent(villager => {
-              MerchantUtil.getMerchantRecipes(key) match {
-                case Some(merchantRecipes) =>
-                  villager.setRecipes(merchantRecipes)
-                  player.sendMessage("セット！！！！！！！！！！！！！！！！！")
-                  villager.setInvulnerable(true)
-                case None =>
-                  player.sendMessage("空！！！！！！！！")
-              }
-            })
-          }
-        } else if (args.length > 1 && args(0) == "name") {
-          val target = getVillager(player)
-          if(target.isEmpty) {
-            player.sendMessage("村人が見つかりません")
-          } else {
-            target.ifPresent(villager => {
-              if(args(1) == "reset") {
-                villager.setCustomName(null)
-              } else {
-                villager.setCustomName(ChatColor.translateAlternateColorCodes('&', args(1)))
-              }
-            })
-          }
-        } else if(args(0) == "head" || args(0) == "helmet") {
-          getVillager(player).ifPresent(vil => {
-            val i = player.getInventory.getItemInMainHand
-            if(i.getType == Material.AIR) {
-              vil.getEquipment.setHelmet(null)
+        } else if (args(0) == "list") {
+          val comp = new ComponentBuilder("Show merchants list\n")
+          MerchantUtil.config.getKeys(false).forEach(
+            k => comp.append("* ").append(k).append("\n")
+          )
+        } else if (args(0) == "add") {
+          if(args.length > 1) {
+            if(!MerchantUtil.config.contains(args(1))) {
+              MerchantUtil.config.set(args(1), java.util.Arrays.asList("air,air,air"))
+              MerchantUtil.saveConfig()
+              player.sendMessage(ChatColor.BLUE + args(1) + "を追加")
             } else {
-              vil.getEquipment.setHelmet(i)
+              player.sendMessage(ChatColor.RED + args(1) + "はすでに存在している。delで削除")
             }
-          })
+          } else {
+            player.sendMessage(ChatColor.RED + "追加する取引タイトルを入力！")
+          }
+        } else if (args(0) == "del") {
+          if(args.length > 1) {
+            if(MerchantUtil.config.contains(args(1))) {
+              MerchantUtil.config.set(args(1), null)
+              MerchantUtil.saveConfig()
+              player.sendMessage(ChatColor.BLUE + args(1) + "を削除")
+            } else {
+              player.sendMessage(ChatColor.RED + args(1) + "は存在しない")
+            }
+          } else {
+            player.sendMessage(ChatColor.RED + "削除する取引タイトルを入力！")
+          }
+        } else if (args(0) == "mod") {
+          if(args.length > 1) {
+            if(MerchantUtil.config.contains(args(1))) {
+              val key = args(1)
+              if(args.length > 2) {
+                if(args.length > 4 && args(2) == "set") {
+                  val a3 = args(3)  // オペランド
+                  val a4 = args(4)  // 値
+                  if(a3 == "+" || a3 == "add") {
+                    val content = MerchantUtil.config.getStringList(key)
+                    content.add(a4)
+                    MerchantUtil.config.set(key, content)
+                    MerchantUtil.saveConfig()
+                  } else if (a3 == "-" || a3 == "rem" || a3 == "rm") {
+                    val content = MerchantUtil.config.getStringList(key)
+                    content.remove(a4)
+                    MerchantUtil.config.set(key, content)
+                    MerchantUtil.saveConfig()
+                  }
+                } else if(args.length > 3 && (args(2) == "rem" || args(2) == "rm")) {
+                  player.sendMessage(ChatColor.RED + "err: 313")
+                } else if(args(2) == "info" || args(2) == "list") {
+                  player.sendMessage(ChatColor.RED + "err: 312")
+                } else {
+                  player.sendMessage(ChatColor.RED + "err: 311")
+                }
+              } else {
+                player.sendMessage(ChatColor.RED + "err: 310")
+              }
+            } else {
+              player.sendMessage(ChatColor.RED + args(1) + "は存在しない")
+            }
+          } else {
+            player.sendMessage(ChatColor.RED + "取引タイトルを入力！")
+          }
         }
       case _ =>
     }

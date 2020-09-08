@@ -37,9 +37,10 @@ class UpgradeListener extends Listener {
                 inv.setItem(0, new ItemStack(Material.AIR))
                 inv.setItem(1, new ItemStack(Material.AIR))
                 inv.setItem(2, new ItemStack(Material.AIR))
-                val key = ItemUtil.getItemKey(tool)
+                //val key = ItemUtil.getItemKey(tool)
+                val key = ItemUtil.getKey(tool)
                 val success = if (upgradeItem.list.contains(key)) upgradeItem.list.get(key) else upgradeItem.list.get("else")
-                ItemUtil.items.get(success.getOrElse(("", 0.0))._1) match {
+                ItemUtil.getItem(success.getOrElse(("", 0.0))._1) match {
                   case Some(value) =>
                     player.setItemOnCursor(value)
                     player.sendMessage("§9成功しました!")
@@ -74,10 +75,11 @@ class UpgradeListener extends Listener {
         val baseChance: Double = UpgradeUtil.getChance(tool)
         UpgradeUtil.getUpgradeItem(item) match {
           case Some(upgradeItem) =>
-            val key = ItemUtil.getItemKey(tool)
+            //val key = ItemUtil.getItemKey(tool)
+            val key = ItemUtil.getKey(tool)
             upgradeItem.list.get(if (upgradeItem.list.contains(key)) key else "else") match {
               case Some(value) =>
-                val result = ItemUtil.items.getOrElse(value._1, UpgradeUtil.invalidItem).clone()
+                val result = ItemUtil.getItem(value._1).getOrElse(UpgradeUtil.invalidItem).clone()
                 val rMeta = result.getItemMeta
                 val chance = if (baseChance - value._2 > 0) baseChance - value._2 else 0.0
                 rMeta.setLore(util.Arrays.asList(s"§f成功確率: §a${chance * tool.getAmount}%", "§4§n確率で失敗します!!"))

@@ -18,9 +18,6 @@ import scala.collection.JavaConverters._
  * @version 3
  */
 object ItemUtil {
-  @Deprecated
-  val items = mutable.HashMap.empty[String, ItemStack]
-
   val itemCache = mutable.HashMap.empty[String, ItemStack]
 
   val invalid = new ItemStack(Material.STONE, 1)
@@ -29,7 +26,7 @@ object ItemUtil {
 
   var config: FileConfiguration = _
 
-  def reload(): Unit = {
+  def reloadItem(): Unit = {
     createConfig() match {
       case Success(_) =>
         itemCache.clear()
@@ -48,8 +45,6 @@ object ItemUtil {
     config = new YamlConfiguration
     Try(config.load(file))
   }
-
-
 
   /**
    * キャッシュを少し変えたメソッド
@@ -93,14 +88,14 @@ object ItemUtil {
     }
   }
 
-  def set(key: String, item: ItemStack): Unit = {
+  def setItem(key: String, item: ItemStack): Unit = {
     val c = item.clone()
     itemCache.put(key, c)
     config.set(key, c)
     config.save("item.yml")
   }
 
-  def remove(key: String): Unit = {
+  def removeItem(key: String): Unit = {
     itemCache.remove(key)
     config.set(key, null)
     config.save("item.yml")
@@ -108,41 +103,4 @@ object ItemUtil {
 
   def getItemName(item: ItemStack): String =
     if (item.hasItemMeta) if (item.getItemMeta.hasDisplayName) item.getItemMeta.getDisplayName else "" else ""
-
-  @Deprecated
-  def reloadItem(): Unit = {
-    items.clear()
-    plugin.reloadConfig()
-    val config = plugin.getConfig
-    if (config.isConfigurationSection("items")) {
-      config.getConfigurationSection("items").getKeys(false).forEach(key => {
-        items.put(key, config.getItemStack(s"items.$key", invalid))
-      })
-    }
-  }
-
-  @Deprecated
-  def saveItem(): Unit = {
-    plugin.saveConfig()
-  }
-
-  @Deprecated
-  def setItem(key: String, item: ItemStack): Unit = {
-    items.put(key, item)
-    plugin.getConfig.set(s"items.$key", item)
-  }
-
-  @Deprecated
-  def removeItem(key: String): Unit = {
-    items.remove(key)
-    plugin.getConfig.set(s"items.$key", null)
-  }
-
-  @Deprecated
-  def getItemKey(item: ItemStack): String = {
-    items.find(p => p._2.isSimilar(item)) match {
-      case Some(v) => v._1
-      case _ => ""
-    }
-  }
 }

@@ -65,11 +65,17 @@ object UpgradeUtil {
     println(s"§aUpgradeUtil#reload() took ${dE-dS} ms!")
   }
 
-  def isUpgradeItem(item: ItemStack): Boolean =
-    routes.contains(ItemUtil.items.find(p => p._2.isSimilar(item)).getOrElse(return false)._1)
+  def isUpgradeItem(item: ItemStack): Boolean = {
+    // TODO 修正
+    //routes.contains(ItemUtil.items.find(p => p._2.isSimilar(item)).getOrElse(return false)._1)
+    false
+  }
 
-  def getUpgradeItem(item: ItemStack): Option[UpgradeItem] =
-    routes.get(ItemUtil.items.find(p=>p._2.isSimilar(item)).getOrElse(return None)._1)
+  def getUpgradeItem(item: ItemStack): Option[UpgradeItem] = {
+    // TODO 修正
+    //routes.get(ItemUtil.items.find(p=>p._2.isSimilar(item)).getOrElse(return None)._1)
+    None
+  }
 
   reload()
 
