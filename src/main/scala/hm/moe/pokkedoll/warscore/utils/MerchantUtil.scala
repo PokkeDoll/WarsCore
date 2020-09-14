@@ -2,7 +2,6 @@ package hm.moe.pokkedoll.warscore.utils
 
 import java.io.File
 
-import hm.moe.pokkedoll.warscore.utils.ItemUtil.{config, createConfig, itemCache, plugin}
 import hm.moe.pokkedoll.warscore.{Test, WarsCore}
 import org.apache.commons.lang3.StringUtils
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}

@@ -2,103 +2,82 @@ package hm.moe.pokkedoll.warscore.utils
 
 import java.io.File
 
-import hm.moe.pokkedoll.warscore.{Test, WarsCore}
+import hm.moe.pokkedoll.warscore.WarsCore
 import org.bukkit.Material
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 import org.bukkit.inventory.ItemStack
 
-import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
 import scala.collection.JavaConverters._
+import scala.util.{Failure, Success, Try}
 
 /**
  * アイテムを管理するオブジェクト
- *
+ * さらに効率を追求！
  * @author Emorard
- * @version 3
+ * @version 4
  */
 object ItemUtil {
-  val itemCache = mutable.HashMap.empty[String, ItemStack]
+  var cache: Map[String, ItemStack] = _
 
   val invalid = new ItemStack(Material.STONE, 1)
 
   private lazy val plugin = WarsCore.instance
 
+  var configFile: File = _
   var config: FileConfiguration = _
 
+
   def reloadItem(): Unit = {
-    createConfig() match {
-      case Success(_) =>
-        itemCache.clear()
-      case Failure(exception) =>
-        exception.printStackTrace()
-        plugin.getLogger.warning("item.ymlの読み込みに失敗しました")
+    if(configFile==null) {
+      createConfig() match {
+        case Success(_) =>
+          plugin.getLogger.info("item.ymlの読み込みに成功しました")
+        case Failure(e) =>
+          e.printStackTrace()
+          plugin.getLogger.warning("item.ymlの読み込みに失敗しました")
+      }
     }
+    val cs = config.getKeys(false)
+    cache = cs.asScala.map(f => (f, config.getItemStack(f))).toMap
   }
 
   def createConfig(): Try[Unit] = {
-    val file = new File(plugin.getDataFolder, "item.yml")
-    if (!file.exists()) {
-      file.getParentFile.mkdirs()
+    configFile = new File(plugin.getDataFolder, "item.yml")
+    if (!configFile.exists()) {
+      configFile.getParentFile.mkdirs()
       plugin.saveResource("item.yml", false)
     }
     config = new YamlConfiguration
-    Try(config.load(file))
+    Try(config.load(configFile))
   }
 
   /**
-   * キャッシュを少し変えたメソッド
-   * 速度はv1より落ちるがヒープを無駄に使うことがない
+   * キャッシュ無しのメソッド
    *
    * @param key
    * @return
    */
-  def getItem(key: String): Option[ItemStack] =
-    if (itemCache.contains(key))
-      itemCache.get(key)
-    else if (config.isItemStack(key))
-      Some(config.getItemStack(key))
-    else
-      None
+  def getItem(key: String): Option[ItemStack] = cache.get(key)
 
   /**
-   * アイテムからキーを見つける
-   * 速度はv1よりはるかに落ちるがヒープを無駄に使うことがない
+   * キーを取得する。効率はあまりよくない
    * @param item
    * @return
    */
-  def getKey(item: ItemStack): String = {
-    val test = new Test("ItemUtil.getItem")
-    itemCache.find(p => p._2.isSimilar(item)).map(_._1) match {
-      case Some(key) =>
-        test.log(1)
-        key
-      case None =>
-        config.getKeys(false)
-          .asScala
-          .find(p => config.getItemStack(p).isSimilar(item)) match {
-          case Some(key) =>
-            itemCache.put(key, config.getItemStack(key))
-            test.log(2)
-            key
-          case None =>
-            test.log(2)
-            ""
-        }
-    }
-  }
+  def getKey(item: ItemStack): String = cache.find(p => p._2.isSimilar(item)).map(_._1).getOrElse("")
+
 
   def setItem(key: String, item: ItemStack): Unit = {
     val c = item.clone()
-    itemCache.put(key, c)
     config.set(key, c)
-    config.save("item.yml")
+    config.save(configFile)
+    reloadItem()
   }
 
   def removeItem(key: String): Unit = {
-    itemCache.remove(key)
     config.set(key, null)
-    config.save("item.yml")
+    config.save(configFile)
+    reloadItem()
   }
 
   def getItemName(item: ItemStack): String =
