@@ -4,9 +4,11 @@ import java.util.Optional
 
 import hm.moe.pokkedoll.warscore.utils.MerchantUtil
 import net.md_5.bungee.api.chat.ComponentBuilder
-import org.bukkit.{ChatColor, Material}
+import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.{Player, Villager}
+
+import scala.util.{Failure, Success, Try}
 
 class MerchantCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
@@ -22,55 +24,62 @@ class MerchantCommand extends CommandExecutor {
           MerchantUtil.config.getKeys(false).forEach(
             k => comp.append("* ").append(k).append("\n")
           )
+        // 取引グループを作成する
         } else if (args(0) == "add") {
           if(args.length > 1) {
-            if(!MerchantUtil.config.contains(args(1))) {
-              MerchantUtil.config.set(args(1), java.util.Arrays.asList("air,air,air"))
-              MerchantUtil.saveConfig()
-              player.sendMessage(ChatColor.BLUE + args(1) + "を追加")
+            val title = args(1)
+            if(!MerchantUtil.config.contains(title)) {
+              MerchantUtil.newMerchant(title)
+              player.sendMessage(ChatColor.BLUE + title + "を追加")
             } else {
-              player.sendMessage(ChatColor.RED + args(1) + "はすでに存在している。delで削除")
+              player.sendMessage(ChatColor.RED + title + "はすでに存在している.  delで削除")
             }
           } else {
-            player.sendMessage(ChatColor.RED + "追加する取引タイトルを入力！")
+            player.sendMessage(ChatColor.RED + "追加する取引タイトルを入力")
           }
+        // 取引グループを削除
         } else if (args(0) == "del") {
           if(args.length > 1) {
-            if(MerchantUtil.config.contains(args(1))) {
-              MerchantUtil.config.set(args(1), null)
-              MerchantUtil.saveConfig()
-              player.sendMessage(ChatColor.BLUE + args(1) + "を削除")
+            val title = args(1)
+            if(MerchantUtil.config.contains(title)) {
+              MerchantUtil.delMerchant(title)
+              player.sendMessage(ChatColor.BLUE + title + "を削除")
             } else {
-              player.sendMessage(ChatColor.RED + args(1) + "は存在しない")
+              player.sendMessage(ChatColor.RED + title + "は存在しない.  addで追加")
             }
           } else {
-            player.sendMessage(ChatColor.RED + "削除する取引タイトルを入力！")
+            player.sendMessage(ChatColor.RED + "削除する取引タイトルを入力")
           }
+        // 取引内容を弄る
         } else if (args(0) == "mod") {
           if(args.length > 1) {
-            if(MerchantUtil.config.contains(args(1))) {
-              val key = args(1)
+            val key = args(1)
+            if(MerchantUtil.config.contains(key)) {
               if(args.length > 2) {
-                if(args.length > 4 && args(2) == "set") {
-                  val a3 = args(3)  // オペランド
-                  val a4 = args(4)  // 値
-                  if(a3 == "+" || a3 == "add") {
-                    val content = MerchantUtil.config.getStringList(key)
-                    content.add(a4)
-                    MerchantUtil.config.set(key, content)
-                    MerchantUtil.saveConfig()
-                  } else if (a3 == "-" || a3 == "rem" || a3 == "rm") {
-                    val content = MerchantUtil.config.getStringList(key)
-                    content.remove(a4)
-                    MerchantUtil.config.set(key, content)
-                    MerchantUtil.saveConfig()
+                val str = args(2)
+                val content = MerchantUtil.config.getStringList(key)
+                if(str.startsWith("+")) {
+                  (".*@[0-9]*,.*@[0-9]*,.*@[0-9]*".r).findFirstMatchIn(str.substring(1)) match {
+                    case Some(_) =>
+                      content.add(str)
+                      MerchantUtil.setMerchant(key, content)
+                      player.sendMessage(ChatColor.BLUE + "追加しました")
+                    case None =>
+                      player.sendMessage(ChatColor.RED + "構文が間違っています！")
                   }
-                } else if(args.length > 3 && (args(2) == "rem" || args(2) == "rm")) {
-                  player.sendMessage(ChatColor.RED + "err: 313")
-                } else if(args(2) == "info" || args(2) == "list") {
-                  player.sendMessage(ChatColor.RED + "err: 312")
-                } else {
-                  player.sendMessage(ChatColor.RED + "err: 311")
+                } else if (str.startsWith("-")) {
+                  Try(str.substring(1).toInt) match {
+                    case Success(value) =>
+                      content.remove(value)
+                      MerchantUtil.setMerchant(key, content)
+                      player.sendMessage(ChatColor.BLUE + "削除しました")
+                    case Failure(exception) =>
+                      player.sendMessage(ChatColor.RED + "数字のみ可能。インデックス番号は'i'で確認できる")
+                  }
+                } else if (str.startsWith("i")) {
+                  val sb = new StringBuilder(s"MerchantRecipe for $key\n")
+                  content.forEach(f => sb.append(s"${sb.length() - 1}. $f\n"))
+                  player.sendMessage(sb.toString())
                 }
               } else {
                 player.sendMessage(ChatColor.RED + "err: 310")

@@ -6,7 +6,7 @@ import hm.moe.pokkedoll.warscore.{Test, WarsCore}
 import org.apache.commons.lang3.StringUtils
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 import org.bukkit.entity.Player
-import org.bukkit.inventory.{Merchant, MerchantRecipe}
+import org.bukkit.inventory.{ItemStack, Merchant, MerchantRecipe}
 import org.bukkit.{Bukkit, ChatColor}
 
 import scala.collection.JavaConverters._
@@ -59,11 +59,10 @@ object MerchantUtil {
       val list = config.getStringList(key).asScala
         .map(StringUtils.split(_, ','))
         .filter(_.length == 3)
-        .flatMap(arr => new MerchantData(arr(1), arr(2), arr(0)).build())
+        .flatMap(arr => buildMerchantData(arr(1), arr(2), arr(0)))
         .asJava
       if(list==null || list.size()==0) None else Some(list)
     } else None
-    
   }
 
   def openMerchantInventory(player: Player, name: String): Unit = {
@@ -83,27 +82,53 @@ object MerchantUtil {
             player.sendMessage(ChatColor.RED + "取引が見つかりません！")
         }
     }
-    test.log(1L)
+    test.log(2L)
   }
 
-  class MerchantData(item1: String, item2: String, result: String) {
-    def build(): Option[MerchantRecipe] = {
-      val i1 = ItemUtil.getItem(item1)
-      val r = ItemUtil.getItem(result)
-      if(i1.isDefined && r.isDefined) {
-        val mr = new MerchantRecipe(r.get, Int.MaxValue)
-        mr.setExperienceReward(false)
-        mr.setUses(0)
-        mr.addIngredient(i1.get)
-        if(item2!=null) ItemUtil.getItem(item2) match {
-          case Some(i2) =>
-            mr.addIngredient(i2)
-          case None =>
-        }
-        Some(mr)
-      } else {
-        None
-      }
+  private def buildMerchantData(_1: String, _2: String, _r: String): Option[MerchantRecipe] = {
+    val i1 = getItem(_1)
+    val i2 = getItem(_2)
+    val r = getItem(_r)
+    if(i1.isDefined && r.isDefined) {
+      val mr = new MerchantRecipe(r.get, Int.MaxValue)
+      mr.setExperienceReward(false)
+      mr.setUses(0)
+      mr.addIngredient(i1.get)
+      i2.foreach(mr.addIngredient)
+      Some(mr)
+    } else {
+      None
     }
+  }
+
+  private def getItem(str: String): Option[ItemStack] = {
+    // 書式は<itemID>@<個数>,...という感じに書かれている
+    val arr = str.split("@")
+    ItemUtil.getItem(arr(0)) match {
+      case Some(value) =>
+        val item = value.clone()
+        item.setAmount(if(arr.length == 1) 1 else Try(arr(1).toInt).getOrElse(1))
+        Some(item)
+      case _ =>
+        None
+    }
+  }
+
+  def setMerchant(key: String, stringList: java.util.List[String]): Unit = {
+    config.set(key, stringList)
+    saveConfig()
+    reload()
+  }
+
+  def newMerchant(title: String): Unit = {
+    config.set(title, java.util.Arrays.asList("air,air,air"))
+    saveConfig()
+    reload()
+  }
+
+  def delMerchant(title: String): Unit = {
+    config.set(title, null)
+    saveConfig()
+    reload()
   }
 }
