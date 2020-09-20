@@ -17,13 +17,15 @@ class MerchantCommand extends CommandExecutor {
         val send = sendMessage(player, _)
         if(args.length == 0) {
           send(
-            "&f/merchant <list|add|del|mod>\n"
+            "&f/merchant <list|add|del|mod>\n" +
+            "&f詳細は&bhttps://gitlab.com/PokkeDoll/pokkedoll-mc/-/wikis/wars-howto-mer"
           )
         } else if (args(0) == "list") {
           val comp = new ComponentBuilder("Show merchants list\n")
           MerchantUtil.config.getKeys(false).forEach(
             k => comp.append("* ").append(k).append("\n")
           )
+          player.sendMessage(comp.create(): _*)
         // 取引グループを作成する
         } else if (args(0) == "add") {
           if(args.length > 1) {
@@ -59,9 +61,10 @@ class MerchantCommand extends CommandExecutor {
                 val str = args(2)
                 val content = MerchantUtil.config.getStringList(key)
                 if(str.startsWith("+")) {
-                  (".*@[0-9]*,.*@[0-9]*,.*@[0-9]*".r).findFirstMatchIn(str.substring(1)) match {
+                  val text = str.substring(1)
+                  (".*@[0-9]*,.*@[0-9]*,.*@[0-9]*".r).findFirstMatchIn(text) match {
                     case Some(_) =>
-                      content.add(str)
+                      content.add(text)
                       MerchantUtil.setMerchant(key, content)
                       player.sendMessage(ChatColor.BLUE + "追加しました")
                     case None =>
@@ -78,7 +81,8 @@ class MerchantCommand extends CommandExecutor {
                   }
                 } else if (str.startsWith("i")) {
                   val sb = new StringBuilder(s"MerchantRecipe for $key\n")
-                  content.forEach(f => sb.append(s"${sb.length() - 1}. $f\n"))
+                  var i = 0
+                  content.forEach(f => {sb.append(s"$i. $f\n"); i+=1})
                   player.sendMessage(sb.toString())
                 }
               } else {
@@ -90,6 +94,9 @@ class MerchantCommand extends CommandExecutor {
           } else {
             player.sendMessage(ChatColor.RED + "取引タイトルを入力！")
           }
+        } else if (args(0) == "reload") {
+          MerchantUtil.reload()
+          player.sendMessage("リロードしました")
         }
       case _ =>
     }

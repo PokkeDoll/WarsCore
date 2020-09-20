@@ -24,6 +24,7 @@ object MerchantUtil {
 
   private lazy val plugin = WarsCore.instance
 
+  var configFile: File = _
   var config: FileConfiguration = _
 
   val merchantCache = mutable.HashMap.empty[String, Merchant]
@@ -39,17 +40,17 @@ object MerchantUtil {
   }
 
   def createConfig(): Try[Unit] = {
-    val file = new File(plugin.getDataFolder, "merchant.yml")
-    if (!file.exists()) {
-      file.getParentFile.mkdirs()
+    configFile = new File(plugin.getDataFolder, "merchant.yml")
+    if (!configFile.exists()) {
+      configFile.getParentFile.mkdirs()
       plugin.saveResource("merchant.yml", false)
     }
     config = new YamlConfiguration
-    Try(config.load(file))
+    Try(config.load(configFile))
   }
 
   def saveConfig(): Unit = {
-    config.save("merchant.yml")
+    config.save(configFile)
   }
 
   def hasName(name: String): Boolean = config.contains(name)
@@ -116,14 +117,18 @@ object MerchantUtil {
 
   def setMerchant(key: String, stringList: java.util.List[String]): Unit = {
     config.set(key, stringList)
+    println(config.contains(key))
     saveConfig()
     reload()
+    println(config.contains(key))
   }
 
   def newMerchant(title: String): Unit = {
-    config.set(title, java.util.Arrays.asList("air,air,air"))
+    config.set(title, java.util.Arrays.asList("air@1,air@1,air@1"))
+    println(config.contains(title))
     saveConfig()
     reload()
+    println(config.contains(title))
   }
 
   def delMerchant(title: String): Unit = {

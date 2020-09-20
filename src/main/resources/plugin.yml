@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '0.27.0'
+version: '0.27.8'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
 softdepend: [Vault]
@@ -33,9 +33,11 @@ commands:
     aliases: [upg]
     permission: pokkedoll.command.upgrade
   merchant:
+    aliases: [mer]
     permission: pokkedoll.command.merchant
   bank:
     permission: pokkedoll.command.bank
+
 permission:
   pokkedoll.command.game:
     default: true
