@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore
 
-import hm.moe.pokkedoll.warscore.commands.{BankCommand, GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand, WhelpCommand}
+import hm.moe.pokkedoll.warscore.commands.{BankCommand, GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, UpgradeUtil}
@@ -35,7 +35,6 @@ class WarsCore extends JavaPlugin {
     getCommand("game").setTabCompleter(gameCommand)
     getCommand("invite").setExecutor(new InviteCommand)
     getCommand("resourcepack").setExecutor(new RsCommand)
-    getCommand("whelp").setExecutor(new WhelpCommand)
     getCommand("warscore").setExecutor(new WarsCoreCommand)
     getCommand("item").setExecutor(new ItemCommand)
     getCommand("upgrade").setExecutor(new UpgradeCommand)
