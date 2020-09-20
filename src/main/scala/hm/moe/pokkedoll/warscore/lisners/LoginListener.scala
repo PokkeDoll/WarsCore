@@ -1,17 +1,16 @@
 package hm.moe.pokkedoll.warscore.lisners
 
 import com.google.common.io.ByteStreams
-import hm.moe.pokkedoll.warscore.utils.RankManager
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
-import org.bukkit.{Bukkit, ChatColor}
 import org.bukkit.event.player.{PlayerJoinEvent, PlayerQuitEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.{Bukkit, ChatColor}
 
 class LoginListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onJoin(e: PlayerJoinEvent): Unit = {
-    lazy val player = e.getPlayer
+    val player = e.getPlayer
 
     e.setJoinMessage(ChatColor.GREEN + s"Connect: ${player.getName}")
 
@@ -41,15 +40,18 @@ class LoginListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onQuit(e: PlayerQuitEvent): Unit = {
     e.setQuitMessage("")
-    if(e.getPlayer.getWorld.getName!="p-lobby") {
-      e.getPlayer.teleport(Bukkit.getWorlds.get(0).getSpawnLocation)
+    val player = e.getPlayer
+    if(player.getWorld.getName!="p-lobby") {
+      player.teleport(Bukkit.getWorlds.get(0).getSpawnLocation)
     }
-    WarsCoreAPI.removeScoreboard(e.getPlayer)
-    val wp = WarsCoreAPI.getWPlayer(e.getPlayer)
+    WarsCoreAPI.removeScoreboard(player)
+    val wp = WarsCoreAPI.getWPlayer(player)
     wp.game match {
       case Some(game) =>
         game.hub(wp)
       case _ =>
     }
+    // キャッシュから削除
+    WarsCoreAPI.wplayers.remove(player)
   }
 }

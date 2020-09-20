@@ -35,7 +35,7 @@ object WarsCoreAPI {
   val games = mutable.HashMap.empty[String, Game]
 
   /** プレイヤーのキャッシュ */
-  val wplayers = mutable.HashMap.empty[Player, WPlayer]
+  val wplayers = new mutable.HashMap[Player, WPlayer](50, 1.0)
 
   /** ワールドの設定 */
   @Deprecated
@@ -176,10 +176,6 @@ object WarsCoreAPI {
 
   val GAME_INVENTORY_TITLE = "§aゲーム一覧！"
 
-
-  @Deprecated
-  def showGameInventory(player: Player): Unit = {}
-
   /**
    * ゲーム情報GUI版<br>
    * 重み:<br>
@@ -189,7 +185,7 @@ object WarsCoreAPI {
    */
   def openGameInventory(player: Player): Unit = {
     val inv = Bukkit.createInventory(null, 18, GAME_INVENTORY_TITLE)
-    var slot = (-1, 8, 17)
+    var slot = (0, 9, 18)
     games.foreach(f => {
       val weight = if(f._1.startsWith("tdm")) {
         slot = (slot._1 + 1, slot._2, slot._3)
