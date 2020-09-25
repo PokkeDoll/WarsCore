@@ -18,7 +18,8 @@ libraryDependencies += "com.github.MilkBowl" % "VaultAPI" % "1.7" intransitive()
 
 val libs = Seq(
   "lib/scala-library-2.13.3.jar",
-  "lib/HikariCP-3.4.2.jar"
+  "lib/HikariCP-3.4.2.jar",
+  "lib/CrackShotPP-lib.jar"
 )
 
 packageOptions in (Compile, packageBin) +=

@@ -1,13 +1,13 @@
 package hm.moe.pokkedoll.warscore.lisners
 
-import hm.moe.pokkedoll.warscore.utils.{BankManager, EnderChestManager, MerchantUtil, TagUtil}
+import hm.moe.pokkedoll.warscore.utils.{BankManager, EnderChestManager, MerchantUtil, TagUtil, UpgradeUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
 import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryType.SlotType
-import org.bukkit.event.inventory.{InventoryClickEvent, InventoryCloseEvent, InventoryType}
+import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType}
 import org.bukkit.event.player.{PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
@@ -39,33 +39,43 @@ class PlayerListener(plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onInventoryClick(e: InventoryClickEvent): Unit = {
-    if (e.getClickedInventory == null) return
+    val inv = e.getClickedInventory
+    val p = e.getWhoClicked
+    if (inv == null) return
+    if(inv.getType == InventoryType.ANVIL && e.getSlot == 2 && e.getClick == ClickType.LEFT) {
+      UpgradeUtil.onUpgrade(inv, p)
+    }
+    // クラフトはできない
     if (e.getSlotType == SlotType.CRAFTING) {
       e.setCancelled(true)
       return
+    // ゲームインベントリ
     } else if (e.getView.getTitle == WarsCoreAPI.GAME_INVENTORY_TITLE) {
       e.setCancelled(true)
       val icon = e.getCurrentItem
       if (icon == null || !icon.hasItemMeta || !icon.getItemMeta.hasDisplayName) return
       WarsCoreAPI.games.get(ChatColor.stripColor(icon.getItemMeta.getDisplayName)) match {
-        case Some(game) if e.getWhoClicked.isInstanceOf[Player] =>
-          lazy val player = e.getWhoClicked.asInstanceOf[Player]
+        case Some(game) if p.isInstanceOf[Player] =>
+          lazy val player = p.asInstanceOf[Player]
           game.join(player)
           player.closeInventory()
         case None =>
       }
+    // エンダーチェストインベントリ
     } else if (e.getView.getTitle == EnderChestManager.ENDER_CHEST_MENU.getTitle) {
       if (e.getCurrentItem != null) {
-        EnderChestManager.openEnderChest(e.getWhoClicked, e.getCurrentItem.getAmount)
+        EnderChestManager.openEnderChest(p, e.getCurrentItem.getAmount)
       }
+    // 換金インベントリ
     } else if (e.getView.getTitle == BankManager.BANK_MENU.getTitle) {
       BankManager.onClick(e)
+    // それ以外
     } else {
-      val wp = WarsCoreAPI.getWPlayer(e.getWhoClicked.asInstanceOf[Player])
+      val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
       if (wp.game.isDefined) {
         if (!wp.changeInventory && e.getSlotType != SlotType.QUICKBAR) {
           e.setCancelled(true)
-          e.getWhoClicked.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
+          p.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
         }
       }
     }
