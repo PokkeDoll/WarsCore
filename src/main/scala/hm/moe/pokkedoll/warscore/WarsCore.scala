@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore
 import hm.moe.pokkedoll.cspp.CrackShotPP
 import hm.moe.pokkedoll.warscore.commands.{BankCommand, GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
-import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener, UpgradeListener}
+import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, UpgradeUtil}
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
@@ -29,7 +29,6 @@ class WarsCore extends JavaPlugin {
     Bukkit.getPluginManager.registerEvents(new LoginListener(this), this)
     Bukkit.getPluginManager.registerEvents(new PlayerListener(this), this)
     Bukkit.getPluginManager.registerEvents(new SignListener(this), this)
-    Bukkit.getPluginManager.registerEvents(new UpgradeListener, this)
 
     Bukkit.getPluginManager.registerEvents(new CrackShotPP(this, getConfig), this)
 

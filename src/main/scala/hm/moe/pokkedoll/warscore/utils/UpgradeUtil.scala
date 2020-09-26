@@ -130,7 +130,7 @@ object UpgradeUtil {
       getUpgradeItem(sourceItem) match {
         case Some(upgradeItem) =>
           val resultItem = inv.getItem(2)
-          if (resultItem == null && resultItem.getType == Material.AIR) {
+          if (resultItem == null || resultItem.getType == Material.AIR) {
             return false
           } else {
             val chance: Double = getChance(resultItem)

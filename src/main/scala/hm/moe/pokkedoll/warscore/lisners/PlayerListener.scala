@@ -1,13 +1,15 @@
 package hm.moe.pokkedoll.warscore.lisners
 
-import hm.moe.pokkedoll.warscore.utils.{BankManager, EnderChestManager, MerchantUtil, TagUtil, UpgradeUtil}
+import java.util
+
+import hm.moe.pokkedoll.warscore.utils.{BankManager, EnderChestManager, ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
 import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryType.SlotType
-import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType}
+import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType, PrepareAnvilEvent}
 import org.bukkit.event.player.{PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
@@ -43,14 +45,18 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     val p = e.getWhoClicked
     if (inv == null) return
     if(inv.getType == InventoryType.ANVIL && e.getSlot == 2 && e.getClick == ClickType.LEFT) {
-      UpgradeUtil.onUpgrade(inv, p)
+      if(!UpgradeUtil.onUpgrade(inv, p)) {
+        e.setCancelled(true)
+        plugin.getLogger.info("Event Cancelled@47")
+      }
     }
     // クラフトはできない
-    if (e.getSlotType == SlotType.CRAFTING) {
+    else if (inv.getType == InventoryType.PLAYER && e.getSlotType == SlotType.CRAFTING) {
       e.setCancelled(true)
-      return
+      plugin.getLogger.info("Event Cancelled!@54")
     // ゲームインベントリ
     } else if (e.getView.getTitle == WarsCoreAPI.GAME_INVENTORY_TITLE) {
+      plugin.getLogger.info("Event Cancelled!@59")
       e.setCancelled(true)
       val icon = e.getCurrentItem
       if (icon == null || !icon.hasItemMeta || !icon.getItemMeta.hasDisplayName) return
@@ -74,6 +80,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
       if (wp.game.isDefined) {
         if (!wp.changeInventory && e.getSlotType != SlotType.QUICKBAR) {
+          plugin.getLogger.info("Event Cancelled!@83")
           e.setCancelled(true)
           p.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
         }
@@ -117,6 +124,42 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       if(name!=null && MerchantUtil.hasName(name)) {
         MerchantUtil.openMerchantInventory(e.getPlayer, name)
       }
+    }
+  }
+
+  @EventHandler
+  def onAnvilPrepare(e: PrepareAnvilEvent): Unit = {
+    val inv = e.getInventory
+    // 元となるアイテム
+    val sourceItem = inv.getItem(0)
+    if(sourceItem == null) {
+      return
+    } else {
+      if(UpgradeUtil.isUpgradeItem(sourceItem)) {
+        // 強化素材となるアイテム
+        val materialItem = inv.getItem(1)
+        if(sourceItem != null) {
+          val baseChance = UpgradeUtil.getChance(materialItem)
+          UpgradeUtil.getUpgradeItem(sourceItem) match {
+            case Some(upgradeItem) =>
+              val key = ItemUtil.getKey(materialItem)
+              upgradeItem.list.get(if (upgradeItem.list.contains(key)) key else "else") match {
+                case Some(value) =>
+                  val result = ItemUtil.getItem(value._1).getOrElse(UpgradeUtil.invalidItem).clone()
+                  val rMeta = result.getItemMeta
+                  val chance = if (baseChance - value._2 > 0) baseChance - value._2 else 0.0
+                  rMeta.setLore(util.Arrays.asList(s"§f成功確率: §a${chance * materialItem.getAmount}%", "§4§n確率で失敗します!!"))
+                  result.setItemMeta(rMeta)
+                  e.setResult(result)
+                  e.getInventory.setRepairCost(1)
+                  return
+                case _ =>
+              }
+            case None =>
+          }
+        }
+      }
+      e.getInventory.setRepairCost(40)
     }
   }
 }
