@@ -31,12 +31,26 @@ class PlayerListener(plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onBreak(e: BlockBreakEvent): Unit = {
-    if (e.getPlayer.getGameMode == GameMode.SURVIVAL) e.setCancelled(true)
+    if (e.getPlayer.getGameMode == GameMode.SURVIVAL) {
+      WarsCoreAPI.getWPlayer(e.getPlayer).game match {
+        case Some(game) =>
+          game.break(e)
+        case _ =>
+          e.setCancelled(true)
+      }
+    }
   }
 
   @EventHandler
   def onPlace(e: BlockPlaceEvent): Unit = {
-    if (e.getPlayer.getGameMode == GameMode.SURVIVAL) e.setCancelled(true)
+    if (e.getPlayer.getGameMode == GameMode.SURVIVAL) {
+      WarsCoreAPI.getWPlayer(e.getPlayer).game match {
+        case Some(game) =>
+          game.place(e)
+        case _ =>
+          e.setCancelled(true)
+      }
+    }
   }
 
   @EventHandler
@@ -89,7 +103,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   }
 
   @EventHandler
-  def onCInventoryClose(e: InventoryCloseEvent): Unit = {
+  def onInventoryClose(e: InventoryCloseEvent): Unit = {
     val inv = e.getInventory
     val player = e.getPlayer
     if (inv != null && player != null) {
@@ -132,12 +146,12 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     val inv = e.getInventory
     // 元となるアイテム
     val sourceItem = inv.getItem(0)
-    if(sourceItem == null) {
+    // 強化素材となるアイテム
+    val materialItem = inv.getItem(1)
+    if(sourceItem == null || materialItem == null) {
       return
     } else {
       if(UpgradeUtil.isUpgradeItem(sourceItem)) {
-        // 強化素材となるアイテム
-        val materialItem = inv.getItem(1)
         if(sourceItem != null) {
           val baseChance = UpgradeUtil.getChance(materialItem)
           UpgradeUtil.getUpgradeItem(sourceItem) match {
@@ -155,7 +169,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
                   return
                 case _ =>
               }
-            case None =>
+            case _ =>
           }
         }
       }

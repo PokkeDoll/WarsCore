@@ -1,88 +1,102 @@
 package hm.moe.pokkedoll.warscore.utils
 
+import java.io.File
 import java.util
 
-import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
-import org.bukkit.{ChatColor, Material, Sound}
+import hm.moe.pokkedoll.warscore.{Test, WarsCore, WarsCoreAPI}
 import org.bukkit.configuration.ConfigurationSection
+import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 import org.bukkit.entity.HumanEntity
 import org.bukkit.inventory.{Inventory, ItemStack}
+import org.bukkit.{ChatColor, Material, Sound}
 
-import scala.collection.mutable
-import scala.util.Try
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.util.{Failure, Success, Try}
 
 object UpgradeUtil {
-  val routes = mutable.HashMap.empty[String, UpgradeItem]
-
   private lazy val plugin = WarsCore.instance
 
+  var configFile: File = _
+  var config: FileConfiguration = _
+
+  var cache: Map[String, UpgradeItem] = _
+
+  def reloadConfig(): Unit = {
+    val test = new Test("UpgradeUtil.reloadConfig()")
+    if (configFile == null) {
+      createConfig() match {
+        case Success(_) =>
+          plugin.getLogger.info("upgrade.ymlの読み込みに成功しました")
+        case Failure(e) =>
+          e.printStackTrace()
+          plugin.getLogger.warning("upgrade.ymlの読み込みに失敗しました")
+          return
+      }
+    }
+    val cs = config.getKeys(false)
+    cache = cs.asScala.map(f => (f, new UpgradeItem(f, config.getConfigurationSection(f)))).toMap
+    test.log()
+  }
+
+  def createConfig(): Try[Unit] = {
+    configFile = new File(plugin.getDataFolder, "upgrade.yml")
+    if (!configFile.exists()) {
+      configFile.getParentFile.mkdirs()
+      plugin.saveResource("upgrade.yml", false)
+    }
+    config = new YamlConfiguration
+    Try(config.load(configFile))
+  }
+
+  def saveConfig(): Unit = {
+    config.save(configFile)
+  }
+
   /**
-   * こっちの方が効率的!
-   *
+   * 強化の内容を更新する
    * @param upgradeItem
    */
-  def updateUpgradeItem(upgradeItem: UpgradeItem): Unit = {
-    val config = plugin.getConfig
-    val t = s"upgrades.${upgradeItem.name}"
-    config.set(t, null)
+  def setUpgradeItem(upgradeItem: UpgradeItem): Unit = {
+    val key = upgradeItem.name
     upgradeItem.list.foreach(f => {
-      config.set(s"$t.${f._1}.id", f._2._1)
-      config.set(s"$t.${f._1}.chance", f._2._2)
+      config.set(s"$key.${f._1}.id", f._2._1)
+      config.set(s"$key.${f._1}.chance", f._2._2)
     })
-    plugin.saveConfig()
-    reload()
+    saveConfig()
+    reloadConfig()
   }
 
   /**
-   * 別に文字列でもいいんだけど
-   *
-   * @param upgradeItem
+   * 新たに強化を追加する
    */
-  def removeUpgradeItem(upgradeItem: UpgradeItem): Unit = {
-    val config = plugin.getConfig
-    // つまり削除
-    config.set(s"upgrades.${upgradeItem.name}", null)
-    plugin.saveConfig()
-    reload()
+  def newUpgradeItem(key: String): Unit = {
+    config.set(s"$key.else.id", "air")
+    config.set(s"$key.else.chance", 100d)
+    saveConfig()
+    reloadConfig()
   }
 
-  def removeUpgradeItem(key: String): Unit = {
-    val config = plugin.getConfig
-    config.set(s"upgrades.$key", null)
-    plugin.saveConfig()
-    reload()
+  /**
+   * 強化を削除する
+   * @param key
+   */
+  def delUpgradeItem(key: String): Unit = {
+    config.set(key, null)
+    saveConfig()
+    reloadConfig()
   }
 
-  def createUpgradeItem(key: String): Unit = {
-    val config = plugin.getConfig
-    config.set(s"upgrades.$key.else.id", "air")
-    config.set(s"upgrades.$key.else.chance", 100.0)
-    plugin.saveConfig()
-    reload()
-  }
-
-  def reload(): Unit = {
-    val dS = System.currentTimeMillis()
-    routes.clear()
-    val cs = plugin.getConfig.getConfigurationSection("upgrades")
-    cs.getKeys(false).forEach(key => routes.put(key, new UpgradeItem(key, cs.getConfigurationSection(key))))
-    val dE = System.currentTimeMillis()
-    println(s"§aUpgradeUtil#reload() took ${dE - dS} ms!")
-  }
 
   def isUpgradeItem(item: ItemStack): Boolean = {
-    routes.contains(ItemUtil.cache.find(p => p._2.isSimilar(item)).getOrElse(return false)._1)
-    false
+    cache.contains(ItemUtil.cache.find(p => p._2.isSimilar(item)).getOrElse(return false)._1)
   }
 
   def getUpgradeItem(item: ItemStack): Option[UpgradeItem] = {
-    routes.get(ItemUtil.cache.find(p => p._2.isSimilar(item)).getOrElse(return None)._1)
+    cache.get(ItemUtil.cache.find(p => p._2.isSimilar(item)).getOrElse(return None)._1)
   }
 
-  reload()
-
   val invalidItem: ItemStack = {
-    val i = new ItemStack(Material.STONE, 1)
+    val i = new ItemStack(Material.BARRIER, 1)
     val m = i.getItemMeta
     m.setDisplayName("§cInvalid Item!")
     m.setLore(util.Arrays.asList("§e⚠ このアイテムは無効です"))
@@ -93,16 +107,12 @@ object UpgradeUtil {
   /**
    * 強化先を決める; upgradesから派生
    */
-  class UpgradeItem(val name: String) {
+  class UpgradeItem(val name: String, cs: ConfigurationSection) {
     // 強化先, 派生先アイテムのマップ; アイテムID -> アイテムID, 補正確率
-    val list = mutable.HashMap.empty[String, (String, Double)]
-
-    def this(name: String, cs: ConfigurationSection) {
-      this(name)
-      cs.getKeys(false).forEach(c => {
-        list.put(c, (cs.getString(s"$c.id"), cs.getDouble(s"$c.chance")))
-      })
-    }
+    var list: Map[String, (String, Double)] = cs.getKeys(false)
+      .asScala
+      .map(c => (c, (cs.getString(s"$c.id"), cs.getDouble(s"$c.chance"))))
+      .toMap
   }
 
   /**
@@ -130,12 +140,12 @@ object UpgradeUtil {
       getUpgradeItem(sourceItem) match {
         case Some(upgradeItem) =>
           val resultItem = inv.getItem(2)
-          if (resultItem == null || resultItem.getType == Material.AIR) {
+          if (resultItem == null || resultItem.getType == Material.AIR || resultItem.getType == Material.BARRIER) {
             return false
           } else {
             val chance: Double = getChance(resultItem)
             // 成功した場合
-            if(WarsCoreAPI.randomChance(chance)) {
+            if (WarsCoreAPI.randomChance(chance)) {
               inv.setItem(0, new ItemStack(Material.AIR))
               inv.setItem(1, new ItemStack(Material.AIR))
               inv.setItem(2, new ItemStack(Material.AIR))

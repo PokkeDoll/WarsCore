@@ -1,11 +1,13 @@
 package hm.moe.pokkedoll.warscore.games
+
 import java.util
 
-import hm.moe.pokkedoll.warscore.utils.{MapInfo, WorldLoader}
+import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, WorldLoader}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import org.bukkit
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{EntityType, Firework, Player}
+import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.potion.{PotionEffect, PotionEffectType}
@@ -55,7 +57,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   private val scoreboard = Bukkit.getScoreboardManager.getNewScoreboard
 
   val sidebar = scoreboard.registerNewObjective("sidebar", "dummy")
-  sidebar.setDisplayName(ChatColor.GOLD +  "戦況")
+  sidebar.setDisplayName(ChatColor.GOLD + "戦況")
   sidebar.setDisplaySlot(DisplaySlot.SIDEBAR)
 
   var redTeam: Team = scoreboard.registerNewTeam(s"$id-red")
@@ -64,9 +66,11 @@ class TeamDeathMatch(override val id: String) extends Game {
   val blueTeam: Team = scoreboard.registerNewTeam(s"$id-blue")
   blueTeam.setColor(ChatColor.BLUE)
 
-  WarsCoreAPI.setBaseTeam(redTeam); WarsCoreAPI.setBaseTeam(blueTeam)
+  WarsCoreAPI.setBaseTeam(redTeam);
+  WarsCoreAPI.setBaseTeam(blueTeam)
 
-  var redPoint = 0; var bluePoint = 0
+  var redPoint = 0;
+  var bluePoint = 0
 
   // TODO 余裕があればキュー機能を復活させる
 
@@ -86,27 +90,27 @@ class TeamDeathMatch(override val id: String) extends Game {
   private var centerCount = 50
 
   private def setLocationData(): Unit = {
-    val spawn = mapInfo.locations.getOrElse("spawn", (0d,0d,0d,0f,0f))
-    val red = mapInfo.locations.getOrElse("red", (0d,0d,0d,0f,0f))
-    val blue = mapInfo.locations.getOrElse("blue", (0d,0d,0d,0f,0f))
-    val center = mapInfo.locations.getOrElse("center", (0d,0d,0d,0f,0f))
+    val spawn = mapInfo.locations.getOrElse("spawn", (0d, 0d, 0d, 0f, 0f))
+    val red = mapInfo.locations.getOrElse("red", (0d, 0d, 0d, 0f, 0f))
+    val blue = mapInfo.locations.getOrElse("blue", (0d, 0d, 0d, 0f, 0f))
+    val center = mapInfo.locations.getOrElse("center", (0d, 0d, 0d, 0f, 0f))
     locationData = (
-      new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5),     // Spawn
-      new Location(world, red._1, red._2, red._3, red._4, red._5),               // Red
-      new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5),          // Blue
+      new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5), // Spawn
+      new Location(world, red._1, red._2, red._3, red._4, red._5), // Red
+      new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5), // Blue
       new Location(world, center._1, center._2, center._3, center._4, center._5) // Center
     )
   }
 
   private def setTeam(p: Player): Unit = {
-    if(state == GameState.PLAY) {
-      if(checkHelp()) {
+    if (state == GameState.PLAY) {
+      if (checkHelp()) {
 
       }
     }
-    if(redTeam.getEntries.size() > blueTeam.getEntries.size()) {
+    if (redTeam.getEntries.size() > blueTeam.getEntries.size()) {
       blueTeam.addEntry(p.getName)
-    } else if(redTeam.getEntries.size() < blueTeam.getEntries.size()) {
+    } else if (redTeam.getEntries.size() < blueTeam.getEntries.size()) {
       redTeam.addEntry(p.getName)
     } else {
       WarsCoreAPI.random.nextInt(1) match {
@@ -135,9 +139,9 @@ class TeamDeathMatch(override val id: String) extends Game {
         // 一応代入したが別のインスタンス(load, init)中にworldを参照するのは危険！読み込みエラーとなってコンソールを汚しまくる
         this.world = world
         //
-        if(!loaded) loaded = true
+        if (!loaded) loaded = true
         // 無効化を解除
-        if(disable) disable = false
+        if (disable) disable = false
         // 読み込みに成功したので次のステージへ
         init()
       case None =>
@@ -148,7 +152,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   }
 
   override def init(): Unit = {
-    if(state!=GameState.INIT) state = GameState.INIT
+    if (state != GameState.INIT) state = GameState.INIT
 
     // getPlayer().clear()よりよいはず
     bossbar.removeAll()
@@ -157,7 +161,8 @@ class TeamDeathMatch(override val id: String) extends Game {
 
     redTeam.getEntries.forEach(f => redTeam.removeEntry(f))
     blueTeam.getEntries.forEach(f => blueTeam.removeEntry(f))
-    redPoint = 0; bluePoint = 0
+    redPoint = 0;
+    bluePoint = 0
 
     center = "none"
     centerCount = 50
@@ -182,10 +187,11 @@ class TeamDeathMatch(override val id: String) extends Game {
   override def ready(): Unit = {
     state = GameState.READY
     new BukkitRunnable {
-      val removeProgress: Double = 1d/40d
+      val removeProgress: Double = 1d / 40d
       var count = 40
+
       override def run(): Unit = {
-        if(members.length < 2) {
+        if (members.length < 2) {
           sendMessage("&c人数が足りないため待機状態に戻ります")
           state = GameState.WAIT
           cancel()
@@ -209,7 +215,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     members.map(_.player).foreach(p => {
       setTeam(p)
       spawn(p)
-      if(redTeam.hasEntry(p.getName)) {
+      if (redTeam.hasEntry(p.getName)) {
         p.sendTitle("§7YOU ARE §cRED §7TEAM!", "- §6TDM §f- Kill §9Blue §fteam!", 30, 20, 20)
       } else {
         p.sendTitle("§7YOU ARE §9BLUE §7TEAM!", "- §6TDM §f- Kill §cRed §fteam!", 30, 20, 20)
@@ -217,44 +223,45 @@ class TeamDeathMatch(override val id: String) extends Game {
     })
 
     // 効率化のため割り算を先に計算する
-    val div = 1/50.0
+    val div = 1 / 50.0
 
     new BukkitRunnable {
       var time: Int = TIME
+
       override def run(): Unit = {
-        if(
-          members.length < 2 ||     // メンバーが一人
-          redTeam.getSize <= 0 ||   // チーム0人
-          blueTeam.getSize <= 0 ||  //
-          time <= 0 ||              // 時間切れ
-          disable                   // 何か原因があって無効化
+        if (
+          members.length < 2 || // メンバーが一人
+            redTeam.getSize <= 0 || // チーム0人
+            blueTeam.getSize <= 0 || //
+            time <= 0 || // 時間切れ
+            disable // 何か原因があって無効化
         ) {
           // ゲーム強制終了
           end()
           cancel()
         } else {
           // それ以外
-          if(time <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_HAT, 1f, 0f))
-          if(time == 60) state = GameState.PLAY2
-          if(center=="none") {
+          if (time <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_HAT, 1f, 0f))
+          if (time == 60) state = GameState.PLAY2
+          if (center == "none") {
             locationData._4.getNearbyPlayers(2d, 4d).forEach(p => {
-              if(redTeam.hasEntry(p.getName)) {
+              if (redTeam.hasEntry(p.getName)) {
                 centerCount += 1
-                if(centerCount >= 100) {
+                if (centerCount >= 100) {
                   occupy("red", ChatColor.RED + "赤チーム", Color.RED, Material.REDSTONE_BLOCK)
                 }
               } else {
                 centerCount -= 1
-                if(0 >= centerCount) {
+                if (0 >= centerCount) {
                   occupy("blue", ChatColor.BLUE + "青チーム", Color.BLUE, Material.LAPIS_BLOCK)
                 }
               }
               members.map(_.player).foreach(_.sendActionBar(
                 // 赤が優勢
-                if(centerCount > 50) {
-                  s"&c赤チームが中央を占拠しています... &l${((centerCount-50)*div)*100.0}%"
+                if (centerCount > 50) {
+                  s"&c赤チームが中央を占拠しています... &l${((centerCount - 50) * div) * 100.0}%"
                 } else if (50 > centerCount) {
-                  s"&9青チームが中央を占拠しています... &l${((50-centerCount)*div)*100}%"
+                  s"&9青チームが中央を占拠しています... &l${((50 - centerCount) * div) * 100}%"
                 } else ""
               ))
             })
@@ -268,7 +275,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   }
 
   private def occupy(team: String, prefix: String, color: Color, material: Material): Unit = {
-    if(center == "none") {
+    if (center == "none") {
       center = team
       sendMessage(prefix + ChatColor.WHITE + "が中央を占拠しました！！")
       val fw = world.spawnEntity(locationData._4, EntityType.FIREWORK).asInstanceOf[Firework]
@@ -276,8 +283,8 @@ class TeamDeathMatch(override val id: String) extends Game {
       meta.addEffect(FireworkEffect.builder().withColor(color).`with`(FireworkEffect.Type.CREEPER).build())
       fw.setFireworkMeta(meta)
       val loc = locationData._4.add(0, -1, 0)
-      for(i <- -1 to 1) {
-        for(j <- -1 to 1) {
+      for (i <- -1 to 1) {
+        for (j <- -1 to 1) {
           loc.add(i.toDouble, 0d, j.toDouble).getBlock.setType(material)
         }
       }
@@ -288,35 +295,35 @@ class TeamDeathMatch(override val id: String) extends Game {
     state = GameState.END
     world.setPVP(false)
     // ここで勝敗を決める
-    val winner = if(redPoint > bluePoint) "red" else if (redPoint < bluePoint) "blue" else "draw"
+    val winner = if (redPoint > bluePoint) "red" else if (redPoint < bluePoint) "blue" else "draw"
     sendMessage(
       "&7==========================================\n" +
-      "&7                Game Over!                \n" +
-      (
-        if(winner=="red") "              &cRed Team §7won!                \n"
-        else if (winner=="blue") "              &9Blue Team §7won!                \n"
-        else "                &fDraw                \n"
-      ) +
-      "&7==========================================\n"
+        "&7                Game Over!                \n" +
+        (
+          if (winner == "red") "              &cRed Team §7won!                \n"
+          else if (winner == "blue") "              &9Blue Team §7won!                \n"
+          else "                &fDraw                \n"
+          ) +
+        "&7==========================================\n"
     )
     // TODO Skriptに沿ってMVPを決定する
     sendMessage("// TODO MVP作成")
     members.foreach(wp => {
       data.get(wp.player) match {
         case Some(d) =>
-          if((winner=="red" && redTeam.hasEntry(wp.player.getName)) && (winner=="blue" && blueTeam.hasEntry(wp.player.getName))) {
+          if ((winner == "red" && redTeam.hasEntry(wp.player.getName)) && (winner == "blue" && blueTeam.hasEntry(wp.player.getName))) {
             d.money += 500
             d.win = true
           }
           wp.sendMessage(
             "&7= = = = = = = = &b戦績 &7= = = = = = = =\n" +
-            s"* &cRed &7Team: &a${redPoint} &7| &9Blue Team: &a${bluePoint}\n" +
-            s"* &7Kill: &a${d.kill}\n" +
-            s"* &7Death: &a${d.death}" +
-            s"* &7K/D: &a${d.kill/(d.death + 1)}\n" +
-            s"* &7Assist: &a${d.assist}\n" +
-            s"* &7Damage: &a${d.damage}" +
-            s"* &7Money: &a${d.money}\n"
+              s"* &cRed &7Team: &a${redPoint} &7| &9Blue Team: &a${bluePoint}\n" +
+              s"* &7Kill: &a${d.kill}\n" +
+              s"* &7Death: &a${d.death}" +
+              s"* &7K/D: &a${d.kill / (d.death + 1)}\n" +
+              s"* &7Assist: &a${d.assist}\n" +
+              s"* &7Damage: &a${d.damage}" +
+              s"* &7Money: &a${d.money}\n"
           )
           // ゲーム情報のリセット
           wp.game = None
@@ -348,20 +355,20 @@ class TeamDeathMatch(override val id: String) extends Game {
     e.setCancelled(true)
     val victim = e.getEntity
     // 試合中のみのできごと
-    if(state == GameState.PLAY || state == GameState.PLAY2) {
+    if (state == GameState.PLAY || state == GameState.PLAY2) {
       val vData: TDMData = data(victim)
       vData.death += 1
       // WarsCoreAPI.getAttacker(victim.getLastDamageCause)
-       Option(victim.getKiller) match {
+      Option(victim.getKiller) match {
         case Some(attacker) =>
           val aData = data(attacker)
           aData.kill += 1
           // 同じIPアドレスなら報酬をスキップする
-          if(!attacker.isOp && victim.getAddress != attacker.getAddress) aData.money += 50
+          if (!attacker.isOp && victim.getAddress != attacker.getAddress) EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
           e.setDeathSoundVolume(2f)
-          if(redTeam.hasEntry(attacker.getName)) {
+          if (redTeam.hasEntry(attacker.getName)) {
             redPoint += 1
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
@@ -390,16 +397,17 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * deathメソッドで状態はPLAY or PLAY2
+   *
    * @param player
    */
   private def spawn(player: Player, coolTime: Boolean = false): Unit = {
-    if(coolTime) player.setGameMode(GameMode.SPECTATOR)
+    if (coolTime) player.setGameMode(GameMode.SPECTATOR)
     //player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 100, 5), true)
     var spawnTime: Int = 5
     new BukkitRunnable {
       override def run(): Unit = {
-        if(!coolTime) {
-          if(redTeam.hasEntry(player.getName)) {
+        if (!coolTime) {
+          if (redTeam.hasEntry(player.getName)) {
             player.teleport(locationData._2)
           } else {
             player.teleport(locationData._3)
@@ -407,14 +415,14 @@ class TeamDeathMatch(override val id: String) extends Game {
         } else if (player.getKiller != null) {
           player.setSpectatorTarget(player.getKiller)
         }
-        if(coolTime) {
+        if (coolTime) {
           WarsCoreAPI.freeze(player)
           new BukkitRunnable {
             override def run(): Unit = {
-              if(state == GameState.PLAY || state == GameState.PLAY2) {
-                if(0 >= spawnTime) {
+              if (state == GameState.PLAY || state == GameState.PLAY2) {
+                if (0 >= spawnTime) {
                   WarsCoreAPI.unfreeze(player)
-                  if(redTeam.hasEntry(player.getName)) {
+                  if (redTeam.hasEntry(player.getName)) {
                     player.teleport(locationData._2)
                   } else {
                     player.teleport(locationData._3)
@@ -440,16 +448,16 @@ class TeamDeathMatch(override val id: String) extends Game {
   }
 
   override def join(wp: WPlayer): Boolean = {
-    if(wp.game.isDefined) {
+    if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
       false
-    } else if(!loaded && state == GameState.DISABLE) {
+    } else if (!loaded && state == GameState.DISABLE) {
       load()
       false
-    } else if(!state.join) {
+    } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
       false
-    } else if(members.length >= maxMember) {
+    } else if (members.length >= maxMember) {
       wp.player.sendMessage("§c人数が満員なので参加できません！")
       false
     } else {
@@ -471,7 +479,7 @@ class TeamDeathMatch(override val id: String) extends Game {
           new scheduler.BukkitRunnable {
             override def run(): Unit = {
               spawn(wp.player)
-              if(redTeam.hasEntry(wp.player.getName)) {
+              if (redTeam.hasEntry(wp.player.getName)) {
                 sendMessage(s"${wp.player.getName}が§cRED§fチームに参加しました")
               } else {
                 sendMessage(s"${wp.player.getName}が§9BLUE§fチームに参加しました")
@@ -482,7 +490,7 @@ class TeamDeathMatch(override val id: String) extends Game {
           wp.player.teleport(locationData._1)
         case GameState.WAIT =>
           wp.player.teleport(locationData._1)
-          if(members.length >= 2) {
+          if (members.length >= 2) {
             ready()
           }
         case _ =>
@@ -494,7 +502,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   override def hub(wp: WPlayer): Unit = {
     val team = WarsCoreAPI.scoreboard.getEntryTeam(wp.player.getName)
-    if(team != null) {
+    if (team != null) {
       // チームから削除
       team.removeEntry(wp.player.getName)
     }
@@ -507,15 +515,47 @@ class TeamDeathMatch(override val id: String) extends Game {
     // スコアボード情報をリセット
     wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
     sendMessage(s"${wp.player.getName} が退出しました")
-    if(wp.player.isOnline) {
+    if (wp.player.isOnline) {
       wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
     }
   }
 
+  // TODO moneyいらない
   class TDMData {
     // 順に, 金！, キル, デス, アシスト, ダメージ量, 受けたダメージ量
     var money, kill, death, assist, damage: Int = 0
     var win = false
     var damaged = mutable.Set.empty[Player]
+  }
+
+  /**
+   * ブロックを破壊するときに呼び出されるイベント
+   *
+   * @param e
+   */
+  override def break(e: BlockBreakEvent): Unit = {
+    if(!canBuild(e.getBlock.getLocation)) {
+      e.getPlayer.sendMessage(ChatColor.RED +  "その地点にブロックを置くことはできません！")
+      e.setCancelled(true)
+    }
+  }
+
+  /**
+   * ブロックを設置するときに呼び出されるイベント
+   *
+   * @param e
+   */
+  override def place(e: BlockPlaceEvent): Unit = {
+    if(!canBuild(e.getBlock.getLocation)) {
+      e.getPlayer.sendMessage(ChatColor.RED + "その地点にブロックを置くことはできません！")
+      e.setCancelled(true)
+    }
+  }
+
+  private def canBuild(location: Location): Boolean = {
+    val center = locationData._4
+    (location.getX >= center.getX - 19 && location.getX <= center.getX + 19) &&
+      (location.getY >= center.getY - 19 && location.getY <= center.getY + 19) &&
+      (location.getZ >= center.getZ - 19 && location.getZ <= center.getZ + 19)
   }
 }

@@ -35,7 +35,7 @@ object MerchantUtil {
         merchantCache.clear()
       case Failure(exception) =>
         exception.printStackTrace()
-        plugin.getLogger.warning("item.ymlの読み込みに失敗しました")
+        plugin.getLogger.warning("merchant.ymlの読み込みに失敗しました")
     }
   }
 

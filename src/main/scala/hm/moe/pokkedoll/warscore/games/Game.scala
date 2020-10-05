@@ -5,6 +5,7 @@ import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import org.bukkit.{ChatColor, World}
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
+import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 
@@ -94,6 +95,18 @@ trait Game {
   def hub(p: Player): Unit = hub(WarsCoreAPI.getWPlayer(p))
 
   def death(e: PlayerDeathEvent): Unit
+
+  /**
+   * ブロックを破壊するときに呼び出されるイベント
+   * @param e
+   */
+  def break(e: BlockBreakEvent): Unit
+
+  /**
+   * ブロックを設置するときに呼び出されるイベント
+   * @param e
+   */
+  def place(e: BlockPlaceEvent): Unit
 
   def sendMessage(string: String): Unit = {
     world.getPlayers.forEach(_.sendMessage(ChatColor.translateAlternateColorCodes('&', string)))

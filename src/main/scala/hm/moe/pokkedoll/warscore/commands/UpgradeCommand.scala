@@ -12,33 +12,33 @@ class UpgradeCommand extends CommandExecutor {
       case player: Player =>
         player.sendMessage(ChatColor.GRAY + "Wars互換モード: true")
         if(args(0).equalsIgnoreCase("list")) {
-          val sb = new StringBuilder("list > \n")
-          UpgradeUtil.routes.foreach(f => {
-            sb.append(s"${f._1} => ${f._2.name}\n* list =>\n")
+          val sb = new StringBuilder("=: 強化一覧 :=\n")
+          UpgradeUtil.cache.foreach(f => {
+            sb.append(ChatColor.GREEN + "*" + ChatColor.WHITE +s"${f._1} =>\n")
             f._2.list.foreach(ff => {
-              sb.append(s"** ${ff._1} => ID: ${ff._2._1}, FixedChance: ${ff._2._2}\n")
+              sb.append(ChatColor.GREEN + "** " + ChatColor.WHITE + s"${ff._1}(強化素材) ⇒ ${ff._2._1}(強化先), ${ff._2._2}(補正成功確率)\n")
             })
           })
           player.sendMessage(sb.toString())
         } else if (args.length > 1 && args(0).equalsIgnoreCase("create")) {
           val id = args(1)
-          if(UpgradeUtil.routes.contains(id)) {
+          if(UpgradeUtil.cache.contains(id)) {
             player.sendMessage(s"$id はすでに存在します")
           } else {
-            UpgradeUtil.createUpgradeItem(id)
+            UpgradeUtil.newUpgradeItem(id)
             player.sendMessage(s"$id を追加しました")
           }
         } else if (args.length > 1 && args(0).equalsIgnoreCase("delete")) {
           val id = args(1)
-          if(UpgradeUtil.routes.contains(id)) {
+          if(UpgradeUtil.cache.contains(id)) {
             player.sendMessage(s"$id を削除しました")
-            UpgradeUtil.removeUpgradeItem(id)
+            UpgradeUtil.delUpgradeItem(id)
           } else {
             player.sendMessage(s"$id は存在しません")
           }
         } else if (args.length > 2 && args(0).equalsIgnoreCase("mod")) {
           val id = args(1); val a = args(2)
-          UpgradeUtil.routes.get(id) match {
+          UpgradeUtil.cache.get(id) match {
             case Some(item) =>
               if(a.equalsIgnoreCase("list")) {
                 val sb = new StringBuilder(s"mod > list > ${item.name}'s routes'\n")
@@ -51,18 +51,18 @@ class UpgradeCommand extends CommandExecutor {
                 // 強化素材と強化先と補正確率
                 try {
                   val from = args(3); val to = args(4); val fixedChance = args(5).toDouble
-                  item.list.put(from, (to, fixedChance))
+                  item.list = item.list + (from -> (to, fixedChance))
                 } catch {
                   case e: Exception =>
                     player.sendMessage("エラーが発生しました")
                     return true
                 }
-                UpgradeUtil.updateUpgradeItem(item)
+                UpgradeUtil.setUpgradeItem(item)
                 player.sendMessage(s"${id}をアップデートしました")
               } else if(args.length > 3 && a.equalsIgnoreCase("remove")) {
                 val from = args(3)
-                item.list.remove(from)
-                UpgradeUtil.updateUpgradeItem(item)
+                item.list = item.list - from
+                UpgradeUtil.setUpgradeItem(item)
                 player.sendMessage(s"${id}から${from}を削除しました")
               }
             case None =>

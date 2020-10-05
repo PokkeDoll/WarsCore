@@ -26,7 +26,6 @@ object ItemUtil {
   var configFile: File = _
   var config: FileConfiguration = _
 
-
   def reloadItem(): Unit = {
     if(configFile==null) {
       createConfig() match {
@@ -35,6 +34,7 @@ object ItemUtil {
         case Failure(e) =>
           e.printStackTrace()
           plugin.getLogger.warning("item.ymlの読み込みに失敗しました")
+          return
       }
     }
     val cs = config.getKeys(false)

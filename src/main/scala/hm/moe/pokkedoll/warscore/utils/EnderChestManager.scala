@@ -78,8 +78,6 @@ object EnderChestManager {
     db.setStorage(id, player.getUniqueId.toString, i2s(content))
   }
 
-
-
   def i2s(items: Array[ItemStack]): String = {
     if(items==null || items.length != 54) " " else {
       val yaml = new YamlConfiguration

@@ -5,6 +5,7 @@ import hm.moe.pokkedoll.warscore.utils.{MapInfo, WorldLoader}
 import org.bukkit.{Bukkit, GameMode, Location, Sound, World, scheduler}
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.Player
+import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.potion.{PotionEffect, PotionEffectType}
@@ -335,4 +336,18 @@ class Tactics(override val id: String) extends Game {
       }
     }.runTaskLater(WarsCore.instance, 1L)
   }
+
+  /**
+   * ブロックを破壊するときに呼び出されるイベント
+   *
+   * @param e
+   */
+  override def break(e: BlockBreakEvent): Unit = return
+
+  /**
+   * ブロックを設置するときに呼び出されるイベント
+   *
+   * @param e
+   */
+  override def place(e: BlockPlaceEvent): Unit = return
 }
