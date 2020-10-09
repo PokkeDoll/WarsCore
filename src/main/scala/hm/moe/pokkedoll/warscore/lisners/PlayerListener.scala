@@ -2,8 +2,9 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import java.util
 
-import hm.moe.pokkedoll.warscore.utils.{BankManager, EnderChestManager, ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
+import hm.moe.pokkedoll.warscore.utils.{BankManager, EconomyUtil, EnderChestManager, ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import net.milkbowl.vault.economy.Economy
 import org.bukkit.entity.Player
 import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
@@ -121,13 +122,24 @@ class PlayerListener(plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onInteract(e: PlayerInteractEvent): Unit = {
+    val item = e.getItem
     if(e.getAction == Action.RIGHT_CLICK_AIR && e.getHand == EquipmentSlot.HAND) {
-      val item = e.getItem
-      if(item != null && item.getType == Material.NAME_TAG) {
-        e.setCancelled(true)
-        val t = TagUtil.getTagIdFromItemStack(item)
-        e.getPlayer.sendMessage(s"$t を獲得しました！(大嘘)")
+      if(item != null) {
+        if(item.getType == Material.NAME_TAG) {
+          e.setCancelled(true)
+          val t = TagUtil.getTagIdFromItemStack(item)
+          e.getPlayer.sendMessage(s"$t を獲得しました！(大嘘)")
+        // ぽっけコインを所持している
+        } else if (EconomyUtil.COIN.isSimilar(item)) {
+          val player = e.getPlayer
+          if(player.isSneaking) {
+            BankManager.coin2ingot(player, item.getAmount)
+          } else {
+            BankManager.coin2ingot(player, 1)
+          }
+        }
       }
+
     }
   }
 

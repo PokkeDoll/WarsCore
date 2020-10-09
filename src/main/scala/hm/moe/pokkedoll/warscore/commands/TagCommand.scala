@@ -1,7 +1,8 @@
 package hm.moe.pokkedoll.warscore.commands
 
+import hm.moe.pokkedoll.warscore.utils.TagUtil
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.{ClickEvent, ComponentBuilder}
+import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
 
@@ -16,25 +17,21 @@ class TagCommand extends CommandExecutor {
       case player: Player =>
         if(args.length == 0) {
 
-        } else if (args.length >= 1 && player.hasPermission("pokkedoll.admin")) {
-          if(args(1) == "list") {
-
-          } else if (args(1) == "add" || args(1) == "set") {
-
-          } else if (args(1) == "del" || args(1) == "remove") {
-
+        } else if (player.hasPermission("pokkedoll.admin")) {
+          if(args(0) == "list") {
+            val comp = new ComponentBuilder("タグ一覧\n").color(ChatColor.GREEN)
+            TagUtil.cache.foreach(f => {
+              comp.append(s"${f._1} = ${f._2}\n")
+            })
+            player.sendMessage(comp.append("//").color(ChatColor.GREEN).create():_*)
+          } else if (args(0) == "reload") {
+            TagUtil.reloadConfig()
+            player.sendMessage("リロードしました")
           } else {
             player.sendMessage(
-              new ComponentBuilder("Tag Command Help\n")
-                .append("list").color(ChatColor.GOLD)
-                .append(": 登録されているタグの一覧を表示\n").color(ChatColor.WHITE)
-                .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tag list"))
-                .append("add || set").color(ChatColor.GOLD).append("<id>").color(ChatColor.LIGHT_PURPLE).append("<displayName>").color(ChatColor.GREEN)
-                .append(": タグを追加する\n").color(ChatColor.WHITE)
-                .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tag add "))
-                .append("del || remove").color(ChatColor.GOLD).append("<id>").color(ChatColor.LIGHT_PURPLE)
-                .append(": 登録されているタグを削除する\n").color(ChatColor.WHITE)
-                .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tag del "))
+              new ComponentBuilder("Tag Command Help(0.30.4 >)\n").color(ChatColor.GREEN)
+                .append("/tag list: リストを一覧表示\n")
+                .append("/tag reload: configをリロード")
                 .create():_*
             )
           }

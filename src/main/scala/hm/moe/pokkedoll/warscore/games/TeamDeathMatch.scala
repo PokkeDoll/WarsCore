@@ -256,14 +256,14 @@ class TeamDeathMatch(override val id: String) extends Game {
                   occupy("blue", ChatColor.BLUE + "青チーム", Color.BLUE, Material.LAPIS_BLOCK)
                 }
               }
-              members.map(_.player).foreach(_.sendActionBar(
+              members.map(_.player).foreach(_.sendActionBar(ChatColor.translateAlternateColorCodes('&',
                 // 赤が優勢
                 if (centerCount > 50) {
                   s"&c赤チームが中央を占拠しています... &l${((centerCount - 50) * div) * 100.0}%"
                 } else if (50 > centerCount) {
                   s"&9青チームが中央を占拠しています... &l${((50 - centerCount) * div) * 100}%"
                 } else ""
-              ))
+              )))
             })
           }
           time -= 1
@@ -312,7 +312,8 @@ class TeamDeathMatch(override val id: String) extends Game {
       data.get(wp.player) match {
         case Some(d) =>
           if ((winner == "red" && redTeam.hasEntry(wp.player.getName)) && (winner == "blue" && blueTeam.hasEntry(wp.player.getName))) {
-            d.money += 500
+            //d.money += 500
+            EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
             d.win = true
           }
           wp.sendMessage(
@@ -322,8 +323,7 @@ class TeamDeathMatch(override val id: String) extends Game {
               s"* &7Death: &a${d.death}" +
               s"* &7K/D: &a${d.kill / (d.death + 1)}\n" +
               s"* &7Assist: &a${d.assist}\n" +
-              s"* &7Damage: &a${d.damage}" +
-              s"* &7Money: &a${d.money}\n"
+              s"* &7Damage: &a${d.damage}"
           )
           // ゲーム情報のリセット
           wp.game = None
@@ -364,10 +364,13 @@ class TeamDeathMatch(override val id: String) extends Game {
           val aData = data(attacker)
           aData.kill += 1
           // 同じIPアドレスなら報酬をスキップする
-          if (!attacker.isOp && victim.getAddress != attacker.getAddress) EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
+          if (attacker.isOp || victim.getAddress != attacker.getAddress) {
+            EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
+          }
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
           e.setDeathSoundVolume(2f)
+          // 赤チーム用のメッセージ
           if (redTeam.hasEntry(attacker.getName)) {
             redPoint += 1
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
@@ -376,6 +379,7 @@ class TeamDeathMatch(override val id: String) extends Game {
               case None =>
                 sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
             }
+          // 青チーム用のメッセージ
           } else {
             bluePoint += 1
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
@@ -522,8 +526,8 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   // TODO moneyいらない
   class TDMData {
-    // 順に, 金！, キル, デス, アシスト, ダメージ量, 受けたダメージ量
-    var money, kill, death, assist, damage: Int = 0
+    // 順に, キル, デス, アシスト, ダメージ量, 受けたダメージ量
+    var kill, death, assist, damage: Int = 0
     var win = false
     var damaged = mutable.Set.empty[Player]
   }

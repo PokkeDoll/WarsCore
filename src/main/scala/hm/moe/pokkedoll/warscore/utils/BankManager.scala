@@ -64,16 +64,16 @@ object BankManager {
    * @param player
    * @param amount
    */
-  private def coin2ingot(player: HumanEntity, amount: Int): Unit = {
+  def coin2ingot(player: HumanEntity, amount: Int): Unit = {
     val inv = player.getInventory
     if (inv.firstEmpty() == -1) {
       player.sendMessage(ChatColor.RED + "インベントリの空きが不足しています！")
     } else {
-      val coin = EconomyUtil.COIN.item.clone()
+      val coin = EconomyUtil.COIN.clone()
       coin.setAmount(9 * amount)
       if (inv.contains(coin)) {
         inv.remove(coin)
-        val ingot = EconomyUtil.INGOT.item.clone()
+        val ingot = EconomyUtil.INGOT.clone()
         ingot.setAmount(amount)
         inv.addItem(ingot)
       } else {
