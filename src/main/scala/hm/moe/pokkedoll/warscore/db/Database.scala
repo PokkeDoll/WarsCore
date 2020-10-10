@@ -100,5 +100,9 @@ trait Database {
     }.runTaskAsynchronously(WarsCore.instance)
   }
 
+  def getTag(uuid: String): String
+
+  def getTags(uuid: String): IndexedSeq[String]
+
   def close(): Unit
 }

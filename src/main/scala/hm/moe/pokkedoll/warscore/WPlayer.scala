@@ -15,6 +15,8 @@ class WPlayer(val player: Player) {
 
   var rank = 0
 
+  var tag = ""
+
   def sendMessage(string: String): Unit = {
     player.sendMessage(ChatColor.translateAlternateColorCodes('&', string))
   }

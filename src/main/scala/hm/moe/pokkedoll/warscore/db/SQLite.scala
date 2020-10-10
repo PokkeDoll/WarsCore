@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.db
 
-import java.sql.SQLException
+import java.sql.{Connection, SQLException}
 import java.util.UUID
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
@@ -49,8 +49,7 @@ class SQLite(plugin: WarsCore) extends Database {
           |
           |CREATE TABLE IF NOT EXISTS tag (
           | uuid TEXT PRIMARY KEY,
-          | id TEXT DEFAULT "",
-          | storage TEXT DEFAULT "",
+          | tagId TEXT DEFAULT "",
           | FOREIGN KEY(uuid) REFERENCES player(uuid)
           | ON DELETE CASCADE ON UPDATE CASCADE
           |);
@@ -105,6 +104,12 @@ class SQLite(plugin: WarsCore) extends Database {
           | FOREIGN KEY(uuid) REFERENCES player(uuid)
           | ON DELETE CASCADE ON UPDATE CASCADE
           |);
+          |
+          |CREATE TABLE IF NOT EXISTS tagContainer (
+          | uuid TEXT,
+          | tagId TEXT
+          |);
+          |
           |""".stripMargin)
     } catch {
       case e: SQLException => e.printStackTrace()
@@ -274,6 +279,48 @@ class SQLite(plugin: WarsCore) extends Database {
       case e: SQLException =>
         e.printStackTrace()
         false
+    } finally {
+      ps.close()
+      c.close()
+    }
+  }
+
+  def getTags(uuid: String): IndexedSeq[String] = {
+    val c = hikari.getConnection()
+    val ps = c.prepareStatement("SELECT `tagId` FROM `tagContainer` WHERE `uuid`=?")
+    var seq = IndexedSeq.empty[String]
+    try {
+      ps.setString(1, uuid)
+      val rs = ps.executeQuery()
+      while (rs.next()) {
+       seq = seq :+ rs.getString("tagId")
+      }
+      seq
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        seq
+    } finally {
+      ps.close()
+      c.close()
+    }
+  }
+
+  def getTag(uuid: String): String = {
+    val c = hikari.getConnection()
+    val ps = c.prepareStatement("SELECT `tagId` FROM `tag` WHERE `uuid`=?")
+    try {
+      ps.setString(1, uuid)
+      val rs = ps.executeQuery()
+      if(rs.next()) {
+        rs.getString("tagId")
+      } else {
+        ""
+      }
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        "ERROR!"
     } finally {
       ps.close()
       c.close()
