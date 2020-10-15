@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.cspp.CrackShotPP
-import hm.moe.pokkedoll.warscore.commands.{BankCommand, GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand}
+import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, UpgradeCommand, WarsCoreCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
@@ -30,7 +30,7 @@ class WarsCore extends JavaPlugin {
     Bukkit.getPluginManager.registerEvents(new PlayerListener(this), this)
     Bukkit.getPluginManager.registerEvents(new SignListener(this), this)
 
-    Bukkit.getPluginManager.registerEvents(new CrackShotPP(this, getConfig), this)
+    //Bukkit.getPluginManager.registerEvents(new CrackShotPP(this, getConfig), this)
 
     val gameCommand = new GameCommand
     getCommand("game").setExecutor(gameCommand)
@@ -41,7 +41,6 @@ class WarsCore extends JavaPlugin {
     getCommand("item").setExecutor(new ItemCommand)
     getCommand("upgrade").setExecutor(new UpgradeCommand)
     getCommand("merchant").setExecutor(new MerchantCommand)
-    getCommand("bank").setExecutor(new BankCommand)
     saveDefaultConfig()
     WarsCoreAPI.DEFAULT_SPAWN = Bukkit.getWorlds.get(0).getSpawnLocation
     WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))

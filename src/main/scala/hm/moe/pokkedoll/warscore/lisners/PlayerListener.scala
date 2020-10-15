@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import java.util
 
-import hm.moe.pokkedoll.warscore.utils.{BankManager, EconomyUtil, EnderChestManager, ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
+import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, EnderChestManager, ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.entity.Player
@@ -87,10 +87,6 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       if (e.getCurrentItem != null) {
         EnderChestManager.openEnderChest(p, e.getCurrentItem.getAmount)
       }
-    // 換金インベントリ
-    } else if (e.getView.getTitle == BankManager.BANK_MENU.getTitle) {
-      BankManager.onClick(e)
-    // それ以外
     } else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
       if (wp.game.isDefined) {
@@ -133,9 +129,16 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         } else if (EconomyUtil.COIN.isSimilar(item)) {
           val player = e.getPlayer
           if(player.isSneaking) {
-            BankManager.coin2ingot(player, item.getAmount)
+            EconomyUtil.coin2ingot(player, item, item.getAmount/9)
           } else {
-            BankManager.coin2ingot(player, 1)
+            EconomyUtil.coin2ingot(player, item, 1)
+          }
+        } else if (EconomyUtil.INGOT.isSimilar(item)) {
+          val player = e.getPlayer
+          if(player.isSneaking) {
+            EconomyUtil.ingot2coin(player, item, if(item.getAmount >= 7) 7 else item.getAmount)
+          } else {
+            EconomyUtil.ingot2coin(player, item)
           }
         }
       }

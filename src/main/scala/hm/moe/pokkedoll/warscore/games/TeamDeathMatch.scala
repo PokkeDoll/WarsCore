@@ -139,9 +139,9 @@ class TeamDeathMatch(override val id: String) extends Game {
         // 一応代入したが別のインスタンス(load, init)中にworldを参照するのは危険！読み込みエラーとなってコンソールを汚しまくる
         this.world = world
         //
-        if (!loaded) loaded = true
+        if(!loaded) loaded = true
         // 無効化を解除
-        if (disable) disable = false
+        if(disable) disable = false
         // 読み込みに成功したので次のステージへ
         init()
       case None =>
