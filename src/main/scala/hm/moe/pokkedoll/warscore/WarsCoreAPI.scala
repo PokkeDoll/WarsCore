@@ -227,11 +227,11 @@ object WarsCoreAPI {
         // タグ
         val tag = Option(scoreboard.getObjective("tag")) match {
           case Some(tag) =>
-            println("tag is some!")
+            //println("tag is some!")
             tag.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"$tagData &f0"))
             tag
           case None =>
-            println("tag is none!")
+            //println("tag is none!")
             val tag = scoreboard.registerNewObjective("tag", "dummy")
             tag.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"$tagData &f0"))
             tag.getScore(player.getName).setScore(0)

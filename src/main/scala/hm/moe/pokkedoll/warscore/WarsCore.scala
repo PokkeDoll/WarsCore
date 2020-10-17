@@ -30,7 +30,7 @@ class WarsCore extends JavaPlugin {
     Bukkit.getPluginManager.registerEvents(new PlayerListener(this), this)
     Bukkit.getPluginManager.registerEvents(new SignListener(this), this)
 
-    //Bukkit.getPluginManager.registerEvents(new CrackShotPP(this, getConfig), this)
+    Bukkit.getPluginManager.registerEvents(new CrackShotPP(this, getConfig), this)
 
     val gameCommand = new GameCommand
     getCommand("game").setExecutor(gameCommand)

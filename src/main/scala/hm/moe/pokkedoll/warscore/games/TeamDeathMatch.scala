@@ -199,9 +199,17 @@ class TeamDeathMatch(override val id: String) extends Game {
           play()
           cancel()
         } else {
-          bossbar.setTitle(s"§fあと§a${count}§f秒で試合が始まります!")
-          bossbar.setProgress(bossbar.getProgress - removeProgress)
-          count -= 1
+          try {
+            bossbar.setTitle(s"§fあと§a${count}§f秒で試合が始まります!")
+            bossbar.setProgress(bossbar.getProgress - removeProgress)
+            count -= 1
+          } catch {
+            case e: IllegalArgumentException =>
+              e.printStackTrace()
+              sendMessage("エラーが発生したため待機状態に戻ります")
+              state = GameState.WAIT
+              cancel()
+          }
         }
       }
     }.runTaskTimer(WarsCore.instance, 0, 20L)
@@ -248,12 +256,12 @@ class TeamDeathMatch(override val id: String) extends Game {
               if (redTeam.hasEntry(p.getName)) {
                 centerCount += 1
                 if (centerCount >= 100) {
-                  occupy("red", ChatColor.RED + "赤チーム", Color.RED, Material.REDSTONE_BLOCK)
+                  occupy("red", ChatColor.RED + "赤チーム", Color.RED, 14.toByte)
                 }
               } else {
                 centerCount -= 1
                 if (0 >= centerCount) {
-                  occupy("blue", ChatColor.BLUE + "青チーム", Color.BLUE, Material.LAPIS_BLOCK)
+                  occupy("blue", ChatColor.BLUE + "青チーム", Color.BLUE, 11.toByte)
                 }
               }
               members.map(_.player).foreach(_.sendActionBar(ChatColor.translateAlternateColorCodes('&',
@@ -274,7 +282,8 @@ class TeamDeathMatch(override val id: String) extends Game {
     }.runTaskTimer(WarsCore.instance, 0, 20L)
   }
 
-  private def occupy(team: String, prefix: String, color: Color, material: Material): Unit = {
+
+  private def occupy(team: String, prefix: String, color: Color, data: Byte): Unit = {
     if (center == "none") {
       center = team
       sendMessage(prefix + ChatColor.WHITE + "が中央を占拠しました！！")
@@ -282,10 +291,12 @@ class TeamDeathMatch(override val id: String) extends Game {
       val meta = fw.getFireworkMeta
       meta.addEffect(FireworkEffect.builder().withColor(color).`with`(FireworkEffect.Type.CREEPER).build())
       fw.setFireworkMeta(meta)
-      val loc = locationData._4.add(0, -1, 0)
+      val loc = locationData._4.add(0, 1, 0)
       for (i <- -1 to 1) {
         for (j <- -1 to 1) {
-          loc.add(i.toDouble, 0d, j.toDouble).getBlock.setType(material)
+          val block = world.getBlockAt(loc.getBlockX + i, loc.getBlockY, loc.getBlockZ + j)
+          block.setType(Material.STAINED_GLASS)
+          block.setData(data)
         }
       }
     }
@@ -555,11 +566,13 @@ class TeamDeathMatch(override val id: String) extends Game {
       e.setCancelled(true)
     }
   }
+  
+  private val buildRange = 9
 
   private def canBuild(location: Location): Boolean = {
     val center = locationData._4
-    (location.getX >= center.getX - 19 && location.getX <= center.getX + 19) &&
-      (location.getY >= center.getY - 19 && location.getY <= center.getY + 19) &&
-      (location.getZ >= center.getZ - 19 && location.getZ <= center.getZ + 19)
+    (location.getX >= center.getX - buildRange && location.getX <= center.getX + buildRange) &&
+      (location.getY >= center.getY + 2 && location.getY <= center.getY + buildRange*2) &&
+      (location.getZ >= center.getZ - buildRange && location.getZ <= center.getZ + buildRange)
   }
 }
