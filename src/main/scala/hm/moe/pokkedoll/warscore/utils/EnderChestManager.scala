@@ -31,7 +31,7 @@ object EnderChestManager {
       i.setItemMeta(m)
       i
     }): Int => ItemStack
-    (0 to 6).foreach(f => inv.setItem(f,createIcon(f)))
+    (0 to 26).foreach(f => inv.setItem(f,createIcon(f)))
     inv
   }
 

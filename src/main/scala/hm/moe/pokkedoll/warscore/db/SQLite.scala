@@ -328,8 +328,10 @@ class SQLite(plugin: WarsCore) extends Database {
         // 存在しないなら新たにデータを追加する
         rs.close()
         ps.close()
-        val ps2 = c.createStatement()
-        ps2.executeUpdate(s"INSERT INTO `tag` VALUES($uuid, '')")
+        val ps2 = c.prepareStatement("INSERT INTO `tag` VALUES(?,?)")
+        ps2.setString(1, uuid)
+        ps2.setString(2, "")
+        ps2.executeUpdate()
         ps2.close()
         ""
       }

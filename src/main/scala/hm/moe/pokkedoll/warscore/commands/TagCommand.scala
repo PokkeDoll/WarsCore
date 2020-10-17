@@ -35,8 +35,9 @@ class TagCommand extends CommandExecutor {
                     .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, s"/tag ${f._1}"))
                     .append("\n")
                 })
+              player.sendMessage(c.create():_*)
             }
-          }
+          }.runTask(WarsCore.instance)
         } else if (args(0).equalsIgnoreCase("-reset")) {
           TagUtil.setTag(player, "")
           player.sendMessage(ChatColor.AQUA + "タグをリセットしました！")
