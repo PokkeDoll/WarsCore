@@ -51,15 +51,24 @@ object TagUtil {
     config.save(configFile)
   }
 
+  def hasTag(player: Player, tagId: String): Boolean = {
+    plugin.database.getTags(uuid = player.getUniqueId.toString).contains(tagId) && cache.contains(tagId)
+  }
+
   def setTag(player: Player, tagId: String): Unit = {
     // タグ情報をデータベース側に送るのはプレイヤーがログアウトしたときかセーブしたときのみ！
-    val tag = cache.getOrElse(tagId, "Not Found")
+    val tag = cache.getOrElse(tagId, "-")
+    plugin.database.setTag(player.getUniqueId.toString, tagId)
     val board = WarsCoreAPI.scoreboards(player)
     val obj = board.getObjective("tag")
     obj.setDisplayName(s"$tag §f0")
     WarsCoreAPI.scoreboards.values
       .map(_.getObjective("tag"))
       .foreach(_.getScore(player.getName).setScore(0))
+  }
+
+  def addTag(player: Player, tagId: String): Unit = {
+
   }
 
   /**

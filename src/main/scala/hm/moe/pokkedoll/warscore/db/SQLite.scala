@@ -285,6 +285,11 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
+  /**
+   * 所持しているタグを獲得する テーブル tagContainerより
+   * @param uuid
+   * @return
+   */
   def getTags(uuid: String): IndexedSeq[String] = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("SELECT `tagId` FROM `tagContainer` WHERE `uuid`=?")
@@ -306,6 +311,11 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
+  /**
+   * 現在設定しているタグを獲得する テーブル tagより
+   * @param uuid
+   * @return
+   */
   def getTag(uuid: String): String = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("SELECT `tagId` FROM `tag` WHERE `uuid`=?")
@@ -315,12 +325,64 @@ class SQLite(plugin: WarsCore) extends Database {
       if(rs.next()) {
         rs.getString("tagId")
       } else {
+        // 存在しないなら新たにデータを追加する
+        rs.close()
+        ps.close()
+        val ps2 = c.createStatement()
+        ps2.executeUpdate(s"INSERT INTO `tag` VALUES($uuid, '')")
+        ps2.close()
         ""
       }
     } catch {
       case e: SQLException =>
         e.printStackTrace()
         "ERROR!"
+    } finally {
+      if(!ps.isClosed) ps.close()
+      c.close()
+    }
+  }
+
+
+
+  /**
+   * タグをセットする
+   *
+   * @param uuid
+   * @param id
+   */
+  override def setTag(uuid: String, id: String): Unit = {
+    val c = hikari.getConnection
+    val ps = c.prepareStatement("UPDATE `tag` SET `tagId`=? WHERE `uuid`=?")
+    try {
+      ps.setString(1, id)
+      ps.setString(2, uuid)
+      ps.executeUpdate()
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      ps.close()
+      c.close()
+    }
+  }
+
+  /**
+   * タグコンテナにタグを追加する
+   *
+   * @param uuid
+   * @param id
+   */
+  override def addTag(uuid: String, id: String): Unit = {
+    val c = hikari.getConnection
+    val ps = c.prepareStatement("INSERT INTO `tagContainer` VALUES(?,?)")
+    try {
+      ps.setString(1, uuid)
+      ps.setString(2, id)
+      ps.executeUpdate()
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
     } finally {
       ps.close()
       c.close()

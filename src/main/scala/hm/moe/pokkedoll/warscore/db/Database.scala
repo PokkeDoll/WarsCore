@@ -100,9 +100,33 @@ trait Database {
     }.runTaskAsynchronously(WarsCore.instance)
   }
 
+  /**
+   * 現在設定しているタグを獲得する テーブル tagより
+   * @param uuid
+   * @return
+   */
   def getTag(uuid: String): String
 
+  /**
+   * 所持しているタグを獲得する テーブル tagContainerより
+   * @param uuid
+   * @return
+   */
   def getTags(uuid: String): IndexedSeq[String]
+
+  /**
+   * タグをセットする
+   * @param uuid
+   * @param id
+   */
+  def setTag(uuid: String, id: String)
+
+  /**
+   * タグコンテナにタグを追加する
+   * @param uuid
+   * @param id
+   */
+  def addTag(uuid: String, id: String)
 
   def close(): Unit
 }

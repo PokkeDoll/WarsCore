@@ -23,7 +23,7 @@ object EnderChestManager {
   private val cache = mutable.HashMap.empty[String, Array[Byte]]
 
   val ENDER_CHEST_MENU: Inventory = {
-    val inv = Bukkit.createInventory(null, 9, ChatColor.LIGHT_PURPLE + "EnderChest Menu")
+    val inv = Bukkit.createInventory(null, 27, ChatColor.LIGHT_PURPLE + "EnderChest Menu")
     lazy val createIcon = (slot => {
       val i = new ItemStack(Material.ENDER_CHEST, slot + 1)
       val m = i.getItemMeta
@@ -31,7 +31,7 @@ object EnderChestManager {
       i.setItemMeta(m)
       i
     }): Int => ItemStack
-    (0 to 8).foreach(f => inv.setItem(f,createIcon(f)))
+    (0 to 6).foreach(f => inv.setItem(f,createIcon(f)))
     inv
   }
 
@@ -67,7 +67,7 @@ object EnderChestManager {
                 player.sendMessage(ChatColor.RED + s"エラーが発生しました。管理者に報告してください (${e.getMessage})")
             }
           case None =>
-            player.sendMessage(ChatColor.RED + "データは空です！")
+            player.sendMessage(ChatColor.RED + "データを作成しています...")
         }
       }
     }.runTaskAsynchronously(WarsCore.instance)
