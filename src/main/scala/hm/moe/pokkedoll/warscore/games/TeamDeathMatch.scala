@@ -62,9 +62,12 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   var redTeam: Team = scoreboard.registerNewTeam(s"$id-red")
   redTeam.setColor(ChatColor.RED)
+  redTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM)
+
 
   val blueTeam: Team = scoreboard.registerNewTeam(s"$id-blue")
   blueTeam.setColor(ChatColor.BLUE)
+  blueTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM)
 
   WarsCoreAPI.setBaseTeam(redTeam);
   WarsCoreAPI.setBaseTeam(blueTeam)
@@ -167,10 +170,10 @@ class TeamDeathMatch(override val id: String) extends Game {
     center = "none"
     centerCount = 50
 
-    sidebar.getScore(ChatColor.RED + "赤チーム キル数(仮):").setScore(0)
-    sidebar.getScore(ChatColor.RED + "赤チーム 占領率(仮):").setScore(0)
-    sidebar.getScore(ChatColor.BLUE + "青チーム キル数(仮):").setScore(0)
-    sidebar.getScore(ChatColor.BLUE + "青チーム 占領率(仮):").setScore(0)
+    sidebar.getScore(ChatColor.RED + "赤チーム キル数:").setScore(0)
+    sidebar.getScore(ChatColor.RED + "赤チーム 占領率:").setScore(0)
+    sidebar.getScore(ChatColor.BLUE + "青チーム キル数:").setScore(0)
+    sidebar.getScore(ChatColor.BLUE + "青チーム 占領率:").setScore(0)
 
     setLocationData()
 
@@ -267,16 +270,22 @@ class TeamDeathMatch(override val id: String) extends Game {
               members.map(_.player).foreach(_.sendActionBar(ChatColor.translateAlternateColorCodes('&',
                 // 赤が優勢
                 if (centerCount > 50) {
-                  s"&c赤チームが中央を占拠しています... &l${((centerCount - 50) * div) * 100.0}%"
+                  val score = ((centerCount - 50) * div) * 100.0
+                  sidebar.getScore(ChatColor.RED + "赤チーム 占領率:").setScore(score.toInt)
+                  s"&c赤チームが中央を占拠しています... &l$score%"
+
                 } else if (50 > centerCount) {
-                  s"&9青チームが中央を占拠しています... &l${((50 - centerCount) * div) * 100}%"
+                  val score = ((50 - centerCount) * div) * 100
+                  sidebar.getScore(ChatColor.BLUE + "青チーム 占領率:").setScore(score.toInt)
+                  s"&9青チームが中央を占拠しています... &l$score%"
                 } else ""
               )))
             })
           }
           time -= 1
+          val splitTime = WarsCoreAPI.splitToComponentTimes(time)
           bossbar.setProgress(time * 0.0016)
-          bossbar.setTitle(s"(TDM) ${mapInfo.mapName} §7|| §a$time")
+          bossbar.setTitle(s"(TDM) ${mapInfo.mapName} §7|| §a${splitTime._2} 分 ${splitTime._3} 秒")
         }
       }
     }.runTaskTimer(WarsCore.instance, 0, 20L)
@@ -384,6 +393,7 @@ class TeamDeathMatch(override val id: String) extends Game {
           // 赤チーム用のメッセージ
           if (redTeam.hasEntry(attacker.getName)) {
             redPoint += 1
+            sidebar.getScore(ChatColor.RED + "赤チーム キル数:").setScore(redPoint)
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §c${attacker.getName} §f[${name}§f] §7-> §0Killed §7-> §9${victim.getName}")
@@ -393,9 +403,10 @@ class TeamDeathMatch(override val id: String) extends Game {
           // 青チーム用のメッセージ
           } else {
             bluePoint += 1
+            sidebar.getScore(ChatColor.BLUE + "青チーム キル数:").setScore(bluePoint)
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
-                sendMessage(s"§f0X §9${attacker.getName} §f[${name}§f] §7-> §0Killed §7-> §c${victim.getName}")
+                sendMessage(s"§f0X §9${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §c${victim.getName}")
               case None =>
                 sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
             }

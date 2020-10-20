@@ -87,6 +87,8 @@ trait Database {
    */
   def getRankData(uuid: String): Option[(Int, Int)]
 
+  def setRankData(uuid: String, data: (Int, Int))
+
   /**
    * TDMの戦績を更新する
    * @param game

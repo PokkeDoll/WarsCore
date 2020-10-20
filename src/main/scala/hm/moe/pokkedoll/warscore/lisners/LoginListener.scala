@@ -23,8 +23,10 @@ class LoginListener(plugin: WarsCore) extends Listener {
     player.sendMessage("§9クライアントのバージョンを取得しています...")
     new BukkitRunnable {
       override def run(): Unit = {
-        if(player.getWorld.getName!="p-lobby") {
-          player.teleport(Bukkit.getWorlds.get(0).getSpawnLocation)
+        if(!player.hasPlayedBefore) {
+          player.teleport(WarsCoreAPI.FIRST_SPAWN)
+        } else if(player.getWorld.getName!="p-lobby") {
+          player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
         }
         val out = ByteStreams.newDataOutput
         out.writeUTF("PlayerVersion")

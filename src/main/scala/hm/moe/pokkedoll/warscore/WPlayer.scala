@@ -13,6 +13,9 @@ class WPlayer(val player: Player) {
 
   var changeInventory = true
 
+  /**
+   * 現在のランクのキャッシュ
+   */
   var rank = 0
 
   var tag = ""

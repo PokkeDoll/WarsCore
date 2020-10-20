@@ -261,6 +261,23 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
+  override def setRankData(uuid: String, data: (Int, Int)): Unit = {
+    val c = hikari.getConnection()
+    val ps = c.prepareStatement("UPDATE rank SET id=?, exp=? WHERE uuid=?")
+    try {
+      ps.setInt(1, data._1)
+      ps.setInt(2, data._2)
+      ps.setString(3, uuid)
+      ps.executeUpdate()
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      ps.close()
+      c.close()
+    }
+  }
+
   override def updateTDM(game: TeamDeathMatch): Boolean = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("UPDATE tdm SET kill=kill+?, death=death+?, assist=assist+?, damage=damage+?, win=win+?, play=play+1 WHERE uuid=?")

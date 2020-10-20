@@ -29,7 +29,9 @@ object WarsCoreAPI {
 
   lazy val random = new Random()
 
-  protected[warscore] var DEFAULT_SPAWN: Location = _
+  protected [warscore] var DEFAULT_SPAWN: Location = _
+
+  protected [warscore] var FIRST_SPAWN: Location = _
 
   /** ゲーム情報 */
   val games = mutable.HashMap.empty[String, Game]
@@ -139,7 +141,7 @@ object WarsCoreAPI {
   def reloadGame(cs: ConfigurationSection): Unit = {
     games.clear()
 
-    (1 to 9) foreach (id => {
+    (1 to 8) foreach (id => {
       games.put(s"tdm-test-$id", new TeamDeathMatch(s"tdm-test-$id"))
       if(Bukkit.getWorld(s"tdm-test-$id") != null) WorldLoader.syncUnloadWorld(s"tdm-test-$id")
     })
@@ -186,6 +188,8 @@ object WarsCoreAPI {
   def openGameInventory(player: Player): Unit = {
     val inv = Bukkit.createInventory(null, 18, GAME_INVENTORY_TITLE)
     var slot = (0, 9, 18)
+    inv.setItem(0, new ItemStack(Material.BOW))
+    inv.setItem(9, new ItemStack(Material.IRON_SWORD))
     games.foreach(f => {
       val weight = if(f._1.startsWith("tdm")) {
         slot = (slot._1 + 1, slot._2, slot._3)
@@ -197,7 +201,7 @@ object WarsCoreAPI {
       val icon = ((damage => new ItemStack(Material.INK_SACK, f._2.members.size + 1, damage)): Short => ItemStack)(if(f._2.state.join) 10 else 8)
       val meta = icon.getItemMeta
       meta.setDisplayName((if(f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._1}")
-      meta.setLore(java.util.Arrays.asList(s"§f${f._2.title}", s"§e${f._2.description}", s"§a${f._2.members.size} §7/ §a${f._2.maxMember} プレイ中", s"§a${f._2.state.title}", "//TODO ほかにも追加"))
+      meta.setLore(java.util.Arrays.asList(s"§f${f._2.title}", s"§e${f._2.description}", s"§a${f._2.members.size} §7/ §a${f._2.maxMember} プレイ中", s"§a${f._2.state.title}"))
       icon.setItemMeta(meta)
       inv.setItem(weight, icon)
     })
@@ -420,4 +424,25 @@ object WarsCoreAPI {
       .create()
 
 
+  def splitToComponentTimes(biggy: BigDecimal): (Int, Int, Int) = {
+    val long = biggy.longValue
+    val hours = (long/3600).toInt
+    var remainder = (long - hours * 3600).toInt
+    val mins = remainder / 60
+    remainder = remainder - mins * 60
+    val secs = remainder
+    (hours, mins, secs)
+  }
+
+  def getLocation(string: String): Option[Location] = {
+    val arr = string.split(",")
+    try {
+      val location = new Location(Bukkit.getWorld(arr(0)), arr(1).toDouble, arr(2).toDouble, arr(3).toDouble, arr(4).toFloat, arr(5).toFloat)
+      Some(location)
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        None
+    }
+  }
 }

@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.commands
 
-import hm.moe.pokkedoll.warscore.WarsCore
-import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MerchantUtil}
+import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MerchantUtil, RankManager}
 import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
@@ -40,6 +40,10 @@ class WarsCoreCommand extends CommandExecutor {
               WarsCore.instance.reloadConfig()
               player.sendMessage(ChatColor.BLUE + "リロードしました。")
               MerchantUtil.merchantCache.clear()
+            }
+          } else if (args(0) == "exp") {
+            if(args.length > 1) {
+              RankManager.giveExp(WarsCoreAPI.getWPlayer(player), args(1).toInt)
             }
           }
         }
