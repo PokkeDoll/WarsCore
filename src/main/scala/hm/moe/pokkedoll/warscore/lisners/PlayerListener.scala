@@ -11,9 +11,10 @@ import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType, PrepareAnvilEvent}
-import org.bukkit.event.player.{PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent}
+import org.bukkit.event.player.{PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent, PlayerToggleSprintEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
+import org.bukkit.scheduler.BukkitRunnable
 
 class PlayerListener(plugin: WarsCore) extends Listener {
 
@@ -189,6 +190,41 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         }
       }
       e.getInventory.setRepairCost(40)
+    }
+  }
+
+  def onSprint(e: PlayerToggleSprintEvent): Unit = {
+    val player = e.getPlayer
+    if(player.getWorld.getName != "lobby" && player.getGameMode == GameMode.SURVIVAL) {
+      new BukkitRunnable {
+        override def run(): Unit = {
+          if(e.isSprinting) {
+            new BukkitRunnable {
+              override def run(): Unit = {
+                if(4 >=player.getFoodLevel) {
+                  cancel()
+                } else {
+                  player.setFoodLevel(player.getFoodLevel - 1)
+                  if(!player.isSprinting || player.getFoodLevel == 4) cancel()
+                }
+              }
+            }.runTaskTimer(plugin, 0L, 1L)
+          } else {
+            new BukkitRunnable {
+              override def run(): Unit = {
+                if(!player.isSprinting) {
+                  new BukkitRunnable {
+                    override def run(): Unit = {
+                      player.setFoodLevel(player.getFoodLevel + 1)
+                      if(player.isSprinting || player.getFoodLevel == 20) cancel()
+                    }
+                  }.runTaskTimer(plugin, 0, 1L)
+                }
+              }
+            }.runTaskLater(plugin, 30L)
+          }
+        }
+      }.runTaskLater(plugin, 1L)
     }
   }
 }

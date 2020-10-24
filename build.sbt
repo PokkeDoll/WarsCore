@@ -1,8 +1,10 @@
 name := "WarsCore"
 
-version := "0.34"
+version := "0.36"
 
 scalaVersion := "2.13.3"
+
+javacOptions ++= Seq("-source", "11", "-target", "11")
 
 resolvers += "papermc" at "https://papermc.io/repo/repository/maven-public/"
 resolvers += "jitpack.io" at "https://jitpack.io"

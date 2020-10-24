@@ -1,9 +1,13 @@
 package hm.moe.pokkedoll.warscore.games
 
 import java.util
+import java.util.UUID
 
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, WorldLoader}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
+import io.chazza.advancementapi.{AdvancementAPI, FrameType, Trigger}
+import io.chazza.advancementapi.AdvancementAPI.AdvancementAPIBuilder
+import io.chazza.advancementapi.Trigger.{TriggerBuilder, TriggerType}
 import org.bukkit
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{EntityType, Firework, Player}
@@ -13,7 +17,7 @@ import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.potion.{PotionEffect, PotionEffectType}
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Team}
-import org.bukkit.{Bukkit, ChatColor, Color, FireworkEffect, GameMode, Location, Material, Sound, World, scheduler}
+import org.bukkit.{Bukkit, ChatColor, Color, FireworkEffect, GameMode, Location, Material, NamespacedKey, Sound, World, scheduler}
 
 import scala.collection.mutable
 
@@ -220,6 +224,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
 
   override def play(): Unit = {
+    WarsCoreAPI.noticeStartGame(this)
     state = GameState.PLAY
     world.setPVP(true)
     // チーム決め + 移動

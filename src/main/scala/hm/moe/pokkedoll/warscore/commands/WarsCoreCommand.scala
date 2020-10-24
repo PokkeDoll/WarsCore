@@ -1,8 +1,12 @@
 package hm.moe.pokkedoll.warscore.commands
 
+import java.util.UUID
+
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MerchantUtil, RankManager}
-import org.bukkit.ChatColor
+import io.chazza.advancementapi.Trigger.{TriggerBuilder, TriggerType}
+import io.chazza.advancementapi.{AdvancementAPI, FrameType, Trigger}
+import org.bukkit.{Bukkit, ChatColor, NamespacedKey}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
 
@@ -45,6 +49,20 @@ class WarsCoreCommand extends CommandExecutor {
             if(args.length > 1) {
               RankManager.giveExp(WarsCoreAPI.getWPlayer(player), args(1).toInt)
             }
+          } else if (args(0) == "a" ) {
+            val advancement = AdvancementAPI.builder(new NamespacedKey(WarsCore.instance, "story/" + UUID.randomUUID().toString))
+              .frame(FrameType.TASK)
+              //.trigger(Trigger.builder(TriggerType.IMPOSSIBLE, "default"))
+              .icon("minecraft:bow")
+              .title("てすとTDM-なんとかで試合が始まりました！ /game tdm-あ とかで参加？ましょう")
+              .description("description")
+              .background("minecraft:textures/blocks/bedrock.png")
+              .announce(false)
+              .toast(true)
+              .build()
+            import collection.JavaConverters._
+            advancement.show(WarsCore.instance, Bukkit.getOnlinePlayers.asScala.toSeq:_*)
+            //advancement.grant(Bukkit.getOnlinePlayers.asScala.toSeq:_*)
           }
         }
     }
