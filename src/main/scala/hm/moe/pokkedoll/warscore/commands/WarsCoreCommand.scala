@@ -2,6 +2,7 @@ package hm.moe.pokkedoll.warscore.commands
 
 import java.util.UUID
 
+import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MerchantUtil, RankManager}
 import io.chazza.advancementapi.Trigger.{TriggerBuilder, TriggerType}
@@ -63,6 +64,14 @@ class WarsCoreCommand extends CommandExecutor {
             import collection.JavaConverters._
             advancement.show(WarsCore.instance, Bukkit.getOnlinePlayers.asScala.toSeq:_*)
             //advancement.grant(Bukkit.getOnlinePlayers.asScala.toSeq:_*)
+          } else if (args(0) == "vp") {
+            val out = ByteStreams.newDataOutput
+            out.writeUTF("TakeVotePoint")
+            player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
+          } else if (args(0) == "rs") {
+            val out = ByteStreams.newDataOutput
+            out.writeUTF("ResourcePack")
+            player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
           }
         }
     }

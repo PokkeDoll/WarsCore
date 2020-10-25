@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.cspp.CrackShotPP
+import hm.moe.pokkedoll.warscore.WarsCore.LEGACY_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, TagCommand, UpgradeCommand, WarsCoreCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
@@ -20,9 +21,9 @@ class WarsCore extends JavaPlugin {
     WarsCore.instance = this
 
     // BungeeCordから受信するのに必要
-    getServer.getMessenger.registerIncomingPluginChannel(this, "pokkedoll:torus", new MessageListener(this))
+    getServer.getMessenger.registerIncomingPluginChannel(this, LEGACY_TORUS_CHANNEL, new MessageListener(this))
     // BungeeCordに送信するのに必要
-    getServer.getMessenger.registerOutgoingPluginChannel(this, "pokkedoll:torus")
+    getServer.getMessenger.registerOutgoingPluginChannel(this, LEGACY_TORUS_CHANNEL)
 
     database = new SQLite(this)
 
@@ -65,12 +66,14 @@ class WarsCore extends JavaPlugin {
   override def onDisable(): Unit = {
     lazy val board = Bukkit.getScoreboardManager.getMainScoreboard
     WarsCoreAPI.scoreboards.keys.foreach(_.setScoreboard(board))
-    getServer.getMessenger.unregisterIncomingPluginChannel(this, "pokkedoll:torus")
-    getServer.getMessenger.unregisterOutgoingPluginChannel(this, "pokkedoll:torus")
+    getServer.getMessenger.unregisterIncomingPluginChannel(this, LEGACY_TORUS_CHANNEL)
+    getServer.getMessenger.unregisterOutgoingPluginChannel(this, LEGACY_TORUS_CHANNEL)
     database.close()
   }
 }
 
 object WarsCore {
   protected [warscore] var instance: WarsCore = _
+
+  val LEGACY_TORUS_CHANNEL = "Torus"
 }

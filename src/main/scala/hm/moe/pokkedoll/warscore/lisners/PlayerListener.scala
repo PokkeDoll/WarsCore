@@ -193,6 +193,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     }
   }
 
+  @EventHandler
   def onSprint(e: PlayerToggleSprintEvent): Unit = {
     val player = e.getPlayer
     if(player.getWorld.getName != "lobby" && player.getGameMode == GameMode.SURVIVAL) {
@@ -201,24 +202,26 @@ class PlayerListener(plugin: WarsCore) extends Listener {
           if(e.isSprinting) {
             new BukkitRunnable {
               override def run(): Unit = {
-                if(4 >=player.getFoodLevel) {
+                if(8 >=player.getFoodLevel || !player.isSprinting) {
                   cancel()
                 } else {
                   player.setFoodLevel(player.getFoodLevel - 1)
-                  if(!player.isSprinting || player.getFoodLevel == 4) cancel()
                 }
               }
-            }.runTaskTimer(plugin, 0L, 1L)
+            }.runTaskTimer(plugin, 0L, 20L)
           } else {
             new BukkitRunnable {
               override def run(): Unit = {
                 if(!player.isSprinting) {
                   new BukkitRunnable {
                     override def run(): Unit = {
-                      player.setFoodLevel(player.getFoodLevel + 1)
-                      if(player.isSprinting || player.getFoodLevel == 20) cancel()
+                      if(player.isSprinting || player.getFoodLevel == 20) {
+                        cancel()
+                      } else {
+                        player.setFoodLevel(player.getFoodLevel + 1)
+                      }
                     }
-                  }.runTaskTimer(plugin, 0, 1L)
+                  }.runTaskTimer(plugin, 0, 20L)
                 }
               }
             }.runTaskLater(plugin, 30L)

@@ -11,9 +11,10 @@ import org.bukkit.plugin.messaging.PluginMessageListener
  * @param plugin
  */
 class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
+
   override def onPluginMessageReceived(channel: String, player: Player, message: Array[Byte]): Unit = {
-    plugin.getLogger.info(s"event received!! + $channel")
-    if(!channel.equalsIgnoreCase("pokkedoll:torus")) return;
+    plugin.getLogger.info(s"event received!! + $channel + ${player.getName}")
+    if(!channel.equalsIgnoreCase(WarsCore.LEGACY_TORUS_CHANNEL)) return
     val in = ByteStreams.newDataInput(message)
     val subChannel = in.readUTF()
     if(subChannel == "PlayerVersion") {
@@ -34,6 +35,8 @@ class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
             )
         }
       }
+    } else if (subChannel == "TakeVotePoint") {
+      player.sendMessage(s"AAAAAAAAAAAAAAAA! ${in.readBoolean()}")
     }
   }
 

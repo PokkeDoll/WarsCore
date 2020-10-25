@@ -448,12 +448,11 @@ object WarsCoreAPI {
 
   def noticeStartGame(game: Game): Unit = {
     val gameInfo = new ComponentBuilder(game.title + "\n").bold(true).underlined(true)
-      .append(game.description + "\n").color(ChatColor.YELLOW).italic(true)
-      .append(s"${game.members.size} / ${game.maxMember} プレイ中\n").color(ChatColor.GREEN)
-      .append(game.state.title + "\n")
-    val comp = new ComponentBuilder("アナウンス :>>> ").color(ChatColor.AQUA)
+      .append(game.description + "\n").color(ChatColor.YELLOW).italic(true).bold(false).underlined(false)
+      .append(s"${game.members.size} / ${game.maxMember} プレイ中\n").color(ChatColor.GREEN).italic(false)
+    val comp = new ComponentBuilder("[お知らせ] ").color(ChatColor.AQUA)
       .append(game.title).color(ChatColor.GREEN)
-      .append(s"の試合が始まりました！参加するには").color(ChatColor.AQUA)
+      .append(s"が始まりました！ ").color(ChatColor.AQUA)
       .append(s"/game join ${game.id}").color(ChatColor.LIGHT_PURPLE)
       .append("または、このメッセージをクリックしてください！").color(ChatColor.AQUA)
       .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, s"/game join ${game.id}"))

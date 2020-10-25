@@ -31,7 +31,7 @@ class InviteCommand extends CommandExecutor {
                 case Some(game) =>
                   target.sendMessage(
                     new ComponentBuilder("= = = = = = = = = = = = = = = = = = = = =\n")
-                      .append(s"${player.getName}").color(ChatColor.GREEN).append("から招待が届きました！").color(ChatColor.WHITE)
+                      .append(s"${player.getName}").color(ChatColor.GREEN).append("から招待が届きました！").color(ChatColor.WHITE).append("\n")
                       .append("ゲームモード: ").color(ChatColor.YELLOW).append(wp.game.get.title).color(ChatColor.GREEN).append("\n")
                       .append("参加するにはこのメッセージをクリック！！").bold(true).color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, s"/game join ${game.id}"))
                       .append("\n= = = = = = = = = = = = = = = = = = = = =").color(ChatColor.WHITE)
@@ -50,13 +50,6 @@ class InviteCommand extends CommandExecutor {
                   target.playSound(target.getLocation, Sound.ENTITY_VILLAGER_YES, 1f, 1f)
                 case None =>
                   player.sendMessage(ChatColor.RED + "ゲームに参加していないため招待できませんでした")
-              }
-              if(wp.game.isEmpty) {
-                player.sendMessage("§cゲームに参加していないため招待できませんでした")
-              } else if (tp.game.isDefined) {
-                player.sendMessage(s"§a${target.getName}§cはすでにゲーム(id: ${tp.game.get.id}に参加しています！")
-              } else {
-
               }
             case None =>
               player.sendMessage(ChatColor.RED + s"$name は存在しません！")

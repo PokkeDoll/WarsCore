@@ -199,6 +199,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
       override def run(): Unit = {
         if (members.length < 2) {
+          bossbar.setProgress(1.0)
           sendMessage("&c人数が足りないため待機状態に戻ります")
           state = GameState.WAIT
           cancel()
@@ -214,6 +215,7 @@ class TeamDeathMatch(override val id: String) extends Game {
             case e: IllegalArgumentException =>
               e.printStackTrace()
               sendMessage("エラーが発生したため待機状態に戻ります")
+              bossbar.setProgress(1.0)
               state = GameState.WAIT
               cancel()
           }

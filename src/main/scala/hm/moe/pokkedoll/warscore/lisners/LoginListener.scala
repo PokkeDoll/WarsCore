@@ -28,9 +28,11 @@ class LoginListener(plugin: WarsCore) extends Listener {
         } else if(player.getWorld.getName!="p-lobby") {
           player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
         }
+        // リソースパックの送信
         val out = ByteStreams.newDataOutput
-        out.writeUTF("PlayerVersion")
-        player.sendPluginMessage(plugin, "pokkedoll:torus", out.toByteArray)
+        out.writeUTF("ResourcePack")
+        out.writeUTF("Wars")
+        player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
 
         player.sendMessage(WarsCoreAPI.NEWS: _*)
 
