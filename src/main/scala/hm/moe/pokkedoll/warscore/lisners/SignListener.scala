@@ -1,8 +1,9 @@
 package hm.moe.pokkedoll.warscore.lisners
 
+import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.utils.EnderChestManager
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
-import org.bukkit.Sound
+import org.bukkit.{ChatColor, Sound}
 import org.bukkit.block.{EnderChest, Sign}
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
@@ -29,6 +30,16 @@ class SignListener(plugin: WarsCore) extends Listener {
                 if(game.join(e.getPlayer)) {
                 }
               case None =>
+            }
+            if(lines(0).contains("[Vote Point]")) {
+              val player = e.getPlayer
+              if(player.getInventory.firstEmpty() == -1) {
+                player.sendMessage(ChatColor.RED + "インベントリの空きが足りません！！")
+              } else {
+                val out = ByteStreams.newDataOutput
+                out.writeUTF("TakeVotePoint")
+                player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
+              }
             }
           } catch {
             case e: ArrayIndexOutOfBoundsException =>

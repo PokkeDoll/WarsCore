@@ -10,6 +10,7 @@ import io.chazza.advancementapi.{AdvancementAPI, FrameType, Trigger}
 import org.bukkit.{Bukkit, ChatColor, NamespacedKey}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
+import org.bukkit.metadata.FixedMetadataValue
 
 class WarsCoreCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
@@ -24,23 +25,7 @@ class WarsCoreCommand extends CommandExecutor {
             )
           )
         } else {
-          if (args(0) == "economy" || args(0) == "eco") {
-            println("eco")
-            if(args.length > 3 && args(1) == "get") {
-              println("get")
-              val eco = if(args(2) == "ingot") EconomyUtil.INGOT else EconomyUtil.COIN
-              println("val eco")
-              try {
-                val amount = args(3).toInt
-                println("val amount")
-                EconomyUtil.give(player, eco, amount)
-                println("EconomyUtil.give")
-              } catch {
-                case e: NumberFormatException =>
-                  e.printStackTrace()
-              }
-            }
-          } else if (args(0) == "config" || args(0) == "conf") {
+          if (args(0) == "config" || args(0) == "conf") {
             if(args.length > 1 && (args(1) == "reload")) {
               WarsCore.instance.reloadConfig()
               player.sendMessage(ChatColor.BLUE + "リロードしました。")
@@ -72,6 +57,14 @@ class WarsCoreCommand extends CommandExecutor {
             val out = ByteStreams.newDataOutput
             out.writeUTF("ResourcePack")
             player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
+          } else if (args(0) == "cmdesp") {
+            if(player.hasMetadata("cmdesp")) {
+              player.removeMetadata("cmdesp", WarsCore.instance)
+              player.sendMessage(ChatColor.BLUE + "CMDESPを無効化しました")
+            } else {
+              player.setMetadata("cmdesp", new FixedMetadataValue(WarsCore.instance, "true"))
+              player.sendMessage(ChatColor.BLUE + "CMDESPを有効化しました")
+            }
           }
         }
     }

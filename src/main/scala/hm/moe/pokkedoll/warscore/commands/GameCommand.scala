@@ -3,6 +3,7 @@ package hm.moe.pokkedoll.warscore.commands
 import java.util
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI
+import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender, TabCompleter}
 import org.bukkit.entity.Player
 
@@ -36,6 +37,14 @@ class GameCommand extends CommandExecutor with TabCompleter {
               game.join(player)
             case None =>
               player.sendMessage(s"${args(1)}は存在しません！")
+          }
+        } else if (args.length >= 2 && args(0) == "end" && player.hasPermission("pokkedoll.game.admin")) {
+          WarsCoreAPI.games.get(args(1)) match {
+            case Some(game) =>
+              game.disable = true
+              player.sendMessage(ChatColor.BLUE + s"${args(1)}を無効化しました")
+            case None =>
+              player.sendMessage(ChatColor.RED + s"${args(1)} は存在しません！")
           }
         }
       case _ =>

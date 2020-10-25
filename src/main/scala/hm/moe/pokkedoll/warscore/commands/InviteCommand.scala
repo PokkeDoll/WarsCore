@@ -37,6 +37,7 @@ class InviteCommand extends CommandExecutor {
                       .append("\n= = = = = = = = = = = = = = = = = = = = =").color(ChatColor.WHITE)
                       .create():_*
                   )
+                  player.sendMessage(ChatColor.GREEN  + target.getName + ChatColor.WHITE + "に招待を送りました")
                   val advancement = AdvancementAPI.builder(new NamespacedKey(WarsCore.instance, "story/" + UUID.randomUUID().toString))
                     .frame(FrameType.TASK)
                     .icon("minecraft:bow")

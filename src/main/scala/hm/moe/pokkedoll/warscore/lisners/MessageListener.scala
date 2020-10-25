@@ -2,7 +2,8 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.WarsCore
-import org.bukkit.Bukkit
+import hm.moe.pokkedoll.warscore.utils.ItemUtil
+import org.bukkit.{Bukkit, ChatColor, Sound}
 import org.bukkit.entity.Player
 import org.bukkit.plugin.messaging.PluginMessageListener
 
@@ -13,30 +14,20 @@ import org.bukkit.plugin.messaging.PluginMessageListener
 class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
 
   override def onPluginMessageReceived(channel: String, player: Player, message: Array[Byte]): Unit = {
-    plugin.getLogger.info(s"event received!! + $channel + ${player.getName}")
+    //plugin.getLogger.info(s"event received!! + $channel + ${player.getName}")
     if(!channel.equalsIgnoreCase(WarsCore.LEGACY_TORUS_CHANNEL)) return
     val in = ByteStreams.newDataInput(message)
     val subChannel = in.readUTF()
-    if(subChannel == "PlayerVersion") {
-      val version = in.readInt()
-      val player = Bukkit.getPlayer(in.readUTF())
-      if(player!=null) {
-        plugin.getLogger.info(s"player is ${player.getName}, version is $version")
-        versionMap.get(version) match {
-          case Some(value) =>
-            player.sendMessage(
-              s"§9バージョンを取得しました！\n" +
-              s"§a§l${value._1} §9に対応したリソースパックを送信しています"
-            )
-          case None =>
-            player.sendMessage(
-              s"§cバージョンの取得に失敗しました... 管理者に報告してください(err: $version is not mapping)\n" +
-              "§a§l1.12.2 §9に対応したリソースパックを送信しています..."
-            )
-        }
+
+    if (subChannel == "TakeVotePoint") {
+      if(in.readBoolean()) {
+        player.sendMessage(ChatColor.BLUE + "VP一つ消費しました\nポールクリスタルを一つ獲得しました")
+        ItemUtil.getItem("vote").foreach(player.getInventory.addItem(_))
+        player.playSound(player.getLocation, Sound.BLOCK_NOTE_HARP, 1f, 2f)
+      } else {
+        player.sendMessage(ChatColor.RED + "VP が足りません！")
+        player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1f ,1f)
       }
-    } else if (subChannel == "TakeVotePoint") {
-      player.sendMessage(s"AAAAAAAAAAAAAAAA! ${in.readBoolean()}")
     }
   }
 

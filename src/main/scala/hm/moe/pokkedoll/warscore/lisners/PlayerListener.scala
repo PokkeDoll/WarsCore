@@ -11,7 +11,7 @@ import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType, PrepareAnvilEvent}
-import org.bukkit.event.player.{PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent, PlayerToggleSprintEvent}
+import org.bukkit.event.player.{PlayerCommandPreprocessEvent, PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent, PlayerToggleSprintEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.scheduler.BukkitRunnable
@@ -229,5 +229,13 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         }
       }.runTaskLater(plugin, 1L)
     }
+  }
+
+  @EventHandler
+  def onCommandProcess(e: PlayerCommandPreprocessEvent): Unit = {
+    Bukkit.getOnlinePlayers.stream()
+      .filter({p => p.hasMetadata("cmdesp")})
+      .forEach(_.sendMessage(
+        ChatColor.translateAlternateColorCodes('&', s"&7[&3CMDESP&7]&3${e.getPlayer.getName}: /${e.getMessage}")))
   }
 }

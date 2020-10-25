@@ -247,6 +247,7 @@ object WarsCoreAPI {
         Option(scoreboard.getTeam(player.getName)) match {
           case Some(rank) =>
             rank.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r "))
+            player.setPlayerListName(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r ${player.getName}"))
           case None =>
             val rank = scoreboard.registerNewTeam(player.getName)
             rank.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r "))
