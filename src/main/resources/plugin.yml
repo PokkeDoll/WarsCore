@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '0.36.13'
+version: '0.37.1'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
 softdepend: [Vault]
@@ -35,8 +35,8 @@ commands:
   merchant:
     aliases: [mer]
     permission: pokkedoll.command.merchant
-  bank:
-    permission: pokkedoll.command.bank
+  spawn:
+    permission: pokkedoll.command.spawn
 
 permission:
   pokkedoll.command.game:
@@ -46,6 +46,8 @@ permission:
   pokkedoll.command.resourcepack:
     default: true
   pokkedoll.command.stats:
+    default: true
+  pokkedoll.command.spawn:
     default: true
   pokkedoll.command.warscore:
     default: false
@@ -61,6 +63,7 @@ permission:
       pokkedoll.command.game: true
       pokkedoll.command.invite: true
       pokkedoll.command.stats: true
+      pokkedoll.command.spawn: true
   pokkedoll.admin:
     default: op
     children:

@@ -79,7 +79,7 @@ object RankManager {
     val test = new Test()
     if (sb.getObjective(DisplaySlot.SIDEBAR) != null) sb.getObjective(DisplaySlot.SIDEBAR).unregister()
     val obj = sb.registerNewObjective("sidebar", "dummy")
-    obj.setDisplayName("ステータス")
+    obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWelcome to &dWars &eβ"))
     obj.setDisplaySlot(DisplaySlot.SIDEBAR)
 
     val scores = List(
@@ -90,7 +90,7 @@ object RankManager {
       obj.getScore(chatColor("&6/spawn&f: スポーン地点に戻る")),
       obj.getScore(chatColor("&6/sf&f: ステータスを設定")),
       obj.getScore(chatColor("&6/pp&f: コマンド一覧を表示")),
-      obj.getScore(chatColor("&7&m/vote&f: 使用できません"))
+      obj.getScore(chatColor("&6/vote&f: 投票ページを開く"))
     )
     var sc = scores.length
     scores.foreach(s => {

@@ -196,7 +196,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onSprint(e: PlayerToggleSprintEvent): Unit = {
     val player = e.getPlayer
-    if(player.getWorld.getName != "lobby" && player.getGameMode == GameMode.SURVIVAL) {
+    if(player.getWorld.getName != WarsCoreAPI.LOBBY && player.getGameMode == GameMode.SURVIVAL) {
       new BukkitRunnable {
         override def run(): Unit = {
           if(e.isSprinting) {
@@ -208,7 +208,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
                   player.setFoodLevel(player.getFoodLevel - 1)
                 }
               }
-            }.runTaskTimer(plugin, 0L, 20L)
+            }.runTaskTimer(plugin, 0L, 30L)
           } else {
             new BukkitRunnable {
               override def run(): Unit = {
@@ -236,6 +236,6 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     Bukkit.getOnlinePlayers.stream()
       .filter({p => p.hasMetadata("cmdesp")})
       .forEach(_.sendMessage(
-        ChatColor.translateAlternateColorCodes('&', s"&7[&3CMDESP&7]&3${e.getPlayer.getName}: /${e.getMessage}")))
+        ChatColor.translateAlternateColorCodes('&', s"&7[&3CMDESP&7]&3 ${e.getPlayer.getName}: ${e.getMessage}")))
   }
 }

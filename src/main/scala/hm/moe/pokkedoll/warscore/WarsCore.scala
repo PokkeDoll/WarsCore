@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.cspp.CrackShotPP
 import hm.moe.pokkedoll.warscore.WarsCore.LEGACY_TORUS_CHANNEL
-import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, TagCommand, UpgradeCommand, WarsCoreCommand}
+import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, SpawnCommand, TagCommand, UpgradeCommand, WarsCoreCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
@@ -43,6 +43,7 @@ class WarsCore extends JavaPlugin {
     getCommand("upgrade").setExecutor(new UpgradeCommand)
     getCommand("merchant").setExecutor(new MerchantCommand)
     getCommand("tag").setExecutor(new TagCommand)
+    getCommand("spawn").setExecutor(new SpawnCommand)
     saveDefaultConfig()
     WarsCoreAPI.DEFAULT_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.default", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
     WarsCoreAPI.FIRST_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.first", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)

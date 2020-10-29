@@ -23,6 +23,8 @@ object WarsCoreAPI {
   // 内部バージョン. 特に意味はない
   val VERSION = 1
 
+  val LOBBY = "p-lobby"
+
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
   lazy val scoreboard: Scoreboard = scoreboardManager.getNewScoreboard
