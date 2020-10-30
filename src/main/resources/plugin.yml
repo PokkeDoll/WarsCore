@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '0.37.1'
+version: '0.37.6'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
 softdepend: [Vault]
@@ -38,7 +38,7 @@ commands:
   spawn:
     permission: pokkedoll.command.spawn
 
-permission:
+permissions:
   pokkedoll.command.game:
     default: true
   pokkedoll.command.invite:

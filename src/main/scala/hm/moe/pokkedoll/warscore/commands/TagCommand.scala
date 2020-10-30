@@ -23,7 +23,7 @@ class TagCommand extends CommandExecutor {
         if(args.length == 0) {
           new BukkitRunnable {
             override def run(): Unit = {
-              val c = new ComponentBuilder("§a== 所持しているタグ一覧 §bクリックして変更！ §a==\n")
+              val c = new ComponentBuilder("§a: = = 所持しているタグ一覧 §bクリックして変更！ §a= = :\n")
               c.append("-> ").color(ChatColor.WHITE)
                 .append("リセットする\n").color(ChatColor.RED)
                 .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tag -reset"))

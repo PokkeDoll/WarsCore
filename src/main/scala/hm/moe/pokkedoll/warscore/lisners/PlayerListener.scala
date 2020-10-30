@@ -85,8 +85,10 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       }
     // エンダーチェストインベントリ
     } else if (e.getView.getTitle == EnderChestManager.ENDER_CHEST_MENU.getTitle) {
-      if (e.getCurrentItem != null) {
-        EnderChestManager.openEnderChest(p, e.getCurrentItem.getAmount)
+      val item = e.getCurrentItem
+      if (item != null) {
+        //EnderChestManager.openEnderChest(p, e.getCurrentItem.getAmount)
+        EnderChestManager.openEnderChest(p, EnderChestManager.parseChestId(item.getItemMeta.getDisplayName))
       }
     } else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
@@ -124,7 +126,8 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       if(item != null) {
         if(item.getType == Material.NAME_TAG) {
           e.setCancelled(true)
-          val t = TagUtil.getTagIdFromItemStack(item)
+          //val t = TagUtil.getTagIdFromItemStack(item)
+          val t = TagUtil.getTagKeyFromItemStack(item)
           e.getPlayer.sendMessage(s"$t を獲得しました！(大嘘)")
         // ぽっけコインを所持している
         } else if (EconomyUtil.COIN.isSimilar(item)) {

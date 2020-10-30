@@ -4,13 +4,17 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import net.md_5.bungee.api
+import org.bukkit
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.{Bukkit, ChatColor, Material, Sound}
 import org.bukkit.entity.{HumanEntity, Player}
+import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.inventory.{Inventory, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
 
 import scala.collection.mutable
+import scala.util.{Success, Try}
 
 /**
  * エンダーチェストを管理する
@@ -20,18 +24,43 @@ object EnderChestManager {
 
   private lazy val db = WarsCore.instance.database
 
-  private val cache = mutable.HashMap.empty[String, Array[Byte]]
+  def parseChestId(name: String): Int = {
+    """[0-9]*$""".r.findFirstMatchIn(ChatColor.stripColor(name)) match {
+      case Some(result) =>
+        Try(result.toString().toInt).getOrElse(0)
+      case None => 0
+    }
+  }
+
+  private val PRESENT: ItemStack = {
+    val i = new ItemStack(Material.SKULL_ITEM, 1, 3)
+    val m = i.getItemMeta.asInstanceOf[SkullMeta]
+    m.setDisplayName(ChatColor.LIGHT_PURPLE + "プレゼントボックスを開く" + ChatColor.GRAY + ": " + ChatColor.LIGHT_PURPLE + "0")
+    m.setOwner("MHF_Present2")
+    i.setItemMeta(m)
+    i
+  }
+
+  private val NONE: ItemStack = {
+    val i = new ItemStack(Material.STAINED_GLASS_PANE, 1, 14)
+    val m = i.getItemMeta
+    m.setDisplayName(" ")
+    i.setItemMeta(m)
+    i
+  }
 
   val ENDER_CHEST_MENU: Inventory = {
-    val inv = Bukkit.createInventory(null, 27, ChatColor.LIGHT_PURPLE + "EnderChest Menu")
+    val inv = Bukkit.createInventory(null, 36, ChatColor.LIGHT_PURPLE + "EnderChest Menu")
     lazy val createIcon = (slot => {
       val i = new ItemStack(Material.ENDER_CHEST, slot + 1)
       val m = i.getItemMeta
       m.setDisplayName(ChatColor.YELLOW + "Ender Chest" + ChatColor.GRAY + ": " + ChatColor.LIGHT_PURPLE + (slot + 1))
+      m.setLore(java.util.Arrays.asList(ChatColor.GRAY + "エンダーチェストを開きます"))
       i.setItemMeta(m)
       i
     }): Int => ItemStack
     (0 to 26).foreach(f => inv.setItem(f,createIcon(f)))
+    (27 to 35).foreach(f => inv.setItem(f, if(f == 27) PRESENT else NONE))
     inv
   }
 

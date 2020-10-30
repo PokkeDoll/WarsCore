@@ -18,6 +18,9 @@ object TagUtil {
   var configFile: File = _
   var config: FileConfiguration = _
 
+  /**
+   * コンフィグから取得される、有効なタグのキャッシュ
+   */
   var cache: Map[String, String] = _
 
   def reloadConfig(): Unit = {
@@ -51,10 +54,24 @@ object TagUtil {
     config.save(configFile)
   }
 
+  /**
+   * データベースのタグコンテナとタグキャッシュに含まれているか確かめる
+   *
+   * @param player
+   * @param tagId
+   * @return
+   */
   def hasTag(player: Player, tagId: String): Boolean = {
     plugin.database.getTags(uuid = player.getUniqueId.toString).contains(tagId) && cache.contains(tagId)
   }
 
+
+  /**
+   * タグをセットする
+   *
+   * @param player
+   * @param tagId
+   */
   def setTag(player: Player, tagId: String): Unit = {
     // タグ情報をデータベース側に送るのはプレイヤーがログアウトしたときかセーブしたときのみ！
     val tag = cache.getOrElse(tagId, "-")
@@ -67,16 +84,25 @@ object TagUtil {
       .foreach(_.getScore(player.getName).setScore(0))
   }
 
+
+  /**
+   * タグを追加する(= 新たに獲得)
+   *
+   * @param player
+   * @param tagId
+   */
   def addTag(player: Player, tagId: String): Unit = {
 
   }
 
   /**
-   * アンセーフコード。愚直なコード
+   * アイテムスタックのタグ表示名からタグキーを取得する。<br>
+   * 愚直で非安全
    *
    * @param item
    * @return
    */
+  @Deprecated
   def getTagIdFromItemStack(item: ItemStack): String =
     Try(
       cache.filter(f => f._2 == ((opt => if (opt.isEmpty) "" else opt.get().replaceAll(ChatColor.WHITE + "タグ名: ", "")): Optional[String] => String)
@@ -87,4 +113,20 @@ object TagUtil {
         e.printStackTrace()
         ""
     }
+
+  /**
+   * アイテムスタックのタグ表示名からタグキーを取得する。<br>
+   * 少し頭がいい
+   *
+   * @param item
+   * @return
+   */
+  def getTagKeyFromItemStack(item: ItemStack): String = {
+    if (!item.hasItemMeta || !item.getItemMeta.hasLore) return ""
+    """タグ名:.*;""".r.findFirstMatchIn(String.join(";", item.getItemMeta.getLore)) match {
+      case Some(result) =>
+        cache.find(_._2 == result.toString().replace(";", "")).map(_._1).getOrElse("NotFound")
+      case None => ""
+    }
+  }
 }

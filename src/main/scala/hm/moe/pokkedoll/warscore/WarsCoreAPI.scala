@@ -417,12 +417,14 @@ object WarsCoreAPI {
   import net.md_5.bungee.api.ChatColor
 
   val NEWS: Array[BaseComponent] =
-    new ComponentBuilder("= = = = = = = = お知らせ = = = = = = = =\n").color(ChatColor.GREEN)
-      .append("*").color(ChatColor.WHITE)
-      .append("開発進捗や計画はすべてGitLabで公開されています\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll-mc/-/boards"))
-      .append("*").color(ChatColor.WHITE)
-      .append("バージョン判定されてるけどまだ1.12.2のリソースパックを送信しています\n")
-      .append("*")
+    new ComponentBuilder("= = = = = = = = = = =").color(ChatColor.GREEN).underlined(true)
+      .append("お知らせ").underlined(false)
+      .append("= = = = = = = = = = =\n").underlined(true)
+      .append("*").color(ChatColor.WHITE).underlined(false)
+      //.append("開発進捗や計画はすべてGitLabで公開されています\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll-mc/-/boards"))
+      //.append("*").color(ChatColor.WHITE)
+      //.append("バージョン判定されてるけどまだ1.12.2のリソースパックを送信しています\n")
+      //.append("*")
       .append("Discordに参加しよう！ こちらメッセージをクリックしてください！").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://discordapp.com/invite/TJ3bkkY"))
       .create()
 
