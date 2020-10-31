@@ -90,7 +90,7 @@ object RankManager {
       obj.getScore(chatColor("&6/spawn&f: スポーン地点に戻る")),
       obj.getScore(chatColor("&6/sf&f: ステータスを設定")),
       obj.getScore(chatColor("&6/pp&f: コマンド一覧を表示")),
-      obj.getScore(chatColor("&6/vote&f: 投票ページを開く"))
+      obj.getScore(chatColor("&6&m/vote&f: 投票ページを開く"))
     )
     var sc = scores.length
     scores.foreach(s => {

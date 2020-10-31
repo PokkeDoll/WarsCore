@@ -1,15 +1,13 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, WorldLoader}
-import org.bukkit.{Bukkit, GameMode, Location, Sound, World, scheduler}
+import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
-import org.bukkit.event.player.PlayerRespawnEvent
-import org.bukkit.potion.{PotionEffect, PotionEffectType}
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit._
 
 /**
  * 1vs1 で行うゲームモード<br>
@@ -356,5 +354,5 @@ class Tactics(override val id: String) extends Game {
    *
    * @param e イベント
    */
-  override def damage(e: EntityDamageByEntityEvent): Unit = ???
+  override def damage(e: EntityDamageByEntityEvent): Unit = return
 }
