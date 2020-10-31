@@ -9,21 +9,22 @@ import org.bukkit.entity.Player
 
 /**
  * ゲームのメインとなるコマンド
+ *
  * @author Emorard
  */
 class GameCommand extends CommandExecutor with TabCompleter {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {
       case player: Player =>
-        if(args.length == 0) {
+        if (args.length == 0) {
           WarsCoreAPI.openGameInventory(player)
-        } else if(args(0) == "list") {
+        } else if (args(0) == "list") {
           val sb = new StringBuilder("§bゲームリスト")
           WarsCoreAPI.games.values.foreach(game => {
             sb.append(s"§a${game.id}§7: §f${game.title}§7: §f${game.mapInfo.mapName}§7: §f${game.members.size} / ${game.maxMember}\n")
           })
           player.sendMessage(sb.toString())
-        } else if(args(0).length >= 1 && (args(0) == "leave" || args(0) == "quit")) {
+        } else if (args(0).length >= 1 && (args(0) == "leave" || args(0) == "quit")) {
           val wp = WarsCoreAPI.getWPlayer(player)
           wp.game match {
             case Some(game) =>
@@ -52,16 +53,16 @@ class GameCommand extends CommandExecutor with TabCompleter {
     true
   }
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   override def onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array[String]): util.List[String] = {
-    if(command.getName.equalsIgnoreCase("game")) {
+    if (command.getName.equalsIgnoreCase("game")) {
       sender match {
-        case player: Player =>
-          if(args.length == 0) {
+        case _: Player =>
+          if (args.length == 0) {
             return util.Arrays.asList("join", "leave", "info")
           }
-          if(args(0).startsWith("join")) {
+          if (args(0).startsWith("join")) {
             return WarsCoreAPI.games.keys.toList.asJava
           }
       }

@@ -14,7 +14,7 @@ class LoginListener(plugin: WarsCore) extends Listener {
 
     e.setJoinMessage(ChatColor.GREEN + s"Connect: ${player.getName}")
 
-    if(!plugin.database.hasUUID(player)) {
+    if (!plugin.database.hasUUID(player)) {
       plugin.database.insert(player)
     }
 
@@ -23,9 +23,9 @@ class LoginListener(plugin: WarsCore) extends Listener {
     player.sendMessage("§9クライアントのバージョンを取得しています...")
     new BukkitRunnable {
       override def run(): Unit = {
-        if(!player.hasPlayedBefore) {
+        if (!player.hasPlayedBefore) {
           player.teleport(WarsCoreAPI.FIRST_SPAWN)
-        } else if(player.getWorld.getName!="p-lobby") {
+        } else if (player.getWorld.getName != "p-lobby") {
           player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
         }
         // リソースパックの送信
@@ -45,7 +45,7 @@ class LoginListener(plugin: WarsCore) extends Listener {
   def onQuit(e: PlayerQuitEvent): Unit = {
     e.setQuitMessage("")
     val player = e.getPlayer
-    if(player.getWorld.getName!="p-lobby") {
+    if (player.getWorld.getName != "p-lobby") {
       player.teleport(Bukkit.getWorlds.get(0).getSpawnLocation)
     }
     WarsCoreAPI.removeScoreboard(player)

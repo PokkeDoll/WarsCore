@@ -10,11 +10,11 @@ class StatsCommand extends CommandExecutor {
     sender match {
       case player: Player =>
         val open = WarsCoreAPI.openStatsInventory(player, _)
-        if(args.length == 0) {
+        if (args.length == 0) {
           open(player)
         } else {
           val target = Bukkit.getPlayer(args(0))
-          if(target == null) {
+          if (target == null) {
             player.sendMessage(ChatColor.RED + s"${target}のデータを取得できませんでした")
           } else {
             open(target)

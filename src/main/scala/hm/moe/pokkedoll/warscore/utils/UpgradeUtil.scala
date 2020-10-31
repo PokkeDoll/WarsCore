@@ -54,7 +54,8 @@ object UpgradeUtil {
 
   /**
    * 強化の内容を更新する
-   * @param upgradeItem
+   *
+   * @param upgradeItem upgradeItem
    */
   def setUpgradeItem(upgradeItem: UpgradeItem): Unit = {
     val key = upgradeItem.name
@@ -78,7 +79,8 @@ object UpgradeUtil {
 
   /**
    * 強化を削除する
-   * @param key
+   *
+   * @param key アイテムのキー
    */
   def delUpgradeItem(key: String): Unit = {
     config.set(key, null)
@@ -135,7 +137,7 @@ object UpgradeUtil {
     val sourceItem = inv.getItem(0)
     val materialItem = inv.getItem(1)
     if (sourceItem == null || materialItem == null) {
-      return false
+      false
     } else {
       getUpgradeItem(sourceItem) match {
         case Some(upgradeItem) =>
@@ -170,7 +172,7 @@ object UpgradeUtil {
           }
         case None =>
       }
-      return true
+      true
     }
   }
 }

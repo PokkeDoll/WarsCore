@@ -10,14 +10,14 @@ class ItemCommand extends CommandExecutor {
     sender match {
       case player: Player =>
         player.sendMessage(ChatColor.GRAY + "Wars互換モード: false [since v0.26.1]")
-        val v0 = if(args.length==0) "" else args(0)
-        if(v0.equalsIgnoreCase("list")) {
+        val v0 = if (args.length == 0) "" else args(0)
+        if (v0.equalsIgnoreCase("list")) {
           val s = new StringBuilder("アイテム一覧\n")
           ItemUtil.config.getKeys(false).forEach(key => s.append(s"$key\n"))
           sender.sendMessage(s.toString())
         } else if (args.length > 1 && v0.equalsIgnoreCase("set")) {
           val item = player.getInventory.getItemInMainHand
-          if(item == null || item.getType == Material.AIR) {
+          if (item == null || item.getType == Material.AIR) {
             player.sendMessage("無効なアイテムです")
           } else {
             ItemUtil.setItem(args(1), item.clone())
@@ -26,7 +26,7 @@ class ItemCommand extends CommandExecutor {
         } else if (args.length > 1 && v0.equalsIgnoreCase("remove")) {
           ItemUtil.removeItem(args(1))
           player.sendMessage(s"${args(1)}を削除しました")
-        }  else if (args.length > 1 && v0.equalsIgnoreCase("get")) {
+        } else if (args.length > 1 && v0.equalsIgnoreCase("get")) {
           ItemUtil.getItem(args(1)) match {
             case Some(item) =>
               player.sendMessage(s"${args(1)}を入手しました")
@@ -34,7 +34,7 @@ class ItemCommand extends CommandExecutor {
             case None =>
               player.sendMessage(s"${args(1)}は存在しません")
           }
-        } else if(v0.equalsIgnoreCase("reload")) {
+        } else if (v0.equalsIgnoreCase("reload")) {
           ItemUtil.reloadItem()
           player.sendMessage("リロードしました")
         } else {

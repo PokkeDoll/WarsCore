@@ -7,12 +7,13 @@ import org.bukkit.Material
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 import org.bukkit.inventory.ItemStack
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 /**
  * アイテムを管理するオブジェクト
  * さらに効率を追求！
+ *
  * @author Emorard
  * @version 4
  */
@@ -27,7 +28,7 @@ object ItemUtil {
   var config: FileConfiguration = _
 
   def reloadItem(): Unit = {
-    if(configFile==null) {
+    if (configFile == null) {
       createConfig() match {
         case Success(_) =>
           plugin.getLogger.info("item.ymlの読み込みに成功しました")
@@ -54,14 +55,15 @@ object ItemUtil {
   /**
    * キャッシュ無しのメソッド
    *
-   * @param key
+   * @param key アイテムのキー
    * @return
    */
   def getItem(key: String): Option[ItemStack] = cache.get(key)
 
   /**
    * キーを取得する。効率はあまりよくない
-   * @param item
+   *
+   * @param item アイテムのキー
    * @return
    */
   def getKey(item: ItemStack): String = cache.find(p => p._2.isSimilar(item)).map(_._1).getOrElse("")

@@ -24,7 +24,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         game.death(e)
       case _ =>
         e.setCancelled(true)
-        if(e.getEntity.getWorld == Bukkit.getWorlds.get(0)) {
+        if (e.getEntity.getWorld == Bukkit.getWorlds.get(0)) {
           e.getEntity.teleport(e.getEntity.getWorld.getSpawnLocation)
         }
     }
@@ -73,8 +73,8 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     val inv = e.getClickedInventory
     val p = e.getWhoClicked
     if (inv == null) return
-    if(inv.getType == InventoryType.ANVIL && e.getSlot == 2 && e.getClick == ClickType.LEFT) {
-      if(!UpgradeUtil.onUpgrade(inv, p)) {
+    if (inv.getType == InventoryType.ANVIL && e.getSlot == 2 && e.getClick == ClickType.LEFT) {
+      if (!UpgradeUtil.onUpgrade(inv, p)) {
         e.setCancelled(true)
         plugin.getLogger.info("Event Cancelled@47")
       }
@@ -83,7 +83,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     else if (inv.getType == InventoryType.PLAYER && e.getSlotType == SlotType.CRAFTING) {
       e.setCancelled(true)
       plugin.getLogger.info("Event Cancelled!@54")
-    // ゲームインベントリ
+      // ゲームインベントリ
     } else if (e.getView.getTitle == WarsCoreAPI.GAME_INVENTORY_TITLE) {
       plugin.getLogger.info("Event Cancelled!@59")
       e.setCancelled(true)
@@ -96,7 +96,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
           player.closeInventory()
         case None =>
       }
-    // エンダーチェストインベントリ
+      // エンダーチェストインベントリ
     } else if (e.getView.getTitle == EnderChestManager.ENDER_CHEST_MENU.getTitle) {
       val item = e.getCurrentItem
       if (item != null) {
@@ -135,25 +135,25 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onInteract(e: PlayerInteractEvent): Unit = {
     val item = e.getItem
-    if(e.getAction == Action.RIGHT_CLICK_AIR && e.getHand == EquipmentSlot.HAND) {
-      if(item != null) {
-        if(item.getType == Material.NAME_TAG) {
+    if (e.getAction == Action.RIGHT_CLICK_AIR && e.getHand == EquipmentSlot.HAND) {
+      if (item != null) {
+        if (item.getType == Material.NAME_TAG) {
           e.setCancelled(true)
           //val t = TagUtil.getTagIdFromItemStack(item)
           val t = TagUtil.getTagKeyFromItemStack(item)
           e.getPlayer.sendMessage(s"$t を獲得しました！(大嘘)")
-        // ぽっけコインを所持している
+          // ぽっけコインを所持している
         } else if (EconomyUtil.COIN.isSimilar(item)) {
           val player = e.getPlayer
-          if(player.isSneaking) {
-            EconomyUtil.coin2ingot(player, item, item.getAmount/9)
+          if (player.isSneaking) {
+            EconomyUtil.coin2ingot(player, item, item.getAmount / 9)
           } else {
-            EconomyUtil.coin2ingot(player, item, 1)
+            EconomyUtil.coin2ingot(player, item)
           }
         } else if (EconomyUtil.INGOT.isSimilar(item)) {
           val player = e.getPlayer
-          if(player.isSneaking) {
-            EconomyUtil.ingot2coin(player, item, if(item.getAmount >= 7) 7 else item.getAmount)
+          if (player.isSneaking) {
+            EconomyUtil.ingot2coin(player, item, if (item.getAmount >= 7) 7 else item.getAmount)
           } else {
             EconomyUtil.ingot2coin(player, item)
           }
@@ -165,9 +165,9 @@ class PlayerListener(plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onInteractAtEntity(e: PlayerInteractAtEntityEvent): Unit = {
-    if(e.getHand == EquipmentSlot.HAND && e.getRightClicked != null) {
+    if (e.getHand == EquipmentSlot.HAND && e.getRightClicked != null) {
       val name = e.getRightClicked.getCustomName
-      if(name!=null && MerchantUtil.hasName(name)) {
+      if (name != null && MerchantUtil.hasName(name)) {
         MerchantUtil.openMerchantInventory(e.getPlayer, name)
       }
     }
@@ -180,11 +180,10 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     val sourceItem = inv.getItem(0)
     // 強化素材となるアイテム
     val materialItem = inv.getItem(1)
-    if(sourceItem == null || materialItem == null) {
-      return
+    if (sourceItem == null || materialItem == null) {
     } else {
-      if(UpgradeUtil.isUpgradeItem(sourceItem)) {
-        if(sourceItem != null) {
+      if (UpgradeUtil.isUpgradeItem(sourceItem)) {
+        if (sourceItem != null) {
           val baseChance = UpgradeUtil.getChance(materialItem)
           UpgradeUtil.getUpgradeItem(sourceItem) match {
             case Some(upgradeItem) =>
@@ -212,15 +211,15 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onSprint(e: PlayerToggleSprintEvent): Unit = {
     val player = e.getPlayer
-    if(player.getWorld.getName == WarsCoreAPI.LOBBY && player.getFoodLevel != 20) {
+    if (player.getWorld.getName == WarsCoreAPI.LOBBY && player.getFoodLevel != 20) {
       player.setFoodLevel(20)
-    } else if(player.getWorld.getName != WarsCoreAPI.LOBBY && player.getGameMode == GameMode.SURVIVAL) {
+    } else if (player.getWorld.getName != WarsCoreAPI.LOBBY && player.getGameMode == GameMode.SURVIVAL) {
       new BukkitRunnable {
         override def run(): Unit = {
-          if(e.isSprinting) {
+          if (e.isSprinting) {
             new BukkitRunnable {
               override def run(): Unit = {
-                if(8 >=player.getFoodLevel || !player.isSprinting) {
+                if (8 >= player.getFoodLevel || !player.isSprinting) {
                   cancel()
                 } else {
                   player.setFoodLevel(player.getFoodLevel - 1)
@@ -230,10 +229,10 @@ class PlayerListener(plugin: WarsCore) extends Listener {
           } else {
             new BukkitRunnable {
               override def run(): Unit = {
-                if(!player.isSprinting) {
+                if (!player.isSprinting) {
                   new BukkitRunnable {
                     override def run(): Unit = {
-                      if(player.isSprinting || player.getFoodLevel == 20) {
+                      if (player.isSprinting || player.getFoodLevel == 20) {
                         cancel()
                       } else {
                         player.setFoodLevel(player.getFoodLevel + 1)
@@ -252,7 +251,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onCommandProcess(e: PlayerCommandPreprocessEvent): Unit = {
     Bukkit.getOnlinePlayers.stream()
-      .filter({p => p.hasMetadata("cmdesp")})
+      .filter({ p => p.hasMetadata("cmdesp") })
       .forEach(_.sendMessage(
         ChatColor.translateAlternateColorCodes('&', s"&7[&3CMDESP&7]&3 ${e.getPlayer.getName}: ${e.getMessage}")))
   }

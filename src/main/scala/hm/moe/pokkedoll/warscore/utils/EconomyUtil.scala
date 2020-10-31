@@ -39,12 +39,12 @@ object EconomyUtil {
   }
 
   def coin2ingot(player: Player, item: ItemStack, amount: Int = 1): Unit = {
-    if(item.isSimilar(COIN) && item.getAmount >= amount * 9) {
+    if (item.isSimilar(COIN) && item.getAmount >= amount * 9) {
       val inv = player.getInventory
-      if(inv.firstEmpty() == -1) {
+      if (inv.firstEmpty() == -1) {
         player.sendMessage(ChatColor.RED + "インベントリの空きが不足しています！")
       } else {
-        item.setAmount(item.getAmount - amount*9)
+        item.setAmount(item.getAmount - amount * 9)
         val ingot = EconomyUtil.INGOT.clone()
         ingot.setAmount(amount)
         inv.addItem(ingot)
@@ -56,14 +56,11 @@ object EconomyUtil {
 
   /**
    * 最高7まで(63)
-   * @param player
-   * @param item
-   * @param amount
    */
   def ingot2coin(player: Player, item: ItemStack, amount: Int = 1): Unit = {
-    if(item.isSimilar(INGOT) && item.getAmount >= amount) {
+    if (item.isSimilar(INGOT) && item.getAmount >= amount) {
       val inv = player.getInventory
-      if(inv.firstEmpty() == -1) {
+      if (inv.firstEmpty() == -1) {
         player.sendMessage(ChatColor.RED + "インベントリの空きが不足しています！")
       } else {
         item.setAmount(item.getAmount - amount)

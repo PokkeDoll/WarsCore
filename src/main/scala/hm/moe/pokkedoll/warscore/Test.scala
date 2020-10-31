@@ -1,5 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
+import java.util.logging.Logger
+
 /**
  * 実行時間を計測するクラス
  */
@@ -18,7 +20,7 @@ class Test(val message: String) {
 
   def log(ms: Long): Unit = {
     val time = System.currentTimeMillis() - start
-    if(time > ms) {
+    if (time > ms) {
       Test.logger.warning(message + s"took $time ms grater than $ms ms!")
     }
   }
@@ -29,5 +31,5 @@ class Test(val message: String) {
 }
 
 object Test {
-  protected lazy val logger = WarsCore.instance.getLogger
+  protected lazy val logger: Logger = WarsCore.instance.getLogger
 }

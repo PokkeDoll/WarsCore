@@ -1,12 +1,10 @@
 package hm.moe.pokkedoll.warscore.commands
 
-import java.util.Optional
-
 import hm.moe.pokkedoll.warscore.utils.MerchantUtil
 import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
-import org.bukkit.entity.{Player, Villager}
+import org.bukkit.entity.Player
 
 import scala.util.{Failure, Success, Try}
 
@@ -15,10 +13,10 @@ class MerchantCommand extends CommandExecutor {
     sender match {
       case player: Player =>
         val send = sendMessage(player, _)
-        if(args.length == 0) {
+        if (args.length == 0) {
           send(
             "&f/merchant <list|add|del|mod>\n" +
-            "&f詳細は&bhttps://gitlab.com/PokkeDoll/pokkedoll-mc/-/wikis/wars-howto-mer"
+              "&f詳細は&bhttps://gitlab.com/PokkeDoll/pokkedoll-mc/-/wikis/wars-howto-mer"
           )
         } else if (args(0) == "list") {
           val comp = new ComponentBuilder("Show merchants list\n")
@@ -26,11 +24,11 @@ class MerchantCommand extends CommandExecutor {
             k => comp.append("* ").append(k).append("\n")
           )
           player.sendMessage(comp.create(): _*)
-        // 取引グループを作成する
+          // 取引グループを作成する
         } else if (args(0) == "add") {
-          if(args.length > 1) {
+          if (args.length > 1) {
             val title = args(1)
-            if(!MerchantUtil.config.contains(title)) {
+            if (!MerchantUtil.config.contains(title)) {
               MerchantUtil.newMerchant(title)
               player.sendMessage(ChatColor.BLUE + title + "を追加")
             } else {
@@ -39,11 +37,11 @@ class MerchantCommand extends CommandExecutor {
           } else {
             player.sendMessage(ChatColor.RED + "追加する取引タイトルを入力")
           }
-        // 取引グループを削除
+          // 取引グループを削除
         } else if (args(0) == "del") {
-          if(args.length > 1) {
+          if (args.length > 1) {
             val title = args(1)
-            if(MerchantUtil.config.contains(title)) {
+            if (MerchantUtil.config.contains(title)) {
               MerchantUtil.delMerchant(title)
               player.sendMessage(ChatColor.BLUE + title + "を削除")
             } else {
@@ -52,17 +50,17 @@ class MerchantCommand extends CommandExecutor {
           } else {
             player.sendMessage(ChatColor.RED + "削除する取引タイトルを入力")
           }
-        // 取引内容を弄る
+          // 取引内容を弄る
         } else if (args(0) == "mod") {
-          if(args.length > 1) {
+          if (args.length > 1) {
             val key = args(1)
-            if(MerchantUtil.config.contains(key)) {
-              if(args.length > 2) {
+            if (MerchantUtil.config.contains(key)) {
+              if (args.length > 2) {
                 val str = args(2)
                 val content = MerchantUtil.config.getStringList(key)
-                if(str.startsWith("+")) {
+                if (str.startsWith("+")) {
                   val text = str.substring(1)
-                  (".*@[0-9]*,.*@[0-9]*,.*@[0-9]*".r).findFirstMatchIn(text) match {
+                  ".*@[0-9]*,.*@[0-9]*,.*@[0-9]*".r.findFirstMatchIn(text) match {
                     case Some(_) =>
                       content.add(text)
                       MerchantUtil.setMerchant(key, content)
@@ -76,13 +74,16 @@ class MerchantCommand extends CommandExecutor {
                       content.remove(value)
                       MerchantUtil.setMerchant(key, content)
                       player.sendMessage(ChatColor.BLUE + "削除しました")
-                    case Failure(exception) =>
+                    case Failure(_) =>
                       player.sendMessage(ChatColor.RED + "数字のみ可能。インデックス番号は'i'で確認できる")
                   }
                 } else if (str.startsWith("i")) {
                   val sb = new StringBuilder(s"MerchantRecipe for $key\n")
                   var i = 0
-                  content.forEach(f => {sb.append(s"$i. $f\n"); i+=1})
+                  content.forEach(f => {
+                    sb.append(s"$i. $f\n");
+                    i += 1
+                  })
                   player.sendMessage(sb.toString())
                 }
               } else {
@@ -107,7 +108,4 @@ class MerchantCommand extends CommandExecutor {
     player.sendMessage(ChatColor.translateAlternateColorCodes('&', msg))
   }
 
-  private def getVillager(player: Player): Optional[Villager] = {
-    player.getLocation.getNearbyEntitiesByType(classOf[Villager], 1d).stream().findFirst()
-  }
 }

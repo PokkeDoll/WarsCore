@@ -1,23 +1,18 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import java.nio.charset.StandardCharsets
-import java.util.UUID
-
-import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
-import net.md_5.bungee.api
-import org.bukkit
+import hm.moe.pokkedoll.warscore.WarsCore
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.{Bukkit, ChatColor, Material, Sound}
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.inventory.{Inventory, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.{Bukkit, ChatColor, Material, Sound}
 
-import scala.collection.mutable
-import scala.util.{Success, Try}
+import scala.util.Try
 
 /**
  * エンダーチェストを管理する
+ *
  * @author Emorard
  */
 object EnderChestManager {
@@ -59,14 +54,15 @@ object EnderChestManager {
       i.setItemMeta(m)
       i
     }): Int => ItemStack
-    (0 to 26).foreach(f => inv.setItem(f,createIcon(f)))
-    (27 to 35).foreach(f => inv.setItem(f, if(f == 27) PRESENT else NONE))
+    (0 to 26).foreach(f => inv.setItem(f, createIcon(f)))
+    (27 to 35).foreach(f => inv.setItem(f, if (f == 27) PRESENT else NONE))
     inv
   }
 
   /**
    * エンダーチェストのメニューを表示する
-   * @param player
+   *
+   * @param player プレイヤー
    */
   def openEnderChestMenu(player: Player): Unit = {
     player.playSound(player.getLocation, Sound.BLOCK_ENDERCHEST_OPEN, 1f, 1f)
@@ -76,8 +72,9 @@ object EnderChestManager {
   /**
    * エンダーチェストの中身を表示する
    * Takuyaよりも高速に動作するように
-   * @param player
-   * @param id
+   *
+   * @param player InventoryClickEventからやってくる
+   * @param id     開くエンダーチェストのID, プレゼントボックスは0
    */
   def openEnderChest(player: HumanEntity, id: Int): Unit = {
     val inv = Bukkit.createInventory(null, 54, ChatColor.DARK_PURPLE + player.getName + "'s Chest " + id)
@@ -108,7 +105,7 @@ object EnderChestManager {
   }
 
   def i2s(items: Array[ItemStack]): String = {
-    if(items==null || items.length != 54) " " else {
+    if (items == null || items.length != 54) " " else {
       val yaml = new YamlConfiguration
       (0 to 53).foreach(i => {
         yaml.set(i.toString, items(i))
@@ -119,7 +116,7 @@ object EnderChestManager {
 
   def s2i(string: String): Option[Array[ItemStack]] = {
     val items = new Array[ItemStack](54)
-    if(string==null || string=="" || string==" ") None else {
+    if (string == null || string == "" || string == " ") None else {
       val yaml = new YamlConfiguration
       try {
         yaml.loadFromString(string)

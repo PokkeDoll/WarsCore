@@ -12,15 +12,15 @@ import org.bukkit.event.{Event, HandlerList}
  */
 class PlayerUnfreezeEvent(val player: Player, var walkSpeed: Float = 0.2f, var flySpeed: Float = 0.1f) extends Event {
 
-  def getPlayer(): Player = player
+  def getPlayer: Player = player
 
-  def getWalkSpeed(): Float = walkSpeed
+  def getWalkSpeed: Float = walkSpeed
 
   def setWalkSpeed(walkSpeed: Float): Unit = {
     this.walkSpeed = walkSpeed
   }
 
-  def getFlySpeed(): Float = flySpeed
+  def getFlySpeed: Float = flySpeed
 
   def setFlySpeed(flySpeed: Float): Unit = {
     this.flySpeed = flySpeed

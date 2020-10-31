@@ -1,10 +1,9 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import hm.moe.pokkedoll.warscore.{Test, WPlayer, WarsCore, WarsCoreAPI}
-import org.bukkit.{ChatColor, Sound, scheduler}
-import org.bukkit.entity.Player
-import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.scoreboard.{DisplaySlot, Objective, Scoreboard}
+import hm.moe.pokkedoll.warscore.{Test, WPlayer, WarsCore}
+import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
+import org.bukkit.scoreboard.{DisplaySlot, Scoreboard}
+import org.bukkit.{ChatColor, Sound}
 
 /**
  * ランクを大雑把に管理するオブジェクト
@@ -25,7 +24,7 @@ object RankManager {
    */
   def getNextExp(rank: Int): Int = (100 * Math.pow(1.05, rank)).toInt
 
-  def giveExp(wp: WPlayer, amount: Int) = new BukkitRunnable {
+  def giveExp(wp: WPlayer, amount: Int): BukkitTask = new BukkitRunnable {
     override def run(): Unit = {
       val player = wp.player
       val uuid = player.getUniqueId.toString
@@ -72,11 +71,11 @@ object RankManager {
   /**
    * データを直接渡すため高速
    *
-   * @param sb
-   * @param data
+   * @param sb   プレイヤーのスコアボード
+   * @param data ランク, 経験値の組
    */
   def updateSidebar(sb: Scoreboard, data: (Int, Int)): Unit = {
-    val test = new Test()
+    val test = new Test("RankManager.updateSidebar(Player, Scoreboard, (Int, Int))")
     if (sb.getObjective(DisplaySlot.SIDEBAR) != null) sb.getObjective(DisplaySlot.SIDEBAR).unregister()
     val obj = sb.registerNewObjective("sidebar", "dummy")
     obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWelcome to &dWars &eβ"))
@@ -97,6 +96,6 @@ object RankManager {
       s.setScore(sc)
       sc -= 1
     })
-    test.log("RankManager.updateSidebar(Player, Scoreboard, (Int, Int))")
+    test.log()
   }
 }

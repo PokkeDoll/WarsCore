@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.db
 
-import java.sql.{Connection, SQLException}
+import java.sql.SQLException
 import java.util.UUID
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
@@ -9,7 +9,6 @@ import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore}
 
 /**
  * SQLite3でのDatabase実装
- * @param plugin
  */
 class SQLite(plugin: WarsCore) extends Database {
 
@@ -121,7 +120,7 @@ class SQLite(plugin: WarsCore) extends Database {
   /**
    * UUID(=データ、つまりテーブル)があるか確認するメソッド
    *
-   * @param uuid
+   * @param uuid UUID
    * @return データがあるならtrueを返す
    */
   override def hasUUID(uuid: UUID): Boolean = {
@@ -142,14 +141,6 @@ class SQLite(plugin: WarsCore) extends Database {
   }
 
   /**
-   * テーブルからデータを読み込むメソッド
-   *
-   * @param wp
-   * @return 読み込みエラーが発生したらNone
-   */
-  override def loadWPlayer(wp: WPlayer): Option[WPlayer] = None
-
-  /**
    * テーブルにデータを保存するメソッド
    */
   override def saveWPlayer(wp: WPlayer): Option[WPlayer] = None
@@ -157,7 +148,7 @@ class SQLite(plugin: WarsCore) extends Database {
   /**
    * データを登録するメソッド
    *
-   * @param uuid
+   * @param uuid UUID
    * @return
    */
   override def insert(uuid: UUID): Boolean = {
@@ -187,7 +178,7 @@ class SQLite(plugin: WarsCore) extends Database {
     try {
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
-      if(rs.next()) {
+      if (rs.next()) {
         Option(rs.getInt(column))
       } else {
         None
@@ -209,7 +200,7 @@ class SQLite(plugin: WarsCore) extends Database {
     try {
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
-      if(rs.next()) {
+      if (rs.next()) {
         Option(rs.getString(col))
       } else {
         None
@@ -246,7 +237,7 @@ class SQLite(plugin: WarsCore) extends Database {
     try {
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
-      if(rs.next()) {
+      if (rs.next()) {
         Some(rs.getInt("id"), rs.getInt("exp"))
       } else {
         None
@@ -278,7 +269,6 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
-  //TODO SQLにdmaagedの追加
   override def updateTDM(game: TeamDeathMatch): Boolean = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("UPDATE tdm SET kill=kill+?, death=death+?, assist=assist+?, damage=damage+?, damaged=damaged+?, win=win+?, play=play+1 WHERE uuid=?")
@@ -289,7 +279,7 @@ class SQLite(plugin: WarsCore) extends Database {
         ps.setInt(3, f._2.assist)
         ps.setInt(4, f._2.damage.toInt)
         ps.setInt(5, f._2.damaged.toInt)
-        ps.setInt(6, if(f._2.win) 1 else 0)
+        ps.setInt(6, if (f._2.win) 1 else 0)
         ps.setString(7, f._1)
         ps.executeUpdate()
       })
@@ -306,7 +296,8 @@ class SQLite(plugin: WarsCore) extends Database {
 
   /**
    * 所持しているタグを獲得する テーブル tagContainerより
-   * @param uuid
+   *
+   * @param uuid UUID
    * @return
    */
   def getTags(uuid: String): IndexedSeq[String] = {
@@ -317,7 +308,7 @@ class SQLite(plugin: WarsCore) extends Database {
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
       while (rs.next()) {
-       seq = seq :+ rs.getString("tagId")
+        seq = seq :+ rs.getString("tagId")
       }
       seq
     } catch {
@@ -332,7 +323,8 @@ class SQLite(plugin: WarsCore) extends Database {
 
   /**
    * 現在設定しているタグを獲得する テーブル tagより
-   * @param uuid
+   *
+   * @param uuid UUID
    * @return
    */
   def getTag(uuid: String): String = {
@@ -341,7 +333,7 @@ class SQLite(plugin: WarsCore) extends Database {
     try {
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
-      if(rs.next()) {
+      if (rs.next()) {
         rs.getString("tagId")
       } else {
         // 存在しないなら新たにデータを追加する
@@ -359,18 +351,17 @@ class SQLite(plugin: WarsCore) extends Database {
         e.printStackTrace()
         "ERROR!"
     } finally {
-      if(!ps.isClosed) ps.close()
+      if (!ps.isClosed) ps.close()
       c.close()
     }
   }
 
 
-
   /**
    * タグをセットする
    *
-   * @param uuid
-   * @param id
+   * @param uuid UUID
+   * @param id タグID
    */
   override def setTag(uuid: String, id: String): Unit = {
     val c = hikari.getConnection
@@ -391,8 +382,8 @@ class SQLite(plugin: WarsCore) extends Database {
   /**
    * タグコンテナにタグを追加する
    *
-   * @param uuid
-   * @param id
+   * @param uuid UUID
+   * @param id タグID
    */
   override def addTag(uuid: String, id: String): Unit = {
     val c = hikari.getConnection

@@ -69,10 +69,10 @@ class TeamDeathMatch(override val id: String) extends Game {
   blueTeam.setColor(org.bukkit.ChatColor.BLUE)
   blueTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM)
 
-  WarsCoreAPI.setBaseTeam(redTeam);
+  WarsCoreAPI.setBaseTeam(redTeam)
   WarsCoreAPI.setBaseTeam(blueTeam)
 
-  var redPoint = 0;
+  var redPoint = 0
   var bluePoint = 0
 
   // TODO 余裕があればキュー機能を復活させる
@@ -106,9 +106,9 @@ class TeamDeathMatch(override val id: String) extends Game {
         // 一応代入したが別のインスタンス(load, init)中にworldを参照するのは危険！読み込みエラーとなってコンソールを汚しまくる
         this.world = world
         //
-        if(!loaded) loaded = true
+        if (!loaded) loaded = true
         // 無効化を解除
-        if(disable) disable = false
+        if (disable) disable = false
         // 読み込みに成功したので次のステージへ
         init()
       case None =>
@@ -174,7 +174,7 @@ class TeamDeathMatch(override val id: String) extends Game {
           cancel()
         } else {
           try {
-            bossbar.setTitle(s"§fあと§a${count}§f秒で試合が始まります!")
+            bossbar.setTitle(s"§fあと§a$count§f秒で試合が始まります!")
             bossbar.setProgress(bossbar.getProgress - removeProgress)
             count -= 1
           } catch {
@@ -254,7 +254,7 @@ class TeamDeathMatch(override val id: String) extends Game {
                   s"&c赤チームが中央を占拠しています... &l$score%"
 
                 } else if (100 > centerCount) {
-                  val score = (((100 - centerCount) * div) * 100 ).toInt
+                  val score = (((100 - centerCount) * div) * 100).toInt
                   sidebar.getScore(ChatColor.BLUE + "青チーム 占領率:").setScore(score)
                   s"&9青チームが中央を占拠しています... &l$score%"
                 } else ""
@@ -282,7 +282,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("             Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
 
-    if(winner == "red") {
+    if (winner == "red") {
       endMsg.append("            ")
         .append("Red Team").color(ChatColor.RED).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
@@ -308,7 +308,7 @@ class TeamDeathMatch(override val id: String) extends Game {
             EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
             d.win = true
           }
-          wp.sendMessage(createResult(d, winner):_*)
+          wp.sendMessage(createResult(d, winner): _*)
           // ゲーム情報のリセット
           wp.game = None
           // スコアボードのリセット
@@ -343,6 +343,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * プレイヤーがゲームに参加するときのメソッド
+   *
    * @param wp プレイヤー
    * @return 参加できる場合
    */
@@ -371,7 +372,7 @@ class TeamDeathMatch(override val id: String) extends Game {
       data.put(wp.player, new TDMData)
       bossbar.addPlayer(wp.player)
       members = members :+ wp
-      sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a${maxMember}§f)")
+      sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a$maxMember§f)")
       state match {
         case GameState.PLAY =>
           setTeam(wp.player)
@@ -402,6 +403,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * プレイヤーがゲームから抜けたときのメソッド
+   *
    * @param wp プレイヤー
    */
   override def hub(wp: WPlayer): Unit = {
@@ -418,7 +420,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     wp.game = None
     sendMessage(s"${wp.player.getName} が退出しました")
     if (wp.player.isOnline) {
-      if(wp.player.getGameMode == GameMode.SPECTATOR) wp.player.setGameMode(GameMode.SURVIVAL)
+      if (wp.player.getGameMode == GameMode.SPECTATOR) wp.player.setGameMode(GameMode.SURVIVAL)
       // スコアボード情報をリセット
       wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
       wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
@@ -428,6 +430,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * プレイヤーが死亡したときのイベント
+   *
    * @param e イベント
    */
   override def death(e: PlayerDeathEvent): Unit = {
@@ -454,11 +457,11 @@ class TeamDeathMatch(override val id: String) extends Game {
             sidebar.getScore(ChatColor.RED + "赤チーム キル数:").setScore(redPoint)
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
-                sendMessage(s"§f0X §c${attacker.getName} §f[${name}§f] §7-> §0Killed §7-> §9${victim.getName}")
+                sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
               case None =>
                 sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
             }
-          // 青チーム用のメッセージ
+            // 青チーム用のメッセージ
           } else {
             bluePoint += 1
             sidebar.getScore(ChatColor.BLUE + "青チーム キル数:").setScore(bluePoint)
@@ -482,6 +485,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * プレイヤーがダメージを受けた時のイベント
+   *
    * @param e イベント
    */
   override def damage(e: EntityDamageByEntityEvent): Unit = {
@@ -494,7 +498,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     })
     e.getDamager match {
       case attacker: Player => d(attacker)
-      case arrow: Arrow  =>
+      case arrow: Arrow =>
         arrow.getShooter match {
           case attacker: Player => d(attacker)
           case _ =>
@@ -507,7 +511,8 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * deathメソッドで状態はPLAY or PLAY2
-   * @param player
+   *
+   * @param player Player
    */
   private def spawn(player: Player, coolTime: Boolean = false): Unit = {
     if (coolTime) player.setGameMode(GameMode.SPECTATOR)
@@ -560,11 +565,12 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * ブロックを破壊するときに呼び出されるイベント
+   *
    * @param e イベント
    */
   override def break(e: BlockBreakEvent): Unit = {
-    if(!canBuild(e.getBlock.getLocation)) {
-      e.getPlayer.sendActionBar(ChatColor.RED +  "そのブロックを壊すことはできません！")
+    if (!canBuild(e.getBlock.getLocation)) {
+      e.getPlayer.sendActionBar(ChatColor.RED + "そのブロックを壊すことはできません！")
       e.setCancelled(true)
     }
   }
@@ -572,10 +578,11 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * ブロックを設置するときに呼び出されるイベント
+   *
    * @param e イベント
    */
   override def place(e: BlockPlaceEvent): Unit = {
-    if(!canBuild(e.getBlock.getLocation)) {
+    if (!canBuild(e.getBlock.getLocation)) {
       e.getPlayer.sendActionBar(ChatColor.RED + "その地点にブロックを置くことはできません！")
       e.setCancelled(true)
     }
@@ -658,7 +665,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   private def canBuild(location: Location): Boolean = {
     val center = locationData._4
     (location.getX >= center.getX - buildRange && location.getX <= center.getX + buildRange) &&
-      (location.getY >= center.getY + 2 && location.getY <= center.getY + buildRange*2) &&
+      (location.getY >= center.getY + 2 && location.getY <= center.getY + buildRange * 2) &&
       (location.getZ >= center.getZ - buildRange && location.getZ <= center.getZ + buildRange)
   }
 
@@ -673,7 +680,7 @@ class TeamDeathMatch(override val id: String) extends Game {
       .append("* ").underlined(false).color(ChatColor.WHITE)
       .append("結果: ").color(ChatColor.GRAY)
 
-    if(winner == "draw") {
+    if (winner == "draw") {
       comp.append("引き分け\n")
     } else if (winner == data.team) {
       comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
@@ -703,12 +710,12 @@ class TeamDeathMatch(override val id: String) extends Game {
       .append("K/D: ").color(ChatColor.GRAY)
       .append((data.kill / (data.death + 1)).toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
-/*
-    comp.append("* ")
-      .append("アシスト: ").color(ChatColor.GRAY)
-      .append(data.assist.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-*/
+    /*
+        comp.append("* ")
+          .append("アシスト: ").color(ChatColor.GRAY)
+          .append(data.assist.toString).color(ChatColor.GREEN).bold(true)
+          .append("\n").color(ChatColor.RESET).bold(false)
+    */
     comp.append("* ")
       .append("与えたダメージ: ").color(ChatColor.GRAY)
       .append(s"❤ × ${data.damage.toInt / 2}").color(ChatColor.RED).bold(true)
@@ -734,7 +741,8 @@ class TeamDeathMatch(override val id: String) extends Game {
     var team = ""
 
     def calcExp(): Int = {
-      kill * 5 + death + assist + (if(win) 100 else 0)
+      kill * 5 + death + assist + (if (win) 100 else 0)
     }
   }
+
 }

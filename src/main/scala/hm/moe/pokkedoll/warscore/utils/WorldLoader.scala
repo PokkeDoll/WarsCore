@@ -16,9 +16,9 @@ import scala.util.control.Breaks
 object WorldLoader {
 
   private def load(name: String): World = {
-    val wc = if(name.startsWith("!"))
+    val wc = if (name.startsWith("!"))
       new WorldCreator(name.substring(1)).generateStructures(false).environment(World.Environment.THE_END)
-    else if(name.startsWith("^"))
+    else if (name.startsWith("^"))
       new WorldCreator(name.substring(1)).generateStructures(false).environment(World.Environment.NETHER)
     else
       new WorldCreator(name).generateStructures(false).environment(World.Environment.NORMAL)
@@ -67,7 +67,8 @@ object WorldLoader {
           val buffer = new Array[Byte](1024)
           var readSize = 0
           while ( {
-            readSize = in.read(buffer); readSize != -1
+            readSize = in.read(buffer);
+            readSize != -1
           }) out.write(buffer, 0, readSize)
           try out.close()
           catch {
@@ -130,7 +131,7 @@ object WorldLoader {
    * 同期的にワールドの解凍=>読み込みの処理をおこなう <br>
    * より安全に読み込むようになった
    *
-   * @param path 解凍するワールドまでの相対パス.  .zipは不要
+   * @param path  解凍するワールドまでの相対パス.  .zipは不要
    * @param world 解凍先のワールド名.
    * @return ファイルを解凍してワールドが読み込めたらSome
    *
@@ -150,7 +151,7 @@ object WorldLoader {
       case _ =>
         // 読み込まれてないだけで存在するかもしれない
         val w = new File(s"./$world")
-        if(w.exists()) {
+        if (w.exists()) {
           delete(w)
         }
     }
@@ -160,9 +161,10 @@ object WorldLoader {
 
   /**
    * 同期的にワールドとそのファイルを削除する
+   *
    * @param name ワールド名
    */
   def syncUnloadWorld(name: String): Unit = if (Bukkit.getWorld(name) != null) {
-    if(unload(name)) delete(new File(s"./$name"))
+    if (unload(name)) delete(new File(s"./$name"))
   }
 }

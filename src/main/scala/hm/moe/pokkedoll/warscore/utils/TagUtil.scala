@@ -57,8 +57,6 @@ object TagUtil {
   /**
    * データベースのタグコンテナとタグキャッシュに含まれているか確かめる
    *
-   * @param player
-   * @param tagId
    * @return
    */
   def hasTag(player: Player, tagId: String): Boolean = {
@@ -68,9 +66,6 @@ object TagUtil {
 
   /**
    * タグをセットする
-   *
-   * @param player
-   * @param tagId
    */
   def setTag(player: Player, tagId: String): Unit = {
     // タグ情報をデータベース側に送るのはプレイヤーがログアウトしたときかセーブしたときのみ！
@@ -87,9 +82,6 @@ object TagUtil {
 
   /**
    * タグを追加する(= 新たに獲得)
-   *
-   * @param player
-   * @param tagId
    */
   def addTag(player: Player, tagId: String): Unit = {
 
@@ -97,28 +89,8 @@ object TagUtil {
 
   /**
    * アイテムスタックのタグ表示名からタグキーを取得する。<br>
-   * 愚直で非安全
-   *
-   * @param item
-   * @return
-   */
-  @Deprecated
-  def getTagIdFromItemStack(item: ItemStack): String =
-    Try(
-      cache.filter(f => f._2 == ((opt => if (opt.isEmpty) "" else opt.get().replaceAll(ChatColor.WHITE + "タグ名: ", "")): Optional[String] => String)
-        (item.getItemMeta.getLore.stream().filter(_.startsWith(ChatColor.WHITE + "タグ名: ")).findFirst())).keys.head
-    ) match {
-      case Success(v) => v
-      case Failure(e) =>
-        e.printStackTrace()
-        ""
-    }
-
-  /**
-   * アイテムスタックのタグ表示名からタグキーを取得する。<br>
    * 少し頭がいい
    *
-   * @param item
    * @return
    */
   def getTagKeyFromItemStack(item: ItemStack): String = {

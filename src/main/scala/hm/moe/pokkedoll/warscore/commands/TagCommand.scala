@@ -10,6 +10,7 @@ import org.bukkit.scheduler.BukkitRunnable
 
 /**
  * タグを設定するコマンド
+ *
  * @author Emorard
  * @since 0.21
  */
@@ -20,7 +21,7 @@ class TagCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {
       case player: Player =>
-        if(args.length == 0) {
+        if (args.length == 0) {
           new BukkitRunnable {
             override def run(): Unit = {
               val c = new ComponentBuilder("§a: = = 所持しているタグ一覧 §bクリックして変更！ §a= = :\n")
@@ -35,26 +36,26 @@ class TagCommand extends CommandExecutor {
                     .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, s"/tag ${f._1}"))
                     .append("\n")
                 })
-              player.sendMessage(c.create():_*)
+              player.sendMessage(c.create(): _*)
             }
           }.runTask(WarsCore.instance)
         } else if (args(0).equalsIgnoreCase("-reset")) {
           TagUtil.setTag(player, "")
           player.sendMessage(ChatColor.AQUA + "タグをリセットしました！")
-        } else if(args(0).equalsIgnoreCase("-list") && player.hasPermission("pokkedoll.admin")) {
+        } else if (args(0).equalsIgnoreCase("-list") && player.hasPermission("pokkedoll.admin")) {
           val comp = new ComponentBuilder("タグ一覧\n").color(ChatColor.GREEN)
           TagUtil.cache.foreach(f => {
             comp.append(s"${f._1} = ${f._2}\n")
           })
-          player.sendMessage(comp.append("//").color(ChatColor.GREEN).create():_*)
-        } else if(args(0).equalsIgnoreCase("-reload") && player.hasPermission("pokkedoll.admin")) {
+          player.sendMessage(comp.append("//").color(ChatColor.GREEN).create(): _*)
+        } else if (args(0).equalsIgnoreCase("-reload") && player.hasPermission("pokkedoll.admin")) {
           TagUtil.reloadConfig()
           player.sendMessage("リロードしました")
-        // タグを設定する
+          // タグを設定する
         } else {
           new BukkitRunnable {
             override def run(): Unit = {
-              if(TagUtil.hasTag(player, args(0))) {
+              if (TagUtil.hasTag(player, args(0))) {
                 TagUtil.setTag(player, args(0))
                 player.sendMessage(ChatColor.AQUA + "タグをセットしました!")
               } else {

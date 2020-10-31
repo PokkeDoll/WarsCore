@@ -17,7 +17,7 @@ class InviteCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {
       case player: Player =>
-        if(args.length == 0) {
+        if (args.length == 0) {
           player.sendMessage("§c使用方法: /invite §a<プレイヤー名>")
         } else {
           val name = args(0)
@@ -35,9 +35,9 @@ class InviteCommand extends CommandExecutor {
                       .append("ゲームモード: ").color(ChatColor.YELLOW).append(wp.game.get.title).color(ChatColor.GREEN).append("\n")
                       .append("参加するにはこのメッセージをクリック！！").bold(true).color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, s"/game join ${game.id}"))
                       .append("\n= = = = = = = = = = = = = = = = = = = = =").color(ChatColor.WHITE)
-                      .create():_*
+                      .create(): _*
                   )
-                  player.sendMessage(ChatColor.GREEN  + target.getName + ChatColor.WHITE + "に招待を送りました")
+                  player.sendMessage(ChatColor.GREEN + target.getName + ChatColor.WHITE + "に招待を送りました")
                   val advancement = AdvancementAPI.builder(new NamespacedKey(WarsCore.instance, "story/" + UUID.randomUUID().toString))
                     .frame(FrameType.TASK)
                     .icon("minecraft:bow")
@@ -58,6 +58,6 @@ class InviteCommand extends CommandExecutor {
         }
       case _ =>
     }
-   true
+    true
   }
 }

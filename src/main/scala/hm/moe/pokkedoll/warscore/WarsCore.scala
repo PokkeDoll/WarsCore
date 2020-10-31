@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.cspp.CrackShotPP
 import hm.moe.pokkedoll.warscore.WarsCore.LEGACY_TORUS_CHANNEL
-import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, RsCommand, SpawnCommand, TagCommand, UpgradeCommand, WarsCoreCommand}
+import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, SpawnCommand, TagCommand, UpgradeCommand, WarsCoreCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
@@ -31,13 +31,10 @@ class WarsCore extends JavaPlugin {
     Bukkit.getPluginManager.registerEvents(new PlayerListener(this), this)
     Bukkit.getPluginManager.registerEvents(new SignListener(this), this)
 
-    Bukkit.getPluginManager.registerEvents(new CrackShotPP(this, getConfig), this)
-
     val gameCommand = new GameCommand
     getCommand("game").setExecutor(gameCommand)
     getCommand("game").setTabCompleter(gameCommand)
     getCommand("invite").setExecutor(new InviteCommand)
-    getCommand("resourcepack").setExecutor(new RsCommand)
     getCommand("warscore").setExecutor(new WarsCoreCommand)
     getCommand("item").setExecutor(new ItemCommand)
     getCommand("upgrade").setExecutor(new UpgradeCommand)
@@ -55,6 +52,8 @@ class WarsCore extends JavaPlugin {
     UpgradeUtil.reloadConfig()
     TagUtil.reloadConfig()
 
+    val cspp = new CrackShotPP(this, getConfig)
+
     if(Bukkit.getOnlinePlayers.size()!=0) {
       Bukkit.getOnlinePlayers.forEach(f => {
         WarsCoreAPI.getWPlayer(f)
@@ -70,7 +69,6 @@ class WarsCore extends JavaPlugin {
     getServer.getMessenger.unregisterOutgoingPluginChannel(this, LEGACY_TORUS_CHANNEL)
     database.close()
   }
-
 }
 
 object WarsCore {

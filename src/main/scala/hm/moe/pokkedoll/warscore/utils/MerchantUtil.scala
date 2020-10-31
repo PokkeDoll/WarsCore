@@ -9,13 +9,14 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.{ItemStack, Merchant, MerchantRecipe}
 import org.bukkit.{Bukkit, ChatColor}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 /**
  * 村人と取引をするための拡張オブジェクト
  * 村人以外に対してもできるように
+ *
  * @author Emorard
  * @since 0.24.0
  * @version 2
@@ -56,13 +57,13 @@ object MerchantUtil {
   def hasName(name: String): Boolean = config.contains(name)
 
   def getMerchantRecipes(key: String): Option[java.util.List[MerchantRecipe]] = {
-    if(config.contains(key)) {
+    if (config.contains(key)) {
       val list = config.getStringList(key).asScala
         .map(StringUtils.split(_, ','))
         .filter(_.length == 3)
         .flatMap(arr => buildMerchantData(arr(1), arr(2), arr(0)))
         .asJava
-      if(list==null || list.size()==0) None else Some(list)
+      if (list == null || list.size() == 0) None else Some(list)
     } else None
   }
 
@@ -90,7 +91,7 @@ object MerchantUtil {
     val i1 = getItem(_1)
     val i2 = getItem(_2)
     val r = getItem(_r)
-    if(i1.isDefined && r.isDefined) {
+    if (i1.isDefined && r.isDefined) {
       val mr = new MerchantRecipe(r.get, Int.MaxValue)
       mr.setExperienceReward(false)
       mr.setUses(0)
@@ -108,7 +109,7 @@ object MerchantUtil {
     ItemUtil.getItem(arr(0)) match {
       case Some(value) =>
         val item = value.clone()
-        item.setAmount(if(arr.length == 1) 1 else Try(arr(1).toInt).getOrElse(1))
+        item.setAmount(if (arr.length == 1) 1 else Try(arr(1).toInt).getOrElse(1))
         Some(item)
       case _ =>
         None

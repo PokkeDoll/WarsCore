@@ -8,11 +8,9 @@ import scala.collection.mutable
  *
  * @note 単体では使わない。WarsCoreAPIで使う。
  * @see WarsCoreAPI#reloadMapinfo
- *
  * @constructor ゲームの識別IDとマップIDを作成
  * @param gameId ゲームの識別ID, TDMなど
- * @param mapId マップのID, yamaとかtaniとか
- *
+ * @param mapId  マップのID, yamaとかtaniとか
  * @author Emorard
  *
  *

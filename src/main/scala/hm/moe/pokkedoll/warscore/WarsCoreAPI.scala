@@ -31,9 +31,9 @@ object WarsCoreAPI {
 
   lazy val random = new Random()
 
-  protected [warscore] var DEFAULT_SPAWN: Location = _
+  protected[warscore] var DEFAULT_SPAWN: Location = _
 
-  protected [warscore] var FIRST_SPAWN: Location = _
+  protected[warscore] var FIRST_SPAWN: Location = _
 
   /** ゲーム情報 */
   val games = mutable.HashMap.empty[String, Game]
@@ -41,18 +41,8 @@ object WarsCoreAPI {
   /** プレイヤーのキャッシュ */
   val wplayers = new mutable.HashMap[Player, WPlayer](50, 1.0)
 
-  /** ワールドの設定 */
-  @Deprecated
-  var worldSettingConfig: ConfigurationSection = _
-
   /** マップ情報 */
   var mapinfo = Seq.empty[MapInfo]
-
-  /**
-   * リソースパック情報
-   */
-  @Deprecated
-  var rsInfo = mutable.HashMap.empty[String, String]
 
   /**
    * スコアボードたち
@@ -61,7 +51,8 @@ object WarsCoreAPI {
 
   /**
    * チームの設定をまとめたもの
-   * @param team
+   *
+   * @param team Team
    */
   def setBaseTeam(team: Team): Unit = {
     team.setAllowFriendlyFire(false)
@@ -72,14 +63,16 @@ object WarsCoreAPI {
 
   /**
    * APIにキャッシュされているインスタンスを返す。ないなら作る
-   * @param player
+   *
+   * @param player Player
    * @return
    */
   def getWPlayer(player: Player): WPlayer = wplayers.getOrElseUpdate(player, new WPlayer(player))
 
   /**
    * プレイヤーの動きを止める。視点は動かせる
-   * @param player
+   *
+   * @param player Player
    */
   def freeze(player: Player): Unit = {
     player.teleport(player.getLocation().add(0, 0.001, 0))
@@ -91,6 +84,7 @@ object WarsCoreAPI {
 
   /**
    * プレイヤーを動けるようにする。freezeと共に使用する
+   *
    * @see freeze(Player)
    */
   def unfreeze(player: Player): Unit = {
@@ -105,12 +99,13 @@ object WarsCoreAPI {
   /**
    * 説明しよう！(図で)<br>
    * mapinfo:             <- ↑ cs ↑<br>
-   *     tdm:             <- gameType<br>
-   *         mapA:        <- id<br>
-   *             author:<br>
-   *             spawn:<br>
-   *             ...<br>
-   * @param cs
+   * tdm:             <- gameType<br>
+   * mapA:        <- id<br>
+   * author:<br>
+   * spawn:<br>
+   * ...<br>
+   *
+   * @param cs mapinfo
    */
   def reloadMapInfo(cs: ConfigurationSection): Unit = {
     cs.getKeys(false).forEach(gameType => {
@@ -139,36 +134,27 @@ object WarsCoreAPI {
 
   /**
    * ゲームの情報を読み込む
-   * @param cs
+   *
+   * @param cs game
    */
   def reloadGame(cs: ConfigurationSection): Unit = {
     games.clear()
 
     (1 to 4) foreach (id => {
       games.put(s"tdm-$id", new TeamDeathMatch(s"tdm-$id"))
-      if(Bukkit.getWorld(s"tdm-$id") != null) WorldLoader.syncUnloadWorld(s"tdm-$id")
+      if (Bukkit.getWorld(s"tdm-$id") != null) WorldLoader.syncUnloadWorld(s"tdm-$id")
     })
 
     (1 to 2) foreach (id => {
       games.put(s"tactics-$id", new Tactics(s"tactics-$id"))
-      if(Bukkit.getWorld(s"tactics-$id") != null) WorldLoader.syncUnloadWorld(s"tactics-$id")
-    })
-  }
-
-  /**
-   * リソースパックの情報を読み込む
-   */
-  @Deprecated
-  def reloadRs(cs: ConfigurationSection): Unit = {
-    rsInfo.clear()
-    cs.getKeys(false).forEach(key => {
-      rsInfo.put(key, cs.getString(key, ""))
+      if (Bukkit.getWorld(s"tactics-$id") != null) WorldLoader.syncUnloadWorld(s"tactics-$id")
     })
   }
 
   /**
    * プレイヤーの所持している武器名を取得する
-   * @param player
+   *
+   * @param player Player
    * @return
    */
   def getAttackerWeaponName(player: Player): Option[String] = {
@@ -195,7 +181,8 @@ object WarsCoreAPI {
    * 重み:<br>
    * tdm: 0<br>
    * tactics: 1(暫定)
-   * @param player
+   *
+   * @param player Player
    */
   def openGameInventory(player: Player): Unit = {
     val inv = Bukkit.createInventory(null, 18, GAME_INVENTORY_TITLE)
@@ -203,16 +190,16 @@ object WarsCoreAPI {
     inv.setItem(0, openGameInventoryIcon)
     inv.setItem(9, new ItemStack(Material.IRON_SWORD))
     games.foreach(f => {
-      val weight = if(f._1.startsWith("tdm")) {
+      val weight = if (f._1.startsWith("tdm")) {
         slot = (slot._1 + 1, slot._2, slot._3)
         slot._1
       } else if (f._1.startsWith("tactics")) {
         slot = (slot._1, slot._2 + 1, slot._3)
         slot._2
       } else slot._3
-      val icon = ((damage => new ItemStack(Material.INK_SACK, f._2.members.size + 1, damage)): Short => ItemStack)(if(f._2.state.join) 10 else 8)
+      val icon = ((damage => new ItemStack(Material.INK_SACK, f._2.members.size + 1, damage)): Short => ItemStack) (if (f._2.state.join) 10 else 8)
       val meta = icon.getItemMeta
-      meta.setDisplayName((if(f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._1}")
+      meta.setDisplayName((if (f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._1}")
       meta.setLore(java.util.Arrays.asList(s"§f${f._2.title}", s"§e${f._2.description}", s"§a${f._2.members.size} §7/ §a${f._2.maxMember} プレイ中", s"§a${f._2.state.title}"))
       icon.setItemMeta(meta)
       inv.setItem(weight, icon)
@@ -225,7 +212,8 @@ object WarsCoreAPI {
   /**
    * スコアボードを更新する
    * スコアボードはscoreboardsにすでに存在するものとする
-   * @param player
+   *
+   * @param player Player
    */
   def updateScoreboard(player: Player, scoreboard: Scoreboard): Unit = {
     val test = new Test("updateScoreboard")
@@ -275,7 +263,7 @@ object WarsCoreAPI {
             WarsCore.instance.getLogger.info(s"WarsCoreAPI.addScoreboard(${player.getName})")
             /* タグの問題 */
             val oTag = f._2.getObjective("tag")
-            if(oTag!=null)
+            if (oTag != null)
               oTag.getScore(player.getName).setScore(0)
             else
               WarsCore.instance.getLogger.info(s"oTag is null! ${f._2}")
@@ -317,8 +305,9 @@ object WarsCoreAPI {
 
   /**
    * 統計
-   * @param player
-   * @param target
+   *
+   * @param player Player
+   * @param target Target
    */
   def openStatsInventory(player: Player, target: Player): Unit = {
     val inv = Bukkit.createInventory(null, 18, s"${target.getName}'s stats'")
@@ -385,7 +374,7 @@ object WarsCoreAPI {
 
   def splitToComponentTimes(biggy: BigDecimal): (Int, Int, Int) = {
     val long = biggy.longValue
-    val hours = (long/3600).toInt
+    val hours = (long / 3600).toInt
     var remainder = (long - hours * 3600).toInt
     val mins = remainder / 60
     remainder = remainder - mins * 60
@@ -420,11 +409,11 @@ object WarsCoreAPI {
     //Bukkit.getWorlds.get(0).getPlayers.forEach(_.sendMessage(comp:_*))
     //
     //Bukkit.broadcast(new TextComponent("テスト用メッセ"))
-    Bukkit.broadcast(comp:_*)
+    Bukkit.broadcast(comp: _*)
   }
 
   def playBattleSound(game: Game): Unit = {
     val n = random.nextInt(3) + 1
-    game.members.map(_.player).foreach(p => p.playSound(p.getLocation, s"battle${n}", 1f, 1f))
+    game.members.map(_.player).foreach(p => p.playSound(p.getLocation, s"battle$n", 1f, 1f))
   }
 }
