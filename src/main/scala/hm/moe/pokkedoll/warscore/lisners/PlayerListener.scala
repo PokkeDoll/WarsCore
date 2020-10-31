@@ -37,6 +37,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       case player: Player =>
         WarsCoreAPI.getWPlayer(player).game match {
           case Some(game) =>
+            game.damage(e)
           case _ =>
         }
       case _ =>
@@ -212,7 +213,9 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onSprint(e: PlayerToggleSprintEvent): Unit = {
     val player = e.getPlayer
-    if(player.getWorld.getName != WarsCoreAPI.LOBBY && player.getGameMode == GameMode.SURVIVAL) {
+    if(player.getWorld.getName == WarsCoreAPI.LOBBY && player.getFoodLevel != 20) {
+      player.setFoodLevel(20)
+    } else if(player.getWorld.getName != WarsCoreAPI.LOBBY && player.getGameMode == GameMode.SURVIVAL) {
       new BukkitRunnable {
         override def run(): Unit = {
           if(e.isSprinting) {

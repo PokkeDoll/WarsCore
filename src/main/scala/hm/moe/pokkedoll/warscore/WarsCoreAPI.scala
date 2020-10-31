@@ -143,14 +143,14 @@ object WarsCoreAPI {
   def reloadGame(cs: ConfigurationSection): Unit = {
     games.clear()
 
-    (1 to 8) foreach (id => {
-      games.put(s"tdm-test-$id", new TeamDeathMatch(s"tdm-test-$id"))
-      if(Bukkit.getWorld(s"tdm-test-$id") != null) WorldLoader.syncUnloadWorld(s"tdm-test-$id")
+    (1 to 4) foreach (id => {
+      games.put(s"tdm-$id", new TeamDeathMatch(s"tdm-$id"))
+      if(Bukkit.getWorld(s"tdm-$id") != null) WorldLoader.syncUnloadWorld(s"tdm-$id")
     })
 
-    (1 to 4) foreach (id => {
-      games.put(s"tactics-test-$id", new Tactics(s"tactics-test-$id"))
-      if(Bukkit.getWorld(s"tactics-test-$id") != null) WorldLoader.syncUnloadWorld(s"tactics-test-$id")
+    (1 to 2) foreach (id => {
+      games.put(s"tactics-$id", new Tactics(s"tactics-$id"))
+      if(Bukkit.getWorld(s"tactics-$id") != null) WorldLoader.syncUnloadWorld(s"tactics-$id")
     })
   }
 
@@ -180,6 +180,14 @@ object WarsCoreAPI {
 
   val GAME_INVENTORY_TITLE = "§aゲーム一覧！"
 
+  private val openGameInventoryIcon: ItemStack = {
+    val i = new ItemStack(Material.ARROW, 1)
+    val m = i.getItemMeta
+    m.setUnbreakable(true)
+    i.setItemMeta(m)
+    i
+  }
+
   /**
    * ゲーム情報GUI版<br>
    * 重み:<br>
@@ -190,7 +198,7 @@ object WarsCoreAPI {
   def openGameInventory(player: Player): Unit = {
     val inv = Bukkit.createInventory(null, 18, GAME_INVENTORY_TITLE)
     var slot = (0, 9, 18)
-    inv.setItem(0, new ItemStack(Material.BOW))
+    inv.setItem(0, openGameInventoryIcon)
     inv.setItem(9, new ItemStack(Material.IRON_SWORD))
     games.foreach(f => {
       val weight = if(f._1.startsWith("tdm")) {
@@ -294,60 +302,6 @@ object WarsCoreAPI {
   @Deprecated
   def addScoreBoard(player: Player): Unit = {
     updateScoreboard(player, scoreboards.getOrElseUpdate(player, scoreboardManager.getNewScoreboard))
-    /*
-    val test = new Test()
-    val board = scoreboardManager.getNewScoreboard
-
-    WarsCore.instance.database.getRankData(player.getUniqueId.toString) match {
-      case Some(data) =>
-
-        // ついでに更新
-        WarsCoreAPI.wplayers(player).rank = data._1
-        RankManager.updateSidebar(board, data)
-
-        // 名前の下に書くやつ
-        val tag = board.registerNewObjective("tag", "dummy")
-        tag.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&a(ここにTAG) &f0"))
-        tag.getScore(player.getName).setScore(0)
-        tag.setDisplaySlot(DisplaySlot.BELOW_NAME)
-
-        player.setScoreboard(board)
-
-        /* 自分 */
-        val team = board.registerNewTeam(player.getName)
-        team.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${data._1}&7]&r "))
-        team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-        team.addEntry(player.getName)
-
-        scoreboards.foreach(f => {
-          WarsCore.instance.getLogger.info(s"WarsCoreAPI.addScoreboard(${player.getName})")
-          /* タグの問題 */
-          val oTag = f._2.getObjective("tag")
-          if(oTag!=null)
-            oTag.getScore(player.getName).setScore(0)
-          else
-            WarsCore.instance.getLogger.info(s"oTag is null! ${f._2}")
-          /* 他プレイヤーに対して */
-          val oTeam = f._2.registerNewTeam(player.getName)
-          oTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${data._1}&7]&r "))
-          oTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-          oTeam.addEntry(player.getName)
-
-          /* 自分に対して */
-          tag.getScore(f._1.getName).setScore(0)
-
-          val mTeam = board.registerNewTeam(f._1.getName)
-          mTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${data._1}&7]&r "))
-          mTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-          mTeam.addEntry(f._1.getName)
-        })
-      case None =>
-    }
-
-    scoreboards.put(player, board)
-
-    test.log("WarsCoreAPI.addScoreboard()")
-     */
   }
 
 
@@ -419,13 +373,10 @@ object WarsCoreAPI {
   val NEWS: Array[BaseComponent] =
     new ComponentBuilder("= = = = = = = = = = =").color(ChatColor.GREEN).underlined(true)
       .append("お知らせ").underlined(false)
-      .append("= = = = = = = = = = =\n").underlined(true)
-      .append("*").color(ChatColor.WHITE).underlined(false)
-      //.append("開発進捗や計画はすべてGitLabで公開されています\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll-mc/-/boards"))
-      //.append("*").color(ChatColor.WHITE)
-      //.append("バージョン判定されてるけどまだ1.12.2のリソースパックを送信しています\n")
-      //.append("*")
-      .append("Discordに参加しよう！ こちらメッセージをクリックしてください！").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://discordapp.com/invite/TJ3bkkY"))
+      .append("= = = = = = = = = = =\n\n").underlined(true)
+      .append("* ").reset().append("Discordに参加しよう！ こちらメッセージをクリックしてください！\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://discordapp.com/invite/TJ3bkkY"))
+      .append("* ").reset().append("不具合情報/開発状況はマイルストーンにまとめています！\n").event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll/-/milestones/1"))
+      .append("* ").reset().append("βテスト開催中！  一新されたTDMをお楽しみください")
       .create()
 
 

@@ -45,7 +45,7 @@ object RankManager {
             obj.getScore(chatColor(s"&9EXP: &aRANK UP!")).setScore(7)
 
             player.playSound(player.getLocation, Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f)
-            wp.sendMessage(s"&bランクが &a${data._1} &bに上がりました！")
+            wp.sendMessage(s"&bランクが &a${data._1 + 1} &bに上がりました！")
             (data._1 + 1, 0)
           } else {
             // サイドバーに表記

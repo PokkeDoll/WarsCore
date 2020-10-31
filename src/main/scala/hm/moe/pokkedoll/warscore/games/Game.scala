@@ -2,6 +2,7 @@ package hm.moe.pokkedoll.warscore.games
 
 import hm.moe.pokkedoll.warscore.utils.MapInfo
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
+import net.md_5.bungee.api.chat.BaseComponent
 import org.bukkit.{ChatColor, World}
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
@@ -153,5 +154,9 @@ trait Game {
    */
   def sendMessage(string: String): Unit = {
     world.getPlayers.forEach(_.sendMessage(ChatColor.translateAlternateColorCodes('&', string)))
+  }
+
+  def sendMessage(components: Array[BaseComponent]): Unit = {
+    world.getPlayers.forEach(_.sendMessage(components:_*))
   }
 }
