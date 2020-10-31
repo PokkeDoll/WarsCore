@@ -9,7 +9,7 @@ import io.chazza.advancementapi.Trigger.{TriggerBuilder, TriggerType}
 import io.chazza.advancementapi.{AdvancementAPI, FrameType, Trigger}
 import org.bukkit.{Bukkit, ChatColor, NamespacedKey}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
-import org.bukkit.entity.Player
+import org.bukkit.entity.{EntityType, Player}
 import org.bukkit.metadata.FixedMetadataValue
 
 class WarsCoreCommand extends CommandExecutor {
@@ -28,7 +28,9 @@ class WarsCoreCommand extends CommandExecutor {
           if (args(0) == "config" || args(0) == "conf") {
             if(args.length > 1 && (args(1) == "reload")) {
               WarsCore.instance.reloadConfig()
-              player.sendMessage(ChatColor.BLUE + "リロードしました。")
+              player.sendMessage(ChatColor.BLUE + "コンフィグをリロードしました。")
+              WarsCoreAPI.reloadMapInfo(WarsCore.instance.getConfig.getConfigurationSection("mapinfo"))
+              player.sendMessage(ChatColor.BLUE + "マップ情報をリロードしました。")
               MerchantUtil.merchantCache.clear()
             }
           } else if (args(0) == "exp") {
@@ -64,6 +66,15 @@ class WarsCoreCommand extends CommandExecutor {
             } else {
               player.setMetadata("cmdesp", new FixedMetadataValue(WarsCore.instance, "true"))
               player.sendMessage(ChatColor.BLUE + "CMDESPを有効化しました")
+            }
+          } else if (args(0) == "changedisplayname" || args(0) == "cd") {
+            if(args.length > 1) {
+              val entities = player.getNearbyEntities(1d, 1d, 1d).stream().filter(p => p.getType != EntityType.PLAYER).findFirst()
+              entities.ifPresent(t => {
+                player.sendMessage(s"${t.getLocation.toString}のエンティティの名前を変更しました。")
+                t.setCustomNameVisible(true)
+                t.setCustomName(ChatColor.translateAlternateColorCodes('&', args.tail.mkString(" ")))
+              })
             }
           }
         }

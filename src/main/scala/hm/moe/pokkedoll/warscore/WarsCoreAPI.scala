@@ -51,6 +51,7 @@ object WarsCoreAPI {
   /**
    * リソースパック情報
    */
+  @Deprecated
   var rsInfo = mutable.HashMap.empty[String, String]
 
   /**
@@ -157,6 +158,7 @@ object WarsCoreAPI {
   /**
    * リソースパックの情報を読み込む
    */
+  @Deprecated
   def reloadRs(cs: ConfigurationSection): Unit = {
     rsInfo.clear()
     cs.getKeys(false).forEach(key => {
@@ -347,6 +349,7 @@ object WarsCoreAPI {
       "",
       ""
     ))
+
   }
 
   def setChangeInventory(wp: WPlayer): Unit = {
@@ -416,7 +419,12 @@ object WarsCoreAPI {
       .create()
     //Bukkit.getWorlds.get(0).getPlayers.forEach(_.sendMessage(comp:_*))
     //
-    Bukkit.broadcast(new TextComponent("テスト用メッセ"))
+    //Bukkit.broadcast(new TextComponent("テスト用メッセ"))
     Bukkit.broadcast(comp:_*)
+  }
+
+  def playBattleSound(game: Game): Unit = {
+    val n = random.nextInt(3) + 1
+    game.members.map(_.player).foreach(p => p.playSound(p.getLocation, s"battle${n}", 1f, 1f))
   }
 }

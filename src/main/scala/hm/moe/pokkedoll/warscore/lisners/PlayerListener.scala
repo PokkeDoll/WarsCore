@@ -2,19 +2,18 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import java.util
 
-import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, EnderChestManager, ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
+import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
-import net.milkbowl.vault.economy.Economy
 import org.bukkit.entity.Player
-import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.inventory.InventoryType.SlotType
-import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType, PrepareAnvilEvent}
-import org.bukkit.event.player.{PlayerCommandPreprocessEvent, PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent, PlayerToggleSprintEvent}
+import org.bukkit.event.inventory._
+import org.bukkit.event.player._
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 
 class PlayerListener(plugin: WarsCore) extends Listener {
 

@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '0.37.20'
+version: '0.37.23'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
 softdepend: [Vault]

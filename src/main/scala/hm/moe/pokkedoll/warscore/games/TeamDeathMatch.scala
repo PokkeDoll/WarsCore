@@ -208,6 +208,8 @@ class TeamDeathMatch(override val id: String) extends Game {
       }
     })
 
+    WarsCoreAPI.playBattleSound(this)
+
     // 効率化のため割り算を先に計算する
     val div = 1 / 100.0
 
@@ -289,7 +291,9 @@ class TeamDeathMatch(override val id: String) extends Game {
         .append("Blue Team").color(ChatColor.BLUE).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
     } else {
-      endMsg.append("                Draw                \n").color(ChatColor.WHITE).bold(false).underlined(true)
+      endMsg.append("                ").reset()
+        .append("Draw").underlined(true)
+        .append("                \n").reset()
     }
 
     sendMessage(endMsg.create())
@@ -414,6 +418,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     wp.game = None
     sendMessage(s"${wp.player.getName} が退出しました")
     if (wp.player.isOnline) {
+      if(wp.player.getGameMode == GameMode.SPECTATOR) wp.player.setGameMode(GameMode.SURVIVAL)
       // スコアボード情報をリセット
       wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
       wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
@@ -627,12 +632,12 @@ class TeamDeathMatch(override val id: String) extends Game {
       center = team
 
       sendMessage(prefix + ChatColor.WHITE + "が中央を占拠し、" + ChatColor.GREEN + "20ポイント" + ChatColor.WHITE + "を獲得しました！")
-      val fwl = locationData._4.add(0d, 3d, 0d)
+      val fwl = locationData._4.clone().add(0d, 3d, 0d)
       val fw = world.spawnEntity(fwl, EntityType.FIREWORK).asInstanceOf[Firework]
       val meta = fw.getFireworkMeta
       meta.addEffect(FireworkEffect.builder().withColor(color).`with`(FireworkEffect.Type.CREEPER).build())
       fw.setFireworkMeta(meta)
-      val loc = locationData._4.add(0, 1, 0)
+      val loc = locationData._4.clone().add(0, 1, 0)
       for (i <- -1 to 1) {
         for (j <- -1 to 1) {
           val block = world.getBlockAt(loc.getBlockX + i, loc.getBlockY, loc.getBlockZ + j)
@@ -653,7 +658,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   private def canBuild(location: Location): Boolean = {
     val center = locationData._4
     (location.getX >= center.getX - buildRange && location.getX <= center.getX + buildRange) &&
-      (location.getY >= center.getY + 1 && location.getY <= center.getY + buildRange*2) &&
+      (location.getY >= center.getY + 2 && location.getY <= center.getY + buildRange*2) &&
       (location.getZ >= center.getZ - buildRange && location.getZ <= center.getZ + buildRange)
   }
 

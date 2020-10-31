@@ -49,7 +49,6 @@ class WarsCore extends JavaPlugin {
     WarsCoreAPI.FIRST_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.first", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
     WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))
     WarsCoreAPI.reloadGame(null)
-    WarsCoreAPI.reloadRs(getConfig.getConfigurationSection("resourcepacks"))
 
     ItemUtil.reloadItem()
     MerchantUtil.reload()
@@ -71,6 +70,7 @@ class WarsCore extends JavaPlugin {
     getServer.getMessenger.unregisterOutgoingPluginChannel(this, LEGACY_TORUS_CHANNEL)
     database.close()
   }
+
 }
 
 object WarsCore {
