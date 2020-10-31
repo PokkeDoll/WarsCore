@@ -8,7 +8,7 @@ import net.milkbowl.vault.economy.Economy
 import org.bukkit.entity.Player
 import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
-import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType, PrepareAnvilEvent}
 import org.bukkit.event.player.{PlayerCommandPreprocessEvent, PlayerInteractAtEntityEvent, PlayerInteractEvent, PlayerItemHeldEvent, PlayerTeleportEvent, PlayerToggleSprintEvent}
@@ -29,6 +29,19 @@ class PlayerListener(plugin: WarsCore) extends Listener {
           e.getEntity.teleport(e.getEntity.getWorld.getSpawnLocation)
         }
     }
+  }
+
+  @EventHandler
+  def onDamage(e: EntityDamageByEntityEvent): Unit = {
+    e.getEntity match {
+      case player: Player =>
+        WarsCoreAPI.getWPlayer(player).game match {
+          case Some(game) =>
+          case _ =>
+        }
+      case _ =>
+    }
+
   }
 
   @EventHandler

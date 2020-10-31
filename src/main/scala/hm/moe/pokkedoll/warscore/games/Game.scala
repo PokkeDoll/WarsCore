@@ -6,7 +6,7 @@ import org.bukkit.{ChatColor, World}
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
-import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.player.PlayerRespawnEvent
 
 import scala.collection.mutable
@@ -70,18 +70,41 @@ trait Game {
    */
   val time: Int
 
+  /**
+   * ゲームを読み込む
+   */
   def load(): Unit
 
+  /**
+   * ゲームを初期化する
+   */
   def init(): Unit
 
+  /**
+   * ゲームのカウントダウンを開始する
+   */
   def ready(): Unit
 
+  /**
+   * ゲームを開始する
+   */
   def play(): Unit
 
+  /**
+   * ゲームを終了する
+   */
   def end(): Unit
 
+  /**
+   * ゲームを削除する
+   */
   def delete(): Unit
 
+  /**
+   * プレイヤーがゲームに参加するときのメソッド
+   * @param wp プレイヤー
+   * @return 参加できる場合
+   */
   def join(wp: WPlayer): Boolean
 
   /**
@@ -90,24 +113,44 @@ trait Game {
    */
   def join(p: Player): Boolean = join(WarsCoreAPI.getWPlayer(p))
 
+  /**
+   * プレイヤーがゲームから抜けたときのメソッド
+   * @param wp プレイヤー
+   */
   def hub(wp: WPlayer): Unit
 
   def hub(p: Player): Unit = hub(WarsCoreAPI.getWPlayer(p))
 
+  /**
+   * プレイヤーが死亡したときのイベント
+   * @param e イベント
+   */
   def death(e: PlayerDeathEvent): Unit
+
+
+  /**
+   * プレイヤーがダメージを受けた時のイベント
+   * @param e イベント
+   */
+  def damage(e: EntityDamageByEntityEvent): Unit
+
 
   /**
    * ブロックを破壊するときに呼び出されるイベント
-   * @param e
+   * @param e イベント
    */
   def break(e: BlockBreakEvent): Unit
 
   /**
    * ブロックを設置するときに呼び出されるイベント
-   * @param e
+   * @param e イベント
    */
   def place(e: BlockPlaceEvent): Unit
 
+  /**
+   * ゲームに参加しているプレイヤー全員にメッセージを送信する
+   * @param string
+   */
   def sendMessage(string: String): Unit = {
     world.getPlayers.forEach(_.sendMessage(ChatColor.translateAlternateColorCodes('&', string)))
   }

@@ -6,7 +6,7 @@ import org.bukkit.{Bukkit, GameMode, Location, Sound, World, scheduler}
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
-import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.potion.{PotionEffect, PotionEffectType}
 import org.bukkit.scheduler.BukkitRunnable
@@ -350,4 +350,11 @@ class Tactics(override val id: String) extends Game {
    * @param e
    */
   override def place(e: BlockPlaceEvent): Unit = return
+
+  /**
+   * プレイヤーがダメージを受けた時のイベント
+   *
+   * @param e イベント
+   */
+  override def damage(e: EntityDamageByEntityEvent): Unit = ???
 }

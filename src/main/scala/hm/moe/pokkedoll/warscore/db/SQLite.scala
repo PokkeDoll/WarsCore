@@ -278,6 +278,7 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
+  //TODO SQLにdmaagedの追加
   override def updateTDM(game: TeamDeathMatch): Boolean = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("UPDATE tdm SET kill=kill+?, death=death+?, assist=assist+?, damage=damage+?, win=win+?, play=play+1 WHERE uuid=?")
@@ -286,7 +287,7 @@ class SQLite(plugin: WarsCore) extends Database {
         ps.setInt(1, f._2.kill)
         ps.setInt(2, f._2.death)
         ps.setInt(3, f._2.assist)
-        ps.setInt(4, f._2.damage)
+        ps.setDouble(4, f._2.damage)
         ps.setInt(5, if(f._2.win) 1 else 0)
         ps.setString(6, f._1)
         ps.executeUpdate()
