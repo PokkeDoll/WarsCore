@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
-import hm.moe.pokkedoll.warscore.games.{Game, Tactics, TeamDeathMatch}
+import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch}
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, TagUtil, WorldLoader}
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent, TextComponent}
 import org.bukkit.configuration.ConfigurationSection
@@ -108,9 +108,8 @@ object WarsCoreAPI {
    * @param cs mapinfo
    */
   def reloadMapInfo(cs: ConfigurationSection): Unit = {
+    mapinfo = Seq.empty[MapInfo]
     cs.getKeys(false).forEach(gameType => {
-      mapinfo = Seq.empty[MapInfo]
-
       cs.getConfigurationSection(gameType).getKeys(false).forEach(id => {
         val i = new MapInfo(gameType, id)
         i.mapName = cs.getString(s"$gameType.$id.mapName")
@@ -146,9 +145,15 @@ object WarsCoreAPI {
     })
 
     (1 to 2) foreach (id => {
+      games.put(s"dom-$id", new Domination(s"dom-$id"))
+      if (Bukkit.getWorld(s"dom-$id") != null) WorldLoader.syncUnloadWorld(s"dom-$id")
+    })
+/*
+    (1 to 2) foreach (id => {
       games.put(s"tactics-$id", new Tactics(s"tactics-$id"))
       if (Bukkit.getWorld(s"tactics-$id") != null) WorldLoader.syncUnloadWorld(s"tactics-$id")
     })
+ */
   }
 
   /**
@@ -185,7 +190,7 @@ object WarsCoreAPI {
    * @param player Player
    */
   def openGameInventory(player: Player): Unit = {
-    val inv = Bukkit.createInventory(null, 18, GAME_INVENTORY_TITLE)
+    val inv = Bukkit.createInventory(null, 27, GAME_INVENTORY_TITLE)
     var slot = (0, 9, 18)
     inv.setItem(0, openGameInventoryIcon)
     inv.setItem(9, new ItemStack(Material.IRON_SWORD))
@@ -193,10 +198,11 @@ object WarsCoreAPI {
       val weight = if (f._1.startsWith("tdm")) {
         slot = (slot._1 + 1, slot._2, slot._3)
         slot._1
-      } else if (f._1.startsWith("tactics")) {
+      } else if (f._1.startsWith("dom")) {
         slot = (slot._1, slot._2 + 1, slot._3)
         slot._2
       } else slot._3
+      // TODO tacticsが死んじゃった！この人でなし！
       val icon = ((damage => new ItemStack(Material.INK_SACK, f._2.members.size + 1, damage)): Short => ItemStack) (if (f._2.state.join) 10 else 8)
       val meta = icon.getItemMeta
       meta.setDisplayName((if (f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._1}")

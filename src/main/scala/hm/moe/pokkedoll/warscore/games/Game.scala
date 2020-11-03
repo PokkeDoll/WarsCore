@@ -159,4 +159,8 @@ trait Game {
   def sendMessage(components: Array[BaseComponent]): Unit = {
     world.getPlayers.forEach(_.sendMessage(components:_*))
   }
+
+  def sendActionBar(string: String): Unit = {
+    world.getPlayers.forEach(_.sendActionBar(ChatColor.translateAlternateColorCodes('&', string)))
+  }
 }

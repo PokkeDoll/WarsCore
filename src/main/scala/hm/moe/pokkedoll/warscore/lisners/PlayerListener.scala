@@ -76,16 +76,16 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     if (inv.getType == InventoryType.ANVIL && e.getSlot == 2 && e.getClick == ClickType.LEFT) {
       if (!UpgradeUtil.onUpgrade(inv, p)) {
         e.setCancelled(true)
-        plugin.getLogger.info("Event Cancelled@47")
+        //plugin.getLogger.info("Event Cancelled@47")
       }
     }
     // クラフトはできない
     else if (inv.getType == InventoryType.PLAYER && e.getSlotType == SlotType.CRAFTING) {
       e.setCancelled(true)
-      plugin.getLogger.info("Event Cancelled!@54")
+      //plugin.getLogger.info("Event Cancelled!@54")
       // ゲームインベントリ
     } else if (e.getView.getTitle == WarsCoreAPI.GAME_INVENTORY_TITLE) {
-      plugin.getLogger.info("Event Cancelled!@59")
+      //plugin.getLogger.info("Event Cancelled!@59")
       e.setCancelled(true)
       val icon = e.getCurrentItem
       if (icon == null || !icon.hasItemMeta || !icon.getItemMeta.hasDisplayName) return
@@ -107,7 +107,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
       if (wp.game.isDefined) {
         if (!wp.changeInventory && e.getSlotType != SlotType.QUICKBAR) {
-          plugin.getLogger.info("Event Cancelled!@83")
+          //plugin.getLogger.info("Event Cancelled!@83")
           e.setCancelled(true)
           p.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
         }
