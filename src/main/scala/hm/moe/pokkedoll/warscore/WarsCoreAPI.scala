@@ -422,4 +422,11 @@ object WarsCoreAPI {
     val n = random.nextInt(3) + 1
     game.members.map(_.player).foreach(p => p.playSound(p.getLocation, s"battle$n", 1f, 1f))
   }
+
+  def createFirework(location: Location, color: Color, `type`: FireworkEffect.Type): Unit = {
+    val fw = location.getWorld.spawnEntity(location, EntityType.FIREWORK).asInstanceOf[Firework]
+    val meta = fw.getFireworkMeta
+    meta.addEffect(FireworkEffect.builder().withColor(color).`with`(`type`).build())
+    fw.setFireworkMeta(meta)
+  }
 }

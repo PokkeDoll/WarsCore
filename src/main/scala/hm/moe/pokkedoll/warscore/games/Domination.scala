@@ -116,6 +116,8 @@ class Domination(override val id: String) extends Game {
     redTeam.getEntries.forEach(f => redTeam.removeEntry(f))
     blueTeam.getEntries.forEach(f => blueTeam.removeEntry(f))
 
+    scoreboard.getEntries.forEach(scoreboard.resetScores(_))
+
     sidebar.getScore(ChatColor.RED + "拠点 赤軍").setScore(100)
     sidebar.getScore(ChatColor.BLUE + "拠点 青軍").setScore(100)
     sidebar.getScore(ChatColor.GRAY + "拠点 A").setScore(0)
@@ -194,6 +196,8 @@ class Domination(override val id: String) extends Game {
     // 効率化のため割り算を先に計算する
     val div = 1 / 100.0
 
+    val captureParam = if(members.length >= 10) 1 else 3
+
     new BukkitRunnable {
       var TIME: Int = time
 
@@ -235,32 +239,59 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
               val d = data(p)
               // TODO 確かに連続して占領が行われることはないが、指を加えて見ないといけない！！
               if(d.team != f.team) {
-                // 101 ~ 200 赤の範囲
+                // データ上は 1 ~ 100: スコアボードでは 0 ~ 100
                 if (d.team == "red") {
-                  f.count += 1
-                  val score = (((f.count - 100) * div) * 100.0).toInt
-                  sidebar.getScore(f.name).setScore(score)
-                  if (f.count == 100) {
-                    occupy(f, 0.toByte)
-                  } else if (f.count >= 200) {
-                    //occupy("red", ChatColor.RED + "赤チーム", Color.RED, 14.toByte)
-                    occupy(f, 14.toByte)
-                  }
-                  // 0 ~ 99 青の範囲
+                  f.count += captureParam
                 } else {
-                  f.count -= 1
-                  val score = (((f.count - 100) * div) * 100.0).toInt
-                  sidebar.getScore(f.name).setScore(score)
-                  if (f.count == 100) {
-                    occupy(f, 0.toByte)
-                  } else if (0 >= f.count) {
-                    //occupy("blue", ChatColor.BLUE + "青チーム", Color.BLUE, 11.toByte)
-                    occupy(f, 11.toByte)
-                  }
+                  f.count -= captureParam
                 }
               }
-              // TODO スコアボード表示
             })
+            // TODO ゴミみたいなコードの修正
+            // 赤ちーむ
+            if(f.count > 0) {
+              // 赤の勝ち
+              if(f.count >= 100 && f.team != "red") {
+                occupy(f, 14.toByte)
+              } else if (f.team == "neutral") {
+                // 中立から赤へ
+                if(f.name.startsWith("§7")) {
+                  sendActionBar("TEST => SUC R: A &' A &'")
+                  scoreboard.resetScores(f.name)
+                  val stripName = ChatColor.stripColor(f.name)
+                  val name = Array(stripName.substring(0, stripName.length / 2), stripName.substring(stripName.length / 2, stripName.length))
+                  f.name =ChatColor.RED + name(0) + ChatColor.GRAY + name(1)
+                }
+                sidebar.getScore(f.name).setScore(calcScore(f.count))
+              } else if (f.team == "blue") {
+                occupy(f, 0.toByte)
+              } else {
+                sidebar.getScore(f.name).setScore(calcScore(f.count))
+              }
+            // 青ちーむ
+            } else if (f.count < 0) {
+              // 青の勝ち
+              if(f.count <= -100 && f.team != "blue") {
+                occupy(f, 11.toByte)
+              } else if (f.team == "neutral") {
+                // 中立から赤へ
+                if(f.name.startsWith("§7")) {
+                  sendActionBar("TEST => SUC R: A &' A &'")
+                  scoreboard.resetScores(f.name)
+                  val stripName = ChatColor.stripColor(f.name)
+                  val name = Array(stripName.substring(0, stripName.length / 2), stripName.substring(stripName.length / 2, stripName.length))
+                  f.name =ChatColor.BLUE + name(0) + ChatColor.GRAY + name(1)
+                }
+                sidebar.getScore(f.name).setScore(calcScore(f.count))
+              } else if (f.team == "red") {
+                occupy(f, 0.toByte)
+              } else {
+                sidebar.getScore(f.name).setScore(calcScore(f.count))
+              }
+            // 0なら!=>中立
+            } else if (f.team != "neutral") {
+              occupy(f, 0.toByte)
+            }
           })
 
           TIME -= 1
@@ -270,6 +301,10 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
         }
       }
     }.runTaskTimer(WarsCore.instance, 0, 20L)
+  }
+
+  private def calcScore(score: Int): Int = {
+    Math.abs(score)
   }
 
   /**
@@ -585,11 +620,12 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
     val c = mapInfo.locations.getOrElse("c", (0d, 0d, 0d, 0f, 0f))
     spawnPoint = new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5)
     captureData = Vector(
-      new CapturePoint(ChatColor.RED + "拠点 赤軍", "red", 200, new Location(world, red._1, red._2, red._3, red._4, red._5)),
-      new CapturePoint(ChatColor.BLUE + "拠点 青軍", "blue", 0, new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5)),
-      new CapturePoint(ChatColor.GRAY + "拠点 A", "a", 100, new Location(world, a._1, a._2, a._3, a._4, a._5)),
-      new CapturePoint(ChatColor.GRAY + "拠点 B", "b", 100, new Location(world, b._1, b._2, b._3, b._4, b._5)),
-      new CapturePoint(ChatColor.GRAY + "拠点 C", "c", 100, new Location(world, c._1, c._2, c._3, c._4, c._5))
+      // -100 = 青, 100 = 赤, -99 ~ 99 = なし
+      new CapturePoint(ChatColor.RED + "拠点 赤軍", "red", 100, new Location(world, red._1, red._2, red._3, red._4, red._5)),
+      new CapturePoint(ChatColor.BLUE + "拠点 青軍", "blue", -100, new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5)),
+      new CapturePoint(ChatColor.GRAY + "拠点 A", "neutral", 0, new Location(world, a._1, a._2, a._3, a._4, a._5)),
+      new CapturePoint(ChatColor.GRAY + "拠点 B", "neutral", 0, new Location(world, b._1, b._2, b._3, b._4, b._5)),
+      new CapturePoint(ChatColor.GRAY + "拠点 C", "neutral", 0, new Location(world, c._1, c._2, c._3, c._4, c._5))
     )
   }
 
@@ -616,30 +652,25 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
   // TODO なぜか負の値になる
   private def occupy(point: CapturePoint, flag: Byte): Unit = {
     scoreboard.resetScores(point.name)
-    val color =
     if (flag == 14) {
       point.team = "red"
       point.name = ChatColor.RED + ChatColor.stripColor(point.name)
       sendMessage(ChatColor.RED + "赤チーム" + ChatColor.WHITE + "が占拠")
-      Color.RED
+      sidebar.getScore(point.name).setScore(100)
+      WarsCoreAPI.createFirework(point.location.clone().add(0d, 3d, 0d), Color.RED, FireworkEffect.Type.CREEPER)
+
     } else if (flag == 11) {
       point.team = "blue"
       point.name = ChatColor.BLUE + ChatColor.stripColor(point.name)
       sendMessage(ChatColor.BLUE + "青チーム" + ChatColor.WHITE + "が占拠")
-      Color.BLUE
+      sidebar.getScore(point.name).setScore(100)
+      WarsCoreAPI.createFirework(point.location.clone().add(0d, 3d, 0d), Color.BLUE, FireworkEffect.Type.CREEPER)
     } else { // = 0
-      point.team = ""
+      point.team = "neutral"
       point.name = ChatColor.GRAY + ChatColor.stripColor(point.name)
       sendMessage(s"占領が解除？")
-      Color.WHITE
+      sidebar.getScore(point.name).setScore(0)
     }
-    sidebar.getScore(point.name).setScore(100)
-
-    val fwl = point.location.clone().add(0d, 3d, 0d)
-    val fw = world.spawnEntity(fwl, EntityType.FIREWORK).asInstanceOf[Firework]
-    val meta = fw.getFireworkMeta
-    meta.addEffect(FireworkEffect.builder().withColor(color).`with`(FireworkEffect.Type.CREEPER).build())
-    fw.setFireworkMeta(meta)
     val loc = point.location.clone().add(0, 1, 0)
     for (i <- -1 to 1) {
       for (j <- -1 to 1) {

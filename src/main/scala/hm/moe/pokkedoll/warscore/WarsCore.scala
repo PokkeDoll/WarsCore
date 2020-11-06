@@ -1,5 +1,8 @@
 package hm.moe.pokkedoll.warscore
 
+import java.util.UUID
+
+import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.cspp.CrackShotPP
 import hm.moe.pokkedoll.warscore.WarsCore.LEGACY_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, SpawnCommand, TagCommand, UpgradeCommand, WarsCoreCommand}
@@ -17,6 +20,8 @@ class WarsCore extends JavaPlugin {
 
   protected[warscore] var database: Database = _
 
+  private val develop = true
+
   override def onEnable(): Unit = {
     WarsCore.instance = this
 
@@ -24,6 +29,14 @@ class WarsCore extends JavaPlugin {
     getServer.getMessenger.registerIncomingPluginChannel(this, LEGACY_TORUS_CHANNEL, new MessageListener(this))
     // BungeeCordに送信するのに必要
     getServer.getMessenger.registerOutgoingPluginChannel(this, LEGACY_TORUS_CHANNEL)
+
+    if(!develop) {
+      val out1 = ByteStreams.newDataOutput
+      out1.writeUTF("ServerProgress")
+      out1.writeByte(1)
+      getServer.sendPluginMessage(this, LEGACY_TORUS_CHANNEL, out1.toByteArray)
+    }
+
 
     database = new SQLite(this)
 
@@ -59,6 +72,13 @@ class WarsCore extends JavaPlugin {
         WarsCoreAPI.getWPlayer(f)
         WarsCoreAPI.addScoreBoard(f)
       })
+    }
+
+    if(!develop) {
+      val out2 = ByteStreams.newDataOutput
+      out2.writeUTF("ServerProgress")
+      out2.writeByte(2)
+      getServer.sendPluginMessage(this, LEGACY_TORUS_CHANNEL, out2.toByteArray)
     }
   }
 
