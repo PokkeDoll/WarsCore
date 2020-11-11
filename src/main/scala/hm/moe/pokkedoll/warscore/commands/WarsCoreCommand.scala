@@ -75,6 +75,9 @@ class WarsCoreCommand extends CommandExecutor {
                 t.setCustomName(ChatColor.translateAlternateColorCodes('&', args.tail.mkString(" ")))
               })
             }
+          } else if (args(0).equalsIgnoreCase("reloadcspp")) {
+            WarsCore.instance.setupCSPP()
+            player.sendMessage("リロードしました")
           }
         }
     }

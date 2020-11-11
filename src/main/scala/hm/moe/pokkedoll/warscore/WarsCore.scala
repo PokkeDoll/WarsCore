@@ -10,6 +10,7 @@ import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
 import org.bukkit.Bukkit
+import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
 
 /**
@@ -21,6 +22,8 @@ class WarsCore extends JavaPlugin {
   protected[warscore] var database: Database = _
 
   private val develop = true
+
+  var cspp: Option[CrackShotPP] = None
 
   override def onEnable(): Unit = {
     WarsCore.instance = this
@@ -65,7 +68,7 @@ class WarsCore extends JavaPlugin {
     UpgradeUtil.reloadConfig()
     TagUtil.reloadConfig()
 
-    val cspp = new CrackShotPP(this, getConfig)
+    setupCSPP()
 
     if(Bukkit.getOnlinePlayers.size()!=0) {
       Bukkit.getOnlinePlayers.forEach(f => {
@@ -88,6 +91,17 @@ class WarsCore extends JavaPlugin {
     getServer.getMessenger.unregisterIncomingPluginChannel(this, LEGACY_TORUS_CHANNEL)
     getServer.getMessenger.unregisterOutgoingPluginChannel(this, LEGACY_TORUS_CHANNEL)
     database.close()
+  }
+
+  def setupCSPP(): Unit = {
+    cspp match {
+      case Some(v) =>
+        HandlerList.unregisterAll(v)
+        getLogger.info("Reset CSPP handler!")
+      case None =>
+        getLogger.info("CSPP is not loaded!")
+    }
+    cspp = Some(new CrackShotPP(this, getConfig))
   }
 }
 

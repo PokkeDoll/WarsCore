@@ -4,8 +4,10 @@ import hm.moe.pokkedoll.warscore.WarsCore
 import hm.moe.pokkedoll.warscore.utils.TagUtil
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{ClickEvent, ComponentBuilder}
+import org.bukkit.Material
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 
 /**
@@ -52,6 +54,20 @@ class TagCommand extends CommandExecutor {
           TagUtil.reloadConfig()
           player.sendMessage("リロードしました")
           // タグを設定する
+        } else if (args(0).equalsIgnoreCase("-create") && player.isOp) {
+          if(args.length > 1) {
+            TagUtil.cache.get(args(1)) match {
+              case Some(tag) =>
+                val i = new ItemStack(Material.NAME_TAG)
+                val m = i.getItemMeta
+                m.setDisplayName(ChatColor.WHITE + "タグ: " + tag)
+                m.setLore(java.util.Arrays.asList(ChatColor.YELLOW + s"タグ名: " + tag, ChatColor.DARK_PURPLE + "クリックしてタグを入手！"))
+                i.setItemMeta(m)
+                player.getInventory.addItem(i)
+              case None =>
+            }
+
+          }
         } else {
           new BukkitRunnable {
             override def run(): Unit = {

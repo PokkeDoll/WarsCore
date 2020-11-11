@@ -6,7 +6,7 @@ import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
-import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
+import org.bukkit.event.entity.{EntityDamageByEntityEvent, FoodLevelChangeEvent, PlayerDeathEvent}
 import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory._
 import org.bukkit.event.player._
@@ -207,7 +207,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       e.getInventory.setRepairCost(40)
     }
   }
-
+/*
   @EventHandler
   def onSprint(e: PlayerToggleSprintEvent): Unit = {
     val player = e.getPlayer
@@ -246,6 +246,11 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         }
       }.runTaskLater(plugin, 1L)
     }
+  }
+*/
+  @EventHandler
+  def onFood(e: FoodLevelChangeEvent): Unit = {
+    e.setCancelled(true)
   }
 
   @EventHandler
