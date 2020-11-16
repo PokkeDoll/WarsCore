@@ -347,15 +347,6 @@ object WarsCoreAPI {
 
   }
 
-  def setChangeInventory(wp: WPlayer): Unit = {
-    wp.changeInventory = true
-    new BukkitRunnable {
-      override def run(): Unit = {
-        wp.changeInventory = false
-      }
-    }.runTaskLaterAsynchronously(WarsCore.instance, 100L)
-  }
-
   def randomChance(chance: Double): Boolean = (chance / 100.0) > Math.random()
 
   def spawnFirework(location: Location): Unit = {
@@ -428,5 +419,22 @@ object WarsCoreAPI {
     val meta = fw.getFireworkMeta
     meta.addEffect(FireworkEffect.builder().withColor(color).`with`(`type`).build())
     fw.setFireworkMeta(meta)
+  }
+
+  def setChangeInventory(wp: WPlayer): Unit = {
+    wp.changeInventory = true
+    var count = 5
+    new BukkitRunnable {
+      override def run(): Unit = {
+        if(count > 0) {
+          wp.player.sendMessage(ChatColor.BLUE + s"インベントリを移動することができなくなるまであと $count 秒...")
+          count -= 1
+        } else {
+          wp.changeInventory = false
+          wp.sendMessage(ChatColor.RED + "インベントリを移動することができなくなりました")
+          cancel()
+        }
+      }
+    }.runTaskTimer(WarsCore.instance, 0L, 20L)
   }
 }

@@ -570,6 +570,7 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
     new BukkitRunnable {
       override def run(): Unit = {
         if (!coolTime) {
+          WarsCoreAPI.getWPlayer(player).changeInventory = true
           if (d.team == "red") {
             player.teleport(captureData(0).location)
           } else {
@@ -585,6 +586,7 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
               if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
                   WarsCoreAPI.unfreeze(player)
+                  WarsCoreAPI.setChangeInventory(WarsCoreAPI.getWPlayer(player))
                   if (d.team == "red") {
                     player.teleport(captureData(0).location)
                   } else {

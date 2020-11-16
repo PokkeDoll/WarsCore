@@ -14,7 +14,7 @@ import org.bukkit._
 import org.bukkit.potion.PotionEffectType
 
 import scala.collection.mutable
-
+//TODO ChangeInventory!!!!!!
 /**
  * 10vs10で行うゲームモード <br>
  * 1点 = 1キル<br>
