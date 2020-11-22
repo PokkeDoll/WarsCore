@@ -295,7 +295,6 @@ object WarsCoreAPI {
   }
 
 
-  @Deprecated
   def addScoreBoard(player: Player): Unit = {
     updateScoreboard(player, scoreboards.getOrElseUpdate(player, scoreboardManager.getNewScoreboard))
   }
@@ -344,7 +343,6 @@ object WarsCoreAPI {
       "",
       ""
     ))
-
   }
 
   def randomChance(chance: Double): Boolean = (chance / 100.0) > Math.random()
@@ -363,9 +361,9 @@ object WarsCoreAPI {
     new ComponentBuilder("= = = = = = = = = = =").color(ChatColor.GREEN).underlined(true)
       .append("お知らせ").underlined(false)
       .append("= = = = = = = = = = =\n\n").underlined(true)
-      .append("* ").reset().append("Discordに参加しよう！ こちらメッセージをクリックしてください！\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://discordapp.com/invite/TJ3bkkY"))
-      .append("* ").reset().append("不具合情報/開発状況はマイルストーンにまとめています！\n").event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll/-/milestones/1"))
-      .append("* ").reset().append("βテスト開催中！  一新されたTDMをお楽しみください")
+      .append("* ").reset().append("Discordに参加しよう！ こちらのメッセージをクリックしてください！\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://discordapp.com/invite/TJ3bkkY"))
+      // .append("* ").reset().append("不具合情報/開発状況はマイルストーンにまとめています！\n").event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll/-/milestones/1"))
+      .append("* ").reset().append("βテスト開催中！  /game よりゲームに参加！")
       .create()
 
 

@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore.games
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, RankManager, WorldLoader}
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.ComponentBuilder
+import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
 import org.bukkit.{Bukkit, Color, FireworkEffect, GameMode, Location, Material, Sound, World, scheduler}
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{Arrow, EntityType, Firework, Player}
@@ -69,9 +69,13 @@ class Domination(override val id: String) extends Game {
   var spawnPoint: Location = _
   /**
    * 占領地点の状態, サイズは5
-   * 赤、青、A,B,C
+   * A,B,C
    */
   var captureData: Vector[CapturePoint] = _
+
+  var redPoint: Location = _
+
+  var bluePoint: Location = _
 
   val data = mutable.HashMap.empty[Player, DOMData]
 
@@ -193,9 +197,6 @@ class Domination(override val id: String) extends Game {
 
     WarsCoreAPI.playBattleSound(this)
 
-    // 効率化のため割り算を先に計算する
-    val div = 1 / 100.0
-
     val captureParam = if(members.length >= 10) 1 else 3
 
     new BukkitRunnable {
@@ -206,34 +207,17 @@ class Domination(override val id: String) extends Game {
           members.length < 2 || // メンバーが一人
             redTeam.getSize <= 0 || // チーム0人
             blueTeam.getSize <= 0 || //
-            time <= 0 || // 時間切れ
+            TIME <= 0 || // 時間切れ
             disable || // 何か原因があって無効化
-            captureData(0).team == "blue" || // 敵陣を占領したとき
-            captureData(1).team == "red"
+            captureData.forall(p => p.team == "red" || p.team == "blue")
         ) {
-          // TODO 試合が終わらない。(版木愛の値)
-          /*
-                  at java.lang.Thread.run(Thread.java:834) [?:?]
-[01:48:04 WARN]: [WarsCore] Task #12726 for WarsCore v0.39.18 generated an exception
-java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312)
-        at com.google.common.base.Preconditions.checkArgument(Preconditions.java:191) ~[patched_1.12.2.jar:git-Paper-1618]
-        at org.bukkit.craftbukkit.v1_12_R1.boss.CraftBossBar.setProgress(CraftBossBar.java:123) ~[patched_1.12.2.jar:git-Paper-1618]
-        at hm.moe.pokkedoll.warscore.games.Domination$$anon$2.run(Domination.scala:251) ~[?:?]
-        at org.bukkit.craftbukkit.v1_12_R1.scheduler.CraftTask.run(CraftTask.java:64) ~[patched_1.12.2.jar:git-Paper-1618]
-        at org.bukkit.craftbukkit.v1_12_R1.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:423) ~[patched_1.12.2.jar:git-Paper-1618]
-        at net.minecraft.server.v1_12_R1.MinecraftServer.D(MinecraftServer.java:840) ~[patched_1.12.2.jar:git-Paper-1618]
-        at net.minecraft.server.v1_12_R1.DedicatedServer.D(DedicatedServer.java:423) ~[patched_1.12.2.jar:git-Paper-1618]
-        at net.minecraft.server.v1_12_R1.MinecraftServer.C(MinecraftServer.java:774) ~[patched_1.12.2.jar:git-Paper-1618]
-        at net.minecraft.server.v1_12_R1.MinecraftServer.run(MinecraftServer.java:666) ~[patched_1.12.2.jar:git-Paper-1618]
-        at java.lang.Thread.run(Thread.java:834) [?:?]
-           */
           // ゲーム強制終了
           end()
           cancel()
         } else {
           // それ以外
-          if (time <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_HAT, 1f, 0f))
-          if (time == 60) state = GameState.PLAY2
+          if (TIME <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_HAT, 1f, 0f))
+          if (TIME == 60) state = GameState.PLAY2
           captureData.foreach(f => {
             f.location.getNearbyPlayers(3d, 6d).forEach(p => {
               val d = data(p)
@@ -314,8 +298,15 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
     state = GameState.END
     world.setPVP(false)
     // ここで勝敗を決める
-    //TODO 勝敗を決める
-    val winner = "??????????????????????????"
+    // groupByでdraw: {}, red: {}, blue: {}となる
+    val winner = captureData.groupBy(f => f.team).map(f => (f._1, f._2.length)) match {
+      case f if f.getOrElse("red", 0) > f.getOrElse("blue", 0) =>
+        "red"
+      case f if f.getOrElse("blue", 0) > f.getOrElse("red", 0) =>
+        "blue"
+      case _ =>
+        "neutral"
+    }
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("               Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
 
@@ -329,7 +320,7 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
     } else {
       endMsg.append("                  ").reset()
-        .append("?????????????????????????????????????????????????????").underlined(true)
+        .append("              Draw").underlined(true)
         .append("                \n").reset()
     }
 
@@ -343,7 +334,7 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
             EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
             d.win = true
           }
-          //wp.sendMessage(createResult(d, winner): _*)
+          wp.sendMessage(createResult(d, winner): _*)
           // ゲーム情報のリセット
           wp.game = None
           // スコアボードのリセット
@@ -572,9 +563,9 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
         if (!coolTime) {
           WarsCoreAPI.getWPlayer(player).changeInventory = true
           if (d.team == "red") {
-            player.teleport(captureData(0).location)
+            player.teleport(redPoint)
           } else {
-            player.teleport(captureData(1).location)
+            player.teleport(bluePoint)
           }
         } else if (player.getKiller != null) {
           player.setSpectatorTarget(player.getKiller)
@@ -588,9 +579,9 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
                   WarsCoreAPI.unfreeze(player)
                   WarsCoreAPI.setChangeInventory(WarsCoreAPI.getWPlayer(player))
                   if (d.team == "red") {
-                    player.teleport(captureData(0).location)
+                    player.teleport(redPoint)
                   } else {
-                    player.teleport(captureData(1).location)
+                    player.teleport(bluePoint)
                   }
                   player.addPotionEffect(PotionEffectType.ABSORPTION.createEffect(100, 10), true)
                   WarsCoreAPI.setChangeInventory(WarsCoreAPI.getWPlayer(player))
@@ -621,10 +612,10 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
     val b = mapInfo.locations.getOrElse("b", (0d, 0d, 0d, 0f, 0f))
     val c = mapInfo.locations.getOrElse("c", (0d, 0d, 0d, 0f, 0f))
     spawnPoint = new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5)
+    redPoint = new Location(world, red._1, red._2, red._3, red._4, red._5)
+    bluePoint = new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5)
     captureData = Vector(
       // -100 = 青, 100 = 赤, -99 ~ 99 = なし
-      new CapturePoint(ChatColor.RED + "拠点 赤軍", "red", 100, new Location(world, red._1, red._2, red._3, red._4, red._5)),
-      new CapturePoint(ChatColor.BLUE + "拠点 青軍", "blue", -100, new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5)),
       new CapturePoint(ChatColor.GRAY + "拠点 A", "neutral", 0, new Location(world, a._1, a._2, a._3, a._4, a._5)),
       new CapturePoint(ChatColor.GRAY + "拠点 B", "neutral", 0, new Location(world, b._1, b._2, b._3, b._4, b._5)),
       new CapturePoint(ChatColor.GRAY + "拠点 C", "neutral", 0, new Location(world, c._1, c._2, c._3, c._4, c._5))
@@ -687,6 +678,49 @@ java.lang.IllegalArgumentException: Progress must be between 0.0 and 1.0 (-0.312
     captureData.exists(p => (location.getX >= p.location.getX - buildRange && location.getX <= p.location.getX + buildRange) &&
       (location.getY >= p.location.getY + 2 && location.getY <= p.location.getY + buildRange + 2) &&
       (location.getZ >= p.location.getZ - buildRange && location.getZ <= p.location.getZ + buildRange))
+  }
+
+  private def createResult(data: DOMData, winner: String): Array[BaseComponent] = {
+    val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
+      .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
+      .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
+      .append("* ").underlined(false).color(ChatColor.WHITE)
+      .append("結果: ").color(ChatColor.GRAY)
+
+    if (winner == "draw") {
+      comp.append("引き分け\n")
+    } else if (winner == data.team) {
+      comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
+    } else {
+      comp.append("敗北").color(ChatColor.BLUE).append("\n")
+    }
+
+    comp.append("* ").reset()
+      .append("キル数: ").color(ChatColor.GRAY)
+      .append(data.kill.toString).color(ChatColor.GREEN).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.append("* ")
+      .append("デス数: ").color(ChatColor.GRAY)
+      .append(data.death.toString).color(ChatColor.GREEN).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.append("* ")
+      .append("K/D: ").color(ChatColor.GRAY)
+      .append((data.kill / (data.death + 1)).toString).color(ChatColor.GREEN).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.append("* ")
+      .append("与えたダメージ: ").color(ChatColor.GRAY)
+      .append(s"❤ × ${data.damage.toInt / 2}").color(ChatColor.RED).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.append("* ")
+      .append("受けたダメージ: ").color(ChatColor.GRAY)
+      .append(s"❤ × ${data.damaged.toInt / 2}").color(ChatColor.RED).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.create()
   }
 
   class CapturePoint(var name: String , var team: String, var count: Int, var location: Location)

@@ -604,11 +604,6 @@ class TeamDeathMatch(override val id: String) extends Game {
 
 
   private def setTeam(p: Player): Unit = {
-    if (state == GameState.PLAY) {
-      if (checkHelp()) {
-        //TODO CheckHelpの実装
-      }
-    }
     if (redTeam.getEntries.size() > blueTeam.getEntries.size()) {
       blueTeam.addEntry(p.getName)
       data(p).team = "blue"
@@ -625,12 +620,6 @@ class TeamDeathMatch(override val id: String) extends Game {
           data(p).team = "red"
       }
     }
-  }
-
-
-  private def checkHelp(): Boolean = {
-    // TODO チェック機能の作成
-    false
   }
 
 

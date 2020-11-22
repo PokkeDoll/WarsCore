@@ -3,8 +3,9 @@ package hm.moe.pokkedoll.warscore.commands
 import java.util
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI
+import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.ChatColor
-import org.bukkit.command.{Command, CommandExecutor, CommandSender, TabCompleter}
+import org.bukkit.command.{Command, CommandExecutor, CommandSender, ConsoleCommandSender, TabCompleter}
 import org.bukkit.entity.Player
 
 /**
@@ -48,7 +49,17 @@ class GameCommand extends CommandExecutor with TabCompleter {
               player.sendMessage(ChatColor.RED + s"${args(1)} は存在しません！")
           }
         }
-      case _ =>
+      case console: ConsoleCommandSender =>
+        if(args(0) == "who") {
+          val comp = new ComponentBuilder("Who\n")
+          WarsCoreAPI.wplayers.foreach(f => {
+            comp.append(s"${f._1.getName}: ${f._2.game match {
+              case Some(game) => game.id
+              case None => "None"
+            }}")
+          })
+          console.sendMessage(comp.create(): _*)
+        }
     }
     true
   }
