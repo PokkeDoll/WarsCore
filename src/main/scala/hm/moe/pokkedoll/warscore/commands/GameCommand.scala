@@ -48,20 +48,28 @@ class GameCommand extends CommandExecutor with TabCompleter {
             case None =>
               player.sendMessage(ChatColor.RED + s"${args(1)} は存在しません！")
           }
+        } else if (args(0) == "who") {
+          who(sender)
         }
       case console: ConsoleCommandSender =>
-        if(args(0) == "who") {
-          val comp = new ComponentBuilder("Who\n")
-          WarsCoreAPI.wplayers.foreach(f => {
-            comp.append(s"${f._1.getName}: ${f._2.game match {
-              case Some(game) => game.id
-              case None => "None"
-            }}")
-          })
-          console.sendMessage(comp.create(): _*)
+        if (args(0) == "who") {
+          who(sender)
         }
     }
     true
+  }
+
+  def who(sender: CommandSender): Unit = {
+    val comp = new ComponentBuilder("Who\n")
+    WarsCoreAPI.wplayers.foreach(f => {
+      comp.append(s"${f._1.getName}: ${
+        f._2.game match {
+          case Some(game) => game.id
+          case None => "None"
+        }
+      }")
+    })
+    sender.sendMessage(comp.create(): _*)
   }
 
   import scala.jdk.CollectionConverters._

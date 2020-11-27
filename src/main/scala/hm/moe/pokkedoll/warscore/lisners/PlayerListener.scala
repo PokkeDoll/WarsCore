@@ -11,7 +11,7 @@ import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory._
 import org.bukkit.event.player._
 import org.bukkit.event.{EventHandler, Listener}
-import org.bukkit.inventory.EquipmentSlot
+import org.bukkit.inventory.{EquipmentSlot, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 
@@ -124,6 +124,16 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         val id = inv.getTitle.replaceAll(ChatColor.DARK_PURPLE + player.getName + "'s Chest ", "").toInt
         EnderChestManager.closeEnderChest(player, id, inv.getContents)
       }
+    }
+  }
+
+  @EventHandler
+  def onInventoryOpen(e: InventoryOpenEvent): Unit = {
+    val player = e.getPlayer.asInstanceOf[Player]
+    val inv = player.getOpenInventory.getTopInventory
+    if(inv.getType == InventoryType.CRAFTING) {
+      inv.setItem(0, new ItemStack(Material.KNOWLEDGE_BOOK))
+      e.getPlayer.asInstanceOf[Player].updateInventory()
     }
   }
 

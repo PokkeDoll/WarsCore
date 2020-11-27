@@ -1,17 +1,18 @@
 package hm.moe.pokkedoll.warscore.games
 
+import hm.moe.pokkedoll.warscore.events.GameDeathEvent
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, RankManager, WorldLoader}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder, HoverEvent}
+import org.bukkit._
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
-import org.bukkit.entity.{Arrow, EntityType, Firework, Player}
+import org.bukkit.entity.{Arrow, Player}
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
-import org.bukkit._
-import org.bukkit.potion.PotionEffectType
 
 import scala.collection.mutable
 //TODO ChangeInventory!!!!!!
@@ -82,15 +83,6 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   val data = mutable.HashMap.empty[Player, TDMData]
 
-  /**
-   * 中央を取ったチーム
-   */
-  private var center = "none"
-
-  private var centerCount = 100
-
-  private val buildRange = 9
-
   private val TIME = 600
 
   /**
@@ -133,14 +125,8 @@ class TeamDeathMatch(override val id: String) extends Game {
     redPoint = 0
     bluePoint = 0
 
-    center = "none"
-    // 100にして考える(前回は50)
-    centerCount = 100
-
     sidebar.getScore(ChatColor.RED + "赤チーム キル数:").setScore(0)
-    sidebar.getScore(ChatColor.RED + "赤チーム 占領率:").setScore(0)
     sidebar.getScore(ChatColor.BLUE + "青チーム キル数:").setScore(0)
-    sidebar.getScore(ChatColor.BLUE + "青チーム 占領率:").setScore(0)
 
     setLocationData()
 
@@ -231,36 +217,6 @@ class TeamDeathMatch(override val id: String) extends Game {
           // それ以外
           if (time <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_HAT, 1f, 0f))
           if (time == 60) state = GameState.PLAY2
-          if (center == "none") {
-            locationData._4.getNearbyPlayers(3d, 6d).forEach(p => {
-              if (redTeam.hasEntry(p.getName)) {
-                centerCount += 1
-                if (centerCount >= 200) {
-                  occupy("red", ChatColor.RED + "赤チーム", Color.RED, 14.toByte)
-                  redPoint += 20
-                }
-              } else {
-                centerCount -= 1
-                if (0 >= centerCount) {
-                  occupy("blue", ChatColor.BLUE + "青チーム", Color.BLUE, 11.toByte)
-                  bluePoint += 20
-                }
-              }
-              members.map(_.player).foreach(_.sendActionBar(ChatColor.translateAlternateColorCodes('&',
-                // 赤が優勢
-                if (centerCount > 100) {
-                  val score = (((centerCount - 100) * div) * 100.0).toInt
-                  sidebar.getScore(ChatColor.RED + "赤チーム 占領率:").setScore(score)
-                  s"&c赤チームが中央を占拠しています... &l$score%"
-
-                } else if (100 > centerCount) {
-                  val score = (((100 - centerCount) * div) * 100).toInt
-                  sidebar.getScore(ChatColor.BLUE + "青チーム 占領率:").setScore(score)
-                  s"&9青チームが中央を占拠しています... &l$score%"
-                } else ""
-              )))
-            })
-          }
           time -= 1
           val splitTime = WarsCoreAPI.splitToComponentTimes(time)
           bossbar.setProgress(time * 0.0016)
@@ -438,6 +394,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     val victim = e.getEntity
     // 試合中のみのできごと
     if (state == GameState.PLAY || state == GameState.PLAY2) {
+      val preEvent = (attacker: Player) => new GameDeathEvent(attacker = attacker, victim = victim, game = this)
       val vData: TDMData = data(victim)
       vData.death += 1
       Option(victim.getKiller) match {
@@ -472,8 +429,10 @@ class TeamDeathMatch(override val id: String) extends Game {
                 sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
             }
           }
+          Bukkit.getServer.getPluginManager.callEvent(preEvent(attacker))
         case None =>
           sendMessage(s"§f0X ${victim.getName} dead")
+          Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
       }
       // とにかく死んだのでリスポン処理
       spawn(victim, coolTime = true)
@@ -569,10 +528,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    * @param e イベント
    */
   override def break(e: BlockBreakEvent): Unit = {
-    if (!canBuild(e.getBlock.getLocation)) {
-      e.getPlayer.sendActionBar(ChatColor.RED + "そのブロックを壊すことはできません！")
-      e.setCancelled(true)
-    }
+    e.setCancelled(true)
   }
 
 
@@ -582,10 +538,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    * @param e イベント
    */
   override def place(e: BlockPlaceEvent): Unit = {
-    if (!canBuild(e.getBlock.getLocation)) {
-      e.getPlayer.sendActionBar(ChatColor.RED + "その地点にブロックを置くことはできません！")
-      e.setCancelled(true)
-    }
+    e.setCancelled(true)
   }
 
 
@@ -621,43 +574,6 @@ class TeamDeathMatch(override val id: String) extends Game {
       }
     }
   }
-
-
-  private def occupy(team: String, prefix: String, color: Color, data: Byte): Unit = {
-    if (center == "none") {
-      center = team
-
-      sendMessage(prefix + ChatColor.WHITE + "が中央を占拠し、" + ChatColor.GREEN + "20ポイント" + ChatColor.WHITE + "を獲得しました！")
-      val fwl = locationData._4.clone().add(0d, 3d, 0d)
-      val fw = world.spawnEntity(fwl, EntityType.FIREWORK).asInstanceOf[Firework]
-      val meta = fw.getFireworkMeta
-      meta.addEffect(FireworkEffect.builder().withColor(color).`with`(FireworkEffect.Type.CREEPER).build())
-      fw.setFireworkMeta(meta)
-      val loc = locationData._4.clone().add(0, 1, 0)
-      for (i <- -1 to 1) {
-        for (j <- -1 to 1) {
-          val block = world.getBlockAt(loc.getBlockX + i, loc.getBlockY, loc.getBlockZ + j)
-          block.setType(Material.STAINED_GLASS)
-          block.setData(data)
-        }
-      }
-      // プレイヤーへの報酬
-      this.data.filter(pred => pred._2.team == team).keys.foreach(f => {
-        EconomyUtil.give(f, EconomyUtil.COIN, 15)
-        f.playSound(f.getLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
-        f.sendMessage(ChatColor.BLUE + "占領ボーナス！ 15コインを獲得しました")
-      })
-    }
-  }
-
-
-  private def canBuild(location: Location): Boolean = {
-    val center = locationData._4
-    (location.getX >= center.getX - buildRange && location.getX <= center.getX + buildRange) &&
-      (location.getY >= center.getY + 2 && location.getY <= center.getY + buildRange * 2) &&
-      (location.getZ >= center.getZ - buildRange && location.getZ <= center.getZ + buildRange)
-  }
-
 
   private val helpTeamPoint = new ComponentBuilder("各チームの獲得ポイントです").color(ChatColor.GREEN).create()
 
@@ -717,6 +633,13 @@ class TeamDeathMatch(override val id: String) extends Game {
 
     comp.create()
   }
+
+  /**
+   * Java用メソッド。Optionalではないためnullの可能性がある。
+   * @param player データを持つプレイヤー。
+   * @return 現時点のTDMのデータ。存在しないならnull
+   */
+  def getDataUnsafe(player: Player): TDMData = data(player)
 
   /**
    * 試合中の一時的なデータを管理するクラス

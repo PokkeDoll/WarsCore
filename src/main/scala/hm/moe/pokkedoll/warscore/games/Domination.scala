@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
+import hm.moe.pokkedoll.warscore.events.GameDeathEvent
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, RankManager, WorldLoader}
 import net.md_5.bungee.api.ChatColor
@@ -460,6 +461,7 @@ class Domination(override val id: String) extends Game {
     val victim = e.getEntity
     // 試合中のみのできごと
     if (state == GameState.PLAY || state == GameState.PLAY2) {
+      val preEvent = (attacker: Player) => new GameDeathEvent(attacker=attacker, victim=victim, game=this)
       val vData: DOMData = data(victim)
       vData.death += 1
       Option(victim.getKiller) match {
@@ -490,8 +492,10 @@ class Domination(override val id: String) extends Game {
                 sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
             }
           }
+          Bukkit.getServer.getPluginManager.callEvent(preEvent(attacker))
         case None =>
           sendMessage(s"§f0X ${victim.getName} dead")
+          Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
       }
       // とにかく死んだのでリスポン処理
       spawn(victim, coolTime = true)
@@ -724,6 +728,13 @@ class Domination(override val id: String) extends Game {
   }
 
   class CapturePoint(var name: String , var team: String, var count: Int, var location: Location)
+
+  /**
+   * Java用メソッド。Optionalではないためnullの可能性がある。
+   * @param player データを持つプレイヤー。
+   * @return 現時点のDOMのデータ。存在しないならnull
+   */
+  def getDataUnsafe(player: Player): DOMData = data(player)
 
   /**
    * 試合中の一時的なデータを管理するクラス
