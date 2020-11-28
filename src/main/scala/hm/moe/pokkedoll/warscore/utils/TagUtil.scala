@@ -7,9 +7,11 @@ import hm.moe.pokkedoll.warscore.{Test, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.{Bukkit, Material, NamespacedKey}
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.meta.SkullMeta
-import org.bukkit.inventory.{Inventory, ItemStack}
+import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 
@@ -27,7 +29,7 @@ object TagUtil {
   /**
    * コンフィグから取得される、有効なタグのキャッシュ
    */
-  var cache: Map[String, String] = _
+  var cache: Map[String, TagInfo] = _
 
   def reloadConfig(): Unit = {
     val test = new Test("TagUtil.reloadConfig()")
@@ -42,7 +44,7 @@ object TagUtil {
       }
     }
     val cs = config.getKeys(false)
-    cache = cs.asScala.map(f => (f, ChatColor.translateAlternateColorCodes('&', config.getString(f, "null")))).toMap
+    cache = cs.asScala.map(f => (f, new TagInfo(f, ChatColor.translateAlternateColorCodes('&', config.getString(s"${f}.name", "null")), config.getInt(s"${f}.price")))).toMap
     test.log()
   }
 
@@ -99,16 +101,17 @@ object TagUtil {
    *
    * @return
    */
+  @Deprecated
   def getTagKeyFromItemStack(item: ItemStack): String = {
     if (!item.hasItemMeta || !item.getItemMeta.hasLore) return ""
     """タグ名:.*;""".r.findFirstMatchIn(String.join(";", item.getItemMeta.getLore)) match {
       case Some(result) =>
-        cache.find(_._2 == result.toString().replace(";", "")).map(_._1).getOrElse("NotFound")
+        cache.find(_._2.name == result.toString().replace(";", "")).map(_._1).getOrElse("NotFound")
       case None => ""
     }
   }
 
-  val TAG_INVENTORY_TITLE: String = ChatColor.of("63C7BE") + "TAG Inventory"
+  val TAG_INVENTORY_TITLE: String = ChatColor.of("#63C7BE") + "TAG Inventory"
 
   private val next = {
     val i = new ItemStack(Material.PLAYER_HEAD)
@@ -145,22 +148,59 @@ object TagUtil {
     i
   }
 
+  private val close = {
+    val i = new ItemStack(Material.BARRIER)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.RED + "インベントリを閉じる")
+    i.setItemMeta(m)
+    i
+  }
+
   private val key = new NamespacedKey(WarsCore.instance, "wc-tag-key")
   private val value = new NamespacedKey(WarsCore.instance, "wc-tag-value")
+
   /**
    *
    * @param player
-   * @param page インベントリの1ページに入るタグ数は45個
+   * @param page   インベントリの1ページに入るタグ数は45個
    * @param filter allならすべて、ownは所持しているタグのみ
    */
   def openTagInventory(player: HumanEntity, page: Int = 1, filter: String = "all"): Unit = {
     val inv = Bukkit.createInventory(null, 54, TAG_INVENTORY_TITLE)
     if (page != 1) inv.setItem(0, previous)
     inv.setItem(1, help)
+    inv.setItem(7, close)
     inv.setItem(8, next)
+    player.openInventory(inv)
     new BukkitRunnable {
       override def run(): Unit = {
         val tags = db.getTags(player.getUniqueId.toString)
+        val currentTag = db.getTag(player.getUniqueId.toString)
+        val currentTagItem = {
+          if(currentTag.isEmpty) {
+            val i = new ItemStack(Material.MAP)
+            val m = i.getItemMeta
+            m.setDisplayName(ChatColor.RED + "タグが設定されていません！")
+            m.setLore(java.util.Arrays.asList(
+              ChatColor.AQUA + "下のリストからタグを選んでください！"
+            ))
+            i.setItemMeta(m)
+            i
+          } else {
+            val i = new ItemStack(Material.NAME_TAG)
+            i.addEnchantment(Enchantment.ARROW_DAMAGE, 0)
+            i.addItemFlags(ItemFlag.HIDE_ENCHANTS)
+            val m = i.getItemMeta
+            m.setDisplayName(ChatColor.WHITE + "現在のタグ: " + cache(currentTag).name)
+            m.setLore(java.util.Arrays.asList(
+              ChatColor.LIGHT_PURPLE + "現在の称号です",
+              ChatColor.RED + "左クリック: " + ChatColor.GRAY + "タグをリセット"
+            ))
+            i.setItemMeta(m)
+            i
+          }
+        }
+        inv.setItem(5, currentTagItem)
         if (filter == "own") {
           // 確実に0 ~ 最大45まで
           val holdTags = cache.filter(f => tags.contains(f._1)).slice((page - 1) * 45, ((page - 1) * 45) + 45).toIndexedSeq
@@ -168,19 +208,61 @@ object TagUtil {
             val item = {
               val i = new ItemStack(Material.NAME_TAG)
               val m = i.getItemMeta
-              m.setDisplayName(holdTags(f)._2)
+              m.setDisplayName(holdTags(f)._2.name)
               m.setLore(java.util.Arrays.asList(
-                ChatColor.GRAY + "左クリックで切り替え"))
+                ChatColor.GREEN + "所持済み",
+                ChatColor.RED + "左クリック: " + ChatColor.GRAY + "タグを切り替える"
+              ))
               val c = m.getPersistentDataContainer
               c.set(key, PersistentDataType.STRING, holdTags(f)._1)
-              c.set(value, PersistentDataType.STRING, holdTags(f)._2)
+              c.set(value, PersistentDataType.STRING, holdTags(f)._2.name)
               i.setItemMeta(m)
               i
             }
-            inv.setItem(f, item)
+            inv.setItem(9 + f, item)
+          })
+        } else {
+          val sliceTags = cache.slice((page - 1) * 45, ((page - 1) * 45) + 45).toIndexedSeq
+          sliceTags.indices.foreach(f => {
+            val item = {
+              val tag = sliceTags(f)
+              if (tags.contains(tag._1)) {
+                val i = new ItemStack(Material.NAME_TAG)
+                val m = i.getItemMeta
+                m.setDisplayName(ChatColor.GRAY + ChatColor.stripColor(tag._2.name))
+                m.setLore(java.util.Arrays.asList(
+                  ChatColor.GREEN + "所持済み",
+                  ChatColor.RED + "左クリック: " + ChatColor.GRAY + "タグを切り替える"
+                ))
+                i.setItemMeta(m)
+                i
+              } else {
+                val i = new ItemStack(Material.PAPER)
+                val m = i.getItemMeta
+                m.setDisplayName(tag._2.name)
+                m.setLore(java.util.Arrays.asList(
+                  ChatColor.YELLOW + "" + ChatColor.UNDERLINE + s"${tag._2.price} コインが必要です！",
+                  "\n",
+                  ChatColor.RED + "左クリック + シフト: " + ChatColor.GRAY + "タグを購入する"
+                ))
+                val c = m.getPersistentDataContainer
+                c.set(key, PersistentDataType.STRING, tag._1)
+                c.set(value, PersistentDataType.STRING, tag._2.name)
+                i.setItemMeta(m)
+                i
+              }
+            }
+            inv.setItem(9 + f, item)
           })
         }
       }
-    }
+    }.runTaskLater(WarsCore.instance, 1L)
   }
+
+  def onClick(e: InventoryClickEvent): Unit = {
+
+  }
+
+  class TagInfo(val id: String, val name: String, val price: Int)
+
 }

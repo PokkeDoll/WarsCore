@@ -23,8 +23,13 @@ class TagCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {
       case player: Player =>
-        TagUtil.openTagInventory(player, filter = args(0))
+        if(args.length > 1) {
+          TagUtil.openTagInventory(player, filter = args(0))
+        } else {
+          TagUtil.openTagInventory(player)
+        }
         return true
+        /*
         if (args.length == 0) {
           new BukkitRunnable {
             override def run(): Unit = {
@@ -81,9 +86,10 @@ class TagCommand extends CommandExecutor {
               }
             }
           }.runTask(WarsCore.instance)
-        }
+        } */
       case _ =>
     }
+
     true
   }
 }

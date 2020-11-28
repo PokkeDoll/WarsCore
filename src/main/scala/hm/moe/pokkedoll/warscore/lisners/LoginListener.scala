@@ -32,7 +32,7 @@ class LoginListener(plugin: WarsCore) extends Listener {
         val out = ByteStreams.newDataOutput
         out.writeUTF("ResourcePack")
         out.writeUTF("Wars")
-        player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
+        player.sendPluginMessage(WarsCore.instance, WarsCore.MODERN_TORUS_CHANNEL, out.toByteArray)
 
         player.sendMessage(WarsCoreAPI.NEWS: _*)
 

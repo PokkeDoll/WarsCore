@@ -1,15 +1,12 @@
 package hm.moe.pokkedoll.warscore.commands
 
-import java.util.UUID
-
 import com.google.common.io.ByteStreams
-import hm.moe.pokkedoll.warscore.utils.{MerchantUtil, RankManager}
+import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
-import io.chazza.advancementapi.{AdvancementAPI, FrameType}
+import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.{EntityType, Player}
 import org.bukkit.metadata.FixedMetadataValue
-import org.bukkit.{Bukkit, ChatColor, NamespacedKey}
 
 class WarsCoreCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
@@ -24,33 +21,35 @@ class WarsCoreCommand extends CommandExecutor {
             )
           )
         } else {
-          if (args(0) == "config" || args(0) == "conf") {
-            if (args.length > 1 && (args(1) == "reload")) {
-              WarsCore.instance.reloadConfig()
-              player.sendMessage(ChatColor.BLUE + "コンフィグをリロードしました。")
-              WarsCoreAPI.reloadMapInfo(WarsCore.instance.getConfig.getConfigurationSection("mapinfo"))
-              player.sendMessage(ChatColor.BLUE + "マップ情報をリロードしました。")
-              MerchantUtil.merchantCache.clear()
+          if (args(0).equalsIgnoreCase("reload") || args(0).equalsIgnoreCase("r")) {
+            if(args.length > 1) {
+              args(1) match {
+                case "item" =>
+                  ItemUtil.reloadItem()
+                case "merchant" =>
+                  MerchantUtil.reload()
+                case "tag" =>
+                  TagUtil.reloadConfig()
+                case "cspp" =>
+                  WarsCore.instance.setupCSPP()
+                case "default" =>
+                  WarsCore.instance.reloadConfig()
+                  WarsCoreAPI.reloadMapInfo(WarsCore.instance.getConfig.getConfigurationSection("mapinfo"))
+              }
+            } else {
+              sender.sendMessage(
+                "= = = = = = = = /wc reload ... = = = = = = = =\n" +
+                "* default: 通常のconfigをリロードする\n" +
+                "* item: アイテム情報をリロードする\n" +
+                "* merchant: 取引情報をリロードする\n" +
+                "* tag: タグ情報をリロードする\n" +
+                "* cspp: CSPP情報をリロードする"
+              )
             }
-          } else if (args(0) == "exp") {
-            if (args.length > 1) {
-              RankManager.giveExp(WarsCoreAPI.getWPlayer(player), args(1).toInt)
-            }
-          } else if (args(0) == "a") {
-            val advancement = AdvancementAPI.builder(new NamespacedKey(WarsCore.instance, "story/" + UUID.randomUUID().toString))
-              .frame(FrameType.TASK)
-              //.trigger(Trigger.builder(TriggerType.IMPOSSIBLE, "default"))
-              .icon("minecraft:bow")
-              .title("てすとTDM-なんとかで試合が始まりました！ /game tdm-あ とかで参加？ましょう")
-              .description("description")
-              .background("minecraft:textures/blocks/bedrock.png")
-              .announce(false)
-              .toast(true)
-              .build()
-            import collection.JavaConverters._
-            advancement.show(WarsCore.instance, Bukkit.getOnlinePlayers.asScala.toSeq: _*)
-            //advancement.grant(Bukkit.getOnlinePlayers.asScala.toSeq:_*)
-          } else if (args(0) == "vp") {
+          } else if (args(0).equalsIgnoreCase("test") || args(0).equalsIgnoreCase("t")) {
+
+          }
+          if (args(0) == "vp") {
             val out = ByteStreams.newDataOutput
             out.writeUTF("TakeVotePoint")
             player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
@@ -75,9 +74,6 @@ class WarsCoreCommand extends CommandExecutor {
                 t.setCustomName(ChatColor.translateAlternateColorCodes('&', args.tail.mkString(" ")))
               })
             }
-          } else if (args(0).equalsIgnoreCase("reloadcspp")) {
-            WarsCore.instance.setupCSPP()
-            player.sendMessage("リロードしました")
           }
         }
     }

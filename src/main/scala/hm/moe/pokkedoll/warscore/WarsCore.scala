@@ -1,11 +1,9 @@
 package hm.moe.pokkedoll.warscore
 
-import java.util.UUID
-
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.cspp.CrackShotPP
-import hm.moe.pokkedoll.warscore.WarsCore.{LEGACY_TORUS_CHANNEL, MODERN_TORUS_CHANNEL}
-import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, SpawnCommand, TagCommand, UpgradeCommand, WarsCoreCommand}
+import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
+import hm.moe.pokkedoll.warscore.commands._
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
@@ -108,6 +106,8 @@ class WarsCore extends JavaPlugin {
 object WarsCore {
   protected [warscore] var instance: WarsCore = _
 
+  @Deprecated
   val LEGACY_TORUS_CHANNEL = "Torus"
+
   val MODERN_TORUS_CHANNEL = "torus:main"
 }
