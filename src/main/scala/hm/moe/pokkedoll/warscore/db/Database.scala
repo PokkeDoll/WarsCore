@@ -131,5 +131,7 @@ trait Database {
    */
   def addTag(uuid: String, id: String)
 
+  def gameLog(gameid: String, level: String, message: String)
+
   def close(): Unit
 }

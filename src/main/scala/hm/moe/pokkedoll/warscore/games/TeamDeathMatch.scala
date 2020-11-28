@@ -85,6 +85,8 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   private val TIME = 600
 
+  val log = WarsCoreAPI.gameLog(id, _, _)
+
   /**
    * ゲームを読み込む
    */
@@ -92,8 +94,10 @@ class TeamDeathMatch(override val id: String) extends Game {
     state = GameState.INIT
     val worlds = WarsCoreAPI.mapinfo.filter(_.gameId == "tdm")
     val info = scala.util.Random.shuffle(worlds).head
-    WorldLoader.syncLoadWorld(s"worlds/${info.mapId}", id) match {
+    val mapId = info.mapId
+    WorldLoader.syncLoadWorld(s"worlds/$mapId", id) match {
       case Some(world) =>
+        log(WarsCoreAPI.LEVEL_INFO, s"Succeeded to load world $mapId")
         mapInfo = info
         // 一応代入したが別のインスタンス(load, init)中にworldを参照するのは危険！読み込みエラーとなってコンソールを汚しまくる
         this.world = world
@@ -104,7 +108,7 @@ class TeamDeathMatch(override val id: String) extends Game {
         // 読み込みに成功したので次のステージへ
         init()
       case None =>
-        WarsCore.instance.getLogger.severe(s"World loading failed at ${info.mapId} on $id!")
+        log(WarsCoreAPI.LEVEL_ERROR, s"Failed to load world $mapId")
         // 通常失敗することはないので不具合を拡大させないために無効化する
         state = GameState.DISABLE
     }
@@ -136,6 +140,8 @@ class TeamDeathMatch(override val id: String) extends Game {
 
     world.setPVP(false)
 
+    log(WarsCoreAPI.LEVEL_INFO, "Initialized game")
+
     // 実に待機状態...! Joinされるまで待つ
     state = GameState.WAIT
   }
@@ -145,6 +151,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    */
   override def ready(): Unit = {
     state = GameState.READY
+    log(WarsCoreAPI.LEVEL_INFO, "Ready to game")
     new BukkitRunnable {
       val removeProgress: Double = 1d / 40d
       var count = 40
@@ -153,6 +160,7 @@ class TeamDeathMatch(override val id: String) extends Game {
         if (members.length < 2) {
           bossbar.setProgress(1.0)
           sendMessage("&c人数が足りないため待機状態に戻ります")
+          log(WarsCoreAPI.LEVEL_WARN, "Not enough members")
           state = GameState.WAIT
           cancel()
         } else if (count <= 0) {
@@ -180,6 +188,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    * ゲームを開始する
    */
   override def play(): Unit = {
+    log(WarsCoreAPI.LEVEL_INFO, "Started game")
     WarsCoreAPI.noticeStartGame(this)
     state = GameState.PLAY
     world.setPVP(true)
@@ -215,7 +224,7 @@ class TeamDeathMatch(override val id: String) extends Game {
           cancel()
         } else {
           // それ以外
-          if (time <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_HAT, 1f, 0f))
+          if (time <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_BLOCK_HAT, 1f, 0f))
           if (time == 60) state = GameState.PLAY2
           time -= 1
           val splitTime = WarsCoreAPI.splitToComponentTimes(time)
@@ -235,6 +244,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     world.setPVP(false)
     // ここで勝敗を決める
     val winner = if (redPoint > bluePoint) "red" else if (redPoint < bluePoint) "blue" else "draw"
+    log(WarsCoreAPI.LEVEL_INFO, s"End game. winner is $winner")
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("               Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
 
@@ -288,6 +298,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    * ゲームを削除する
    */
   override def delete(): Unit = {
+    log(WarsCoreAPI.LEVEL_INFO, "delete()")
     WorldLoader.syncUnloadWorld(id)
     new BukkitRunnable {
       override def run(): Unit = {
@@ -506,7 +517,7 @@ class TeamDeathMatch(override val id: String) extends Game {
                   cancel()
                 } else {
                   player.sendActionBar(s"§bリスポーンするまであと§a$spawnTime§b秒")
-                  player.playSound(player.getLocation(), Sound.BLOCK_NOTE_HARP, 1f, 2f)
+                  player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f)
                   spawnTime -= 1
                 }
               } else {

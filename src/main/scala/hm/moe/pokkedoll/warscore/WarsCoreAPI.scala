@@ -203,7 +203,7 @@ object WarsCoreAPI {
         slot._2
       } else slot._3
       // TODO tacticsが死んじゃった！この人でなし！
-      val icon = ((damage => new ItemStack(Material.INK_SACK, f._2.members.size + 1, damage)): Short => ItemStack) (if (f._2.state.join) 10 else 8)
+      val icon = ((damage => new ItemStack(Material.STONE, f._2.members.size + 1, damage)): Short => ItemStack) (if (f._2.state.join) 10 else 8)
       val meta = icon.getItemMeta
       meta.setDisplayName((if (f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._1}")
       meta.setLore(java.util.Arrays.asList(s"§f${f._2.title}", s"§e${f._2.description}", s"§a${f._2.members.size} §7/ §a${f._2.maxMember} プレイ中", s"§a${f._2.state.title}"))
@@ -434,5 +434,14 @@ object WarsCoreAPI {
         }
       }
     }.runTaskTimer(WarsCore.instance, 0L, 20L)
+  }
+
+  val LEVEL_INFO = "INFO"
+  val LEVEL_WARN = "WARN"
+  val LEVEL_ERROR = "ERROR"
+  val LEVEL_DEBUG = "DEBUG"
+
+  def gameLog(gameid: String, level: String, message: String): Unit = {
+    database.gameLog(gameid, level, message)
   }
 }

@@ -1,6 +1,6 @@
 name := "WarsCore"
 
-version := "0.42"
+version := "1.0"
 
 scalaVersion := "2.13.3"
 
@@ -11,7 +11,7 @@ resolvers += "jitpack.io" at "https://jitpack.io"
 resolvers += "dmulloy2-repo" at "https://repo.dmulloy2.net/nexus/repository/public/"
 
 libraryDependencies ++= Seq(
-  "com.destroystokyo.paper" % "paper-api" % "1.12.2-R0.1-SNAPSHOT" % Provided,
+  "com.destroystokyo.paper" % "paper-api" % "1.16.4-R0.1-SNAPSHOT" % Provided,
   "com.zaxxer" % "HikariCP" % "3.4.2" % Provided,
   "com.comphenix.protocol" % "ProtocolLib" % "4.5.0" % Provided
 )

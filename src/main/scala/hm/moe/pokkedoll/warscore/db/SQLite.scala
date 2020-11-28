@@ -231,6 +231,11 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
+  def getPresentStorage(cond: String): Option[String] = {
+    //val c = hikari.getConnection
+    return null
+  }
+
   override def getRankData(uuid: String): Option[(Int, Int)] = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("SELECT id, exp FROM rank WHERE uuid=?")
@@ -391,6 +396,23 @@ class SQLite(plugin: WarsCore) extends Database {
     try {
       ps.setString(1, uuid)
       ps.setString(2, id)
+      ps.executeUpdate()
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      ps.close()
+      c.close()
+    }
+  }
+
+  def gameLog(gameid: String, level: String, message: String): Unit = {
+    val c = hikari.getConnection
+    val ps = c.prepareStatement("INSERT INTO `gamelog` VALUES((select datetime()), ?, ?, ?)")
+    try {
+      ps.setString(1, gameid)
+      ps.setString(2, level)
+      ps.setString(3, message)
       ps.executeUpdate()
     } catch {
       case e: SQLException =>

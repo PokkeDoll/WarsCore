@@ -217,7 +217,7 @@ class Domination(override val id: String) extends Game {
           cancel()
         } else {
           // それ以外
-          if (TIME <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_HAT, 1f, 0f))
+          if (TIME <= 5) members.map(_.player).foreach(f => f.playSound(f.getLocation, Sound.BLOCK_NOTE_BLOCK_HAT, 1f, 0f))
           if (TIME == 60) state = GameState.PLAY2
           captureData.foreach(f => {
             f.location.getNearbyPlayers(3d, 6d).forEach(p => {
@@ -237,7 +237,7 @@ class Domination(override val id: String) extends Game {
             if(f.count > 0) {
               // 赤の勝ち
               if(f.count >= 100 && f.team != "red") {
-                occupy(f, 14.toByte)
+                occupy(f, Material.RED_STAINED_GLASS)
               } else if (f.team == "neutral") {
                 // 中立から赤へ
                 if(f.name.startsWith("§7")) {
@@ -249,7 +249,7 @@ class Domination(override val id: String) extends Game {
                 }
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               } else if (f.team == "blue") {
-                occupy(f, 0.toByte)
+                occupy(f)
               } else {
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               }
@@ -257,7 +257,7 @@ class Domination(override val id: String) extends Game {
             } else if (f.count < 0) {
               // 青の勝ち
               if(f.count <= -100 && f.team != "blue") {
-                occupy(f, 11.toByte)
+                occupy(f, Material.BLUE_STAINED_GLASS)
               } else if (f.team == "neutral") {
                 // 中立から赤へ
                 if(f.name.startsWith("§7")) {
@@ -269,13 +269,13 @@ class Domination(override val id: String) extends Game {
                 }
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               } else if (f.team == "red") {
-                occupy(f, 0.toByte)
+                occupy(f)
               } else {
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               }
             // 0なら!=>中立
             } else if (f.team != "neutral") {
-              occupy(f, 0.toByte)
+              occupy(f)
             }
           })
 
@@ -593,7 +593,7 @@ class Domination(override val id: String) extends Game {
                   cancel()
                 } else {
                   player.sendActionBar(s"§bリスポーンするまであと§a$spawnTime§b秒")
-                  player.playSound(player.getLocation(), Sound.BLOCK_NOTE_HARP, 1f, 2f)
+                  player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f)
                   spawnTime -= 1
                 }
               } else {
@@ -647,16 +647,16 @@ class Domination(override val id: String) extends Game {
 
 //TODO 報酬
   // TODO なぜか負の値になる
-  private def occupy(point: CapturePoint, flag: Byte): Unit = {
+  private def occupy(point: CapturePoint, flag: Material = Material.WHITE_STAINED_GLASS): Unit = {
     scoreboard.resetScores(point.name)
-    if (flag == 14) {
+    if (flag == Material.RED_STAINED_GLASS) {
       point.team = "red"
       point.name = ChatColor.RED + ChatColor.stripColor(point.name)
       sendMessage(ChatColor.RED + "赤チーム" + ChatColor.WHITE + "が占拠")
       sidebar.getScore(point.name).setScore(100)
       WarsCoreAPI.createFirework(point.location.clone().add(0d, 3d, 0d), Color.RED, FireworkEffect.Type.CREEPER)
 
-    } else if (flag == 11) {
+    } else if (flag == Material.BLUE_STAINED_GLASS) {
       point.team = "blue"
       point.name = ChatColor.BLUE + ChatColor.stripColor(point.name)
       sendMessage(ChatColor.BLUE + "青チーム" + ChatColor.WHITE + "が占拠")
@@ -672,8 +672,7 @@ class Domination(override val id: String) extends Game {
     for (i <- -1 to 1) {
       for (j <- -1 to 1) {
         val block = world.getBlockAt(loc.getBlockX + i, loc.getBlockY, loc.getBlockZ + j)
-        block.setType(Material.STAINED_GLASS)
-        block.setData(flag)
+        block.setType(flag)
       }
     }
   }

@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.cspp.CrackShotPP
-import hm.moe.pokkedoll.warscore.WarsCore.LEGACY_TORUS_CHANNEL
+import hm.moe.pokkedoll.warscore.WarsCore.{LEGACY_TORUS_CHANNEL, MODERN_TORUS_CHANNEL}
 import hm.moe.pokkedoll.warscore.commands.{GameCommand, InviteCommand, ItemCommand, MerchantCommand, SpawnCommand, TagCommand, UpgradeCommand, WarsCoreCommand}
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
@@ -29,15 +29,15 @@ class WarsCore extends JavaPlugin {
     WarsCore.instance = this
 
     // BungeeCordから受信するのに必要
-    getServer.getMessenger.registerIncomingPluginChannel(this, LEGACY_TORUS_CHANNEL, new MessageListener(this))
+    getServer.getMessenger.registerIncomingPluginChannel(this, MODERN_TORUS_CHANNEL, new MessageListener(this))
     // BungeeCordに送信するのに必要
-    getServer.getMessenger.registerOutgoingPluginChannel(this, LEGACY_TORUS_CHANNEL)
+    getServer.getMessenger.registerOutgoingPluginChannel(this, MODERN_TORUS_CHANNEL)
 
     if(!develop) {
       val out1 = ByteStreams.newDataOutput
       out1.writeUTF("ServerProgress")
       out1.writeByte(1)
-      getServer.sendPluginMessage(this, LEGACY_TORUS_CHANNEL, out1.toByteArray)
+      getServer.sendPluginMessage(this, MODERN_TORUS_CHANNEL, out1.toByteArray)
     }
 
 
@@ -81,15 +81,15 @@ class WarsCore extends JavaPlugin {
       val out2 = ByteStreams.newDataOutput
       out2.writeUTF("ServerProgress")
       out2.writeByte(2)
-      getServer.sendPluginMessage(this, LEGACY_TORUS_CHANNEL, out2.toByteArray)
+      getServer.sendPluginMessage(this, MODERN_TORUS_CHANNEL, out2.toByteArray)
     }
   }
 
   override def onDisable(): Unit = {
     lazy val board = Bukkit.getScoreboardManager.getMainScoreboard
     WarsCoreAPI.scoreboards.keys.foreach(_.setScoreboard(board))
-    getServer.getMessenger.unregisterIncomingPluginChannel(this, LEGACY_TORUS_CHANNEL)
-    getServer.getMessenger.unregisterOutgoingPluginChannel(this, LEGACY_TORUS_CHANNEL)
+    getServer.getMessenger.unregisterIncomingPluginChannel(this, MODERN_TORUS_CHANNEL)
+    getServer.getMessenger.unregisterOutgoingPluginChannel(this, MODERN_TORUS_CHANNEL)
     database.close()
   }
 
@@ -109,4 +109,5 @@ object WarsCore {
   protected [warscore] var instance: WarsCore = _
 
   val LEGACY_TORUS_CHANNEL = "Torus"
+  val MODERN_TORUS_CHANNEL = "torus:main"
 }

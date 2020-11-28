@@ -67,7 +67,7 @@ class GameCommand extends CommandExecutor with TabCompleter {
           case Some(game) => game.id
           case None => "None"
         }
-      }")
+      }\n")
     })
     sender.sendMessage(comp.create(): _*)
   }

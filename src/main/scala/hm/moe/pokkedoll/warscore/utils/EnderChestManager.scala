@@ -28,7 +28,7 @@ object EnderChestManager {
   }
 
   private val PRESENT: ItemStack = {
-    val i = new ItemStack(Material.SKULL_ITEM, 1, 3)
+    val i = new ItemStack(Material.LEGACY_SKULL_ITEM, 1, 3)
     val m = i.getItemMeta.asInstanceOf[SkullMeta]
     m.setDisplayName(ChatColor.LIGHT_PURPLE + "プレゼントボックスを開く" + ChatColor.GRAY + ": " + ChatColor.LIGHT_PURPLE + "0")
     m.setOwner("MHF_Present2")
@@ -37,12 +37,14 @@ object EnderChestManager {
   }
 
   private val NONE: ItemStack = {
-    val i = new ItemStack(Material.STAINED_GLASS_PANE, 1, 14)
+    val i = new ItemStack(Material.LEGACY_STAINED_GLASS_PANE, 1, 14)
     val m = i.getItemMeta
     m.setDisplayName(" ")
     i.setItemMeta(m)
     i
   }
+
+  val ENDER_CHEST_MENU_TITLE: String = ChatColor.LIGHT_PURPLE + "EnderChest Menu"
 
   val ENDER_CHEST_MENU: Inventory = {
     val inv = Bukkit.createInventory(null, 36, ChatColor.LIGHT_PURPLE + "EnderChest Menu")
@@ -65,7 +67,7 @@ object EnderChestManager {
    * @param player プレイヤー
    */
   def openEnderChestMenu(player: Player): Unit = {
-    player.playSound(player.getLocation, Sound.BLOCK_ENDERCHEST_OPEN, 1f, 1f)
+    player.playSound(player.getLocation, Sound.BLOCK_ENDER_CHEST_OPEN, 1f, 1f)
     player.openInventory(ENDER_CHEST_MENU)
   }
 

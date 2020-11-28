@@ -320,7 +320,7 @@ class Tactics(override val id: String) extends Game {
                   cancel()
                 } else {
                   player.sendActionBar(s"§bリスポーンするまであと§a$spawnTime§b秒")
-                  player.playSound(player.getLocation(), Sound.BLOCK_NOTE_HARP, 1f, 2f)
+                  player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f)
                   spawnTime -= 1
                 }
               } else {

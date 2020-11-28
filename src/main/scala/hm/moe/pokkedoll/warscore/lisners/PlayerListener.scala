@@ -97,7 +97,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         case None =>
       }
       // エンダーチェストインベントリ
-    } else if (e.getView.getTitle == EnderChestManager.ENDER_CHEST_MENU.getTitle) {
+    } else if (e.getView.getTitle == EnderChestManager.ENDER_CHEST_MENU_TITLE) {
       val item = e.getCurrentItem
       if (item != null) {
         //EnderChestManager.openEnderChest(p, e.getCurrentItem.getAmount)
@@ -120,8 +120,9 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     val inv = e.getInventory
     val player = e.getPlayer
     if (inv != null && player != null) {
-      if (inv.getTitle.contains(ChatColor.DARK_PURPLE + player.getName + "'s Chest")) {
-        val id = inv.getTitle.replaceAll(ChatColor.DARK_PURPLE + player.getName + "'s Chest ", "").toInt
+
+      if (e.getView.getTitle.contains(ChatColor.DARK_PURPLE + player.getName + "'s Chest")) {
+        val id = e.getView.getTitle.replaceAll(ChatColor.DARK_PURPLE + player.getName + "'s Chest ", "").toInt
         EnderChestManager.closeEnderChest(player, id, inv.getContents)
       }
     }

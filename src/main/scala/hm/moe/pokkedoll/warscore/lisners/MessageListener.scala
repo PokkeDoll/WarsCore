@@ -13,7 +13,7 @@ import org.bukkit.{ChatColor, Sound}
 class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
 
   override def onPluginMessageReceived(channel: String, player: Player, message: Array[Byte]): Unit = {
-    if (!channel.equalsIgnoreCase(WarsCore.LEGACY_TORUS_CHANNEL)) return
+    if (!channel.equalsIgnoreCase(WarsCore.MODERN_TORUS_CHANNEL)) return
     val in = ByteStreams.newDataInput(message)
     val subChannel = in.readUTF()
 
@@ -21,7 +21,7 @@ class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
       if (in.readBoolean()) {
         player.sendMessage(ChatColor.BLUE + "VP一つ消費しました\nポールクリスタルを一つ獲得しました")
         ItemUtil.getItem("vote").foreach(player.getInventory.addItem(_))
-        player.playSound(player.getLocation, Sound.BLOCK_NOTE_HARP, 1f, 2f)
+        player.playSound(player.getLocation, Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f)
       } else {
         player.sendMessage(ChatColor.RED + "VP が足りません！")
         player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
