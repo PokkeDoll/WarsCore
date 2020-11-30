@@ -6,9 +6,15 @@ import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.{EntityType, Player}
+import org.bukkit.inventory.Inventory
 import org.bukkit.metadata.FixedMetadataValue
 
+import scala.collection.mutable
+
 class WarsCoreCommand extends CommandExecutor {
+
+  val t = new Array[Inventory](3)
+
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {
       case player: Player =>
@@ -47,7 +53,16 @@ class WarsCoreCommand extends CommandExecutor {
               )
             }
           } else if (args(0).equalsIgnoreCase("test") || args(0).equalsIgnoreCase("t")) {
-
+            if(args(1).equalsIgnoreCase("vinv")) {
+              if(args(2) == "get") {
+                player.getInventory.clear()
+                player.sendMessage("CLEAR")
+                player.getInventory.setContents(t(args(3).toInt).getContents)
+              } else if(args(2) == "set") {
+                t(args(3).toInt) = player.getInventory
+                player.sendMessage("SET!")
+              }
+            }
           }
           if (args(0) == "vp") {
             val out = ByteStreams.newDataOutput

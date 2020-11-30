@@ -100,8 +100,11 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     } else if (e.getView.getTitle == EnderChestManager.ENDER_CHEST_MENU_TITLE) {
       val item = e.getCurrentItem
       if (item != null) {
-        //EnderChestManager.openEnderChest(p, e.getCurrentItem.getAmount)
         EnderChestManager.openEnderChest(p, EnderChestManager.parseChestId(item.getItemMeta.getDisplayName))
+      }
+    } else if(e.getView.getTitle.contains(TagUtil.TAG_INVENTORY_TITLE)) {
+      if(e.getCurrentItem != null) {
+        TagUtil.onClick(e)
       }
     } else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
@@ -125,16 +128,6 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         val id = e.getView.getTitle.replaceAll(ChatColor.DARK_PURPLE + player.getName + "'s Chest ", "").toInt
         EnderChestManager.closeEnderChest(player, id, inv.getContents)
       }
-    }
-  }
-
-  @EventHandler
-  def onInventoryOpen(e: InventoryOpenEvent): Unit = {
-    val player = e.getPlayer.asInstanceOf[Player]
-    val inv = player.getOpenInventory.getTopInventory
-    if(inv.getType == InventoryType.CRAFTING) {
-      inv.setItem(0, new ItemStack(Material.KNOWLEDGE_BOOK))
-      e.getPlayer.asInstanceOf[Player].updateInventory()
     }
   }
 

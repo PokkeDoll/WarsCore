@@ -67,7 +67,9 @@ object WarsCoreAPI {
    * @param player Player
    * @return
    */
-  def getWPlayer(player: Player): WPlayer = wplayers.getOrElseUpdate(player, new WPlayer(player))
+  def getWPlayer(player: Player): WPlayer = {
+    wplayers.getOrElseUpdate(player, new WPlayer(player))
+  }
 
   /**
    * プレイヤーの動きを止める。視点は動かせる
@@ -221,6 +223,7 @@ object WarsCoreAPI {
    *
    * @param player Player
    */
+  @Deprecated
   def updateScoreboard(player: Player, scoreboard: Scoreboard): Unit = {
     val test = new Test("updateScoreboard")
     new BukkitRunnable {
@@ -228,8 +231,8 @@ object WarsCoreAPI {
         val uuid = player.getUniqueId.toString
         val wp = WarsCoreAPI.wplayers(player)
         // ランクを取得する
-        val rankData = database.getRankData(uuid).getOrElse((-1, -1))
-        val tagData = TagUtil.cache.getOrElse(database.getTag(uuid), "-")
+        val rankData = (wp.rank, wp.exp)
+        val tagData = TagUtil.cache.getOrElse(wp._tag, "-")
 
         wp.rank = rankData._1
         RankManager.updateSidebar(scoreboard, data = rankData)

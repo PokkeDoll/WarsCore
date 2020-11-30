@@ -1,11 +1,14 @@
 package hm.moe.pokkedoll.warscore.db
 
 import java.util.UUID
+import java.util.function.Consumer
 
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore}
+import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
+
+import scala.concurrent.Future
 
 /**
  * データベースとのデータをやり取りするトレイト
@@ -132,6 +135,26 @@ trait Database {
   def addTag(uuid: String, id: String)
 
   def gameLog(gameid: String, level: String, message: String)
+
+  /**
+   * 仮想インベントリを読み込む
+   * @param wp
+   * @param col normalまたはgame
+   */
+  def getVInventory(wp: WPlayer, col: String = "normal")
+
+  /**
+   * 仮想インベントリをセーブする
+   * @param wp
+   * @param col normalまたはgame
+   */
+  def setVInventory(wp: WPlayer, col: String = "normal")
+
+  /**
+   * データをすべて読み込む
+   * @return
+   */
+  def loadWPlayer(wp: WPlayer, callback: Callback[WPlayer])
 
   def close(): Unit
 }

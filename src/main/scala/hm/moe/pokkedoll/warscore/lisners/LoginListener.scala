@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.lisners
 
 import com.google.common.io.ByteStreams
-import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import org.bukkit.event.player.{PlayerJoinEvent, PlayerQuitEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.scheduler.BukkitRunnable
@@ -18,7 +18,17 @@ class LoginListener(plugin: WarsCore) extends Listener {
       plugin.database.insert(player)
     }
 
-    WarsCoreAPI.getWPlayer(player)
+
+    WarsCore.instance.database.loadWPlayer(WarsCoreAPI.getWPlayer(player), new Callback[WPlayer] {
+      override def success(value: WPlayer): Unit = {
+
+      }
+
+      override def failure(error: Exception): Unit = {
+        error.printStackTrace()
+        player.sendMessage(ChatColor.RED + "データの読み込みに失敗しました")
+      }
+    })
     //リソースパックのデータ送信を行う
     player.sendMessage("§9クライアントのバージョンを取得しています...")
     new BukkitRunnable {

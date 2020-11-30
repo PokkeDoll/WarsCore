@@ -9,7 +9,7 @@ import org.bukkit.{Bukkit, Material, NamespacedKey}
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
-import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.{ClickType, InventoryAction, InventoryClickEvent, InventoryCloseEvent}
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
@@ -156,6 +156,22 @@ object TagUtil {
     i
   }
 
+  private val isOwn = {
+    val i = new ItemStack(Material.LIME_DYE)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.GREEN + "自身の所持しているタグだけを表示する: ON")
+    i.setItemMeta(m)
+    i
+  }
+
+  private val isNotOwn = {
+    val i = new ItemStack(Material.GRAY_DYE)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.RED + "自身が所持しているタグだけを表示する: OFF")
+    i.setItemMeta(m)
+    i
+  }
+
   private val key = new NamespacedKey(WarsCore.instance, "wc-tag-key")
   private val value = new NamespacedKey(WarsCore.instance, "wc-tag-value")
 
@@ -166,7 +182,7 @@ object TagUtil {
    * @param filter allならすべて、ownは所持しているタグのみ
    */
   def openTagInventory(player: HumanEntity, page: Int = 1, filter: String = "all"): Unit = {
-    val inv = Bukkit.createInventory(null, 54, TAG_INVENTORY_TITLE)
+    val inv = Bukkit.createInventory(null, 54, TAG_INVENTORY_TITLE + s": $page")
     if (page != 1) inv.setItem(0, previous)
     inv.setItem(1, help)
     inv.setItem(7, close)
@@ -200,8 +216,9 @@ object TagUtil {
             i
           }
         }
-        inv.setItem(5, currentTagItem)
+        inv.setItem(4, currentTagItem)
         if (filter == "own") {
+          inv.setItem(3, isOwn)
           // 確実に0 ~ 最大45まで
           val holdTags = cache.filter(f => tags.contains(f._1)).slice((page - 1) * 45, ((page - 1) * 45) + 45).toIndexedSeq
           holdTags.indices.foreach(f => {
@@ -222,6 +239,7 @@ object TagUtil {
             inv.setItem(9 + f, item)
           })
         } else {
+          inv.setItem(3, isNotOwn)
           val sliceTags = cache.slice((page - 1) * 45, ((page - 1) * 45) + 45).toIndexedSeq
           sliceTags.indices.foreach(f => {
             val item = {
@@ -259,8 +277,33 @@ object TagUtil {
     }.runTaskLater(WarsCore.instance, 1L)
   }
 
+  /**
+   * タグインベントリがクリックされた時に呼び出されるメソッド
+   * e.getCurrentItemはnullではないことがわかっている！！！！！
+   * @param e
+   */
   def onClick(e: InventoryClickEvent): Unit = {
-
+    e.setCancelled(true)
+    //e.getWhoClicked.sendMessage(s"${e.getSlot} ${e.getCurrentItem.getType} ${e.getClick}")
+    val player = e.getWhoClicked
+    val page = e.getView.getTitle.replace(TAG_INVENTORY_TITLE + ": ", "").toInt
+    val item = e.getCurrentItem
+    if (e.getSlot == 3) {
+      if(item.getType == Material.GRAY_DYE) {
+        openTagInventory(player, filter = "own")
+      } else if (item.getType == Material.LIME_DYE) {
+        openTagInventory(player)
+      }
+    } else if (e.getSlot == 7) {
+      player.closeInventory(InventoryCloseEvent.Reason.PLAYER)
+    } else if (e.getSlot == 0 && item.getType == Material.PLAYER_HEAD) {
+      openTagInventory(player, page = page - 1)
+    } else if (e.getSlot == 8 && item.getType == Material.PLAYER_HEAD) {
+      openTagInventory(player, page = page + 1)
+    }
+    if(e.getSlot == 4 && e.getCurrentItem.getType == Material.NAME_TAG && e.getClick == ClickType.LEFT) {
+      e.getWhoClicked.sendMessage("WHO!")
+    }
   }
 
   class TagInfo(val id: String, val name: String, val price: Int)

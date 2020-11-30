@@ -1,6 +1,6 @@
 name := "WarsCore"
 
-version := "1.0"
+version := "1.1"
 
 scalaVersion := "2.13.3"
 
@@ -13,7 +13,7 @@ resolvers += "dmulloy2-repo" at "https://repo.dmulloy2.net/nexus/repository/publ
 libraryDependencies ++= Seq(
   "com.destroystokyo.paper" % "paper-api" % "1.16.4-R0.1-SNAPSHOT" % Provided,
   "com.zaxxer" % "HikariCP" % "3.4.2" % Provided,
-  "com.comphenix.protocol" % "ProtocolLib" % "4.5.0" % Provided
+  "com.comphenix.protocol" % "ProtocolLib" % "4.5.1" % Provided
 )
 
 libraryDependencies += "com.github.MilkBowl" % "VaultAPI" % "1.7" intransitive()

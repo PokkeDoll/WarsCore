@@ -2,10 +2,13 @@ package hm.moe.pokkedoll.warscore.db
 
 import java.sql.SQLException
 import java.util.UUID
+import java.util.function.Consumer
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore}
+import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
+import org.bukkit.entity.Player
+import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
 
 /**
  * SQLite3でのDatabase実装
@@ -423,5 +426,76 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
+  /**
+   * 仮想インベントリを読み込む
+   *
+   * @param wp
+   * @param col normalまたはgame
+   */
+  override def getVInventory(wp: WPlayer, col: String): Unit = {
+    val c = hikari.getConnection
+    val ps = c.prepareStatement("SELECT ? FROM `vinv` WHERE `uuid`=?")
+    try {
+      ps.setString(1, col)
+      ps.setString(2, wp.player.getUniqueId.toString)
+      val rs = ps.executeQuery()
+      if(rs.next()) {
+        rs.getString(col)
+      }
+    }
+  }
+
+  /**
+   * 仮想インベントリをセーブする
+   *
+   * @param wp
+   * @param col normalまたはgame
+   */
+  override def setVInventory(wp: WPlayer, col: String): Unit = ???
+
+  /**
+   * データをすべて読み込む
+   *
+   * @return
+   */
+  override def loadWPlayer(wp: WPlayer, callback: Callback[WPlayer]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("SELECT player.uuid, rank.id, rank.exp, tag.tagId FROM player JOIN rank ON player.uuid=rank.uuid JOIN tag ON player.uuid=tag.uuid WHERE player.uuid=?")
+        try {
+          ps.setString(1, wp.player.getUniqueId.toString)
+          val rs = ps.executeQuery()
+          if(rs.next()) {
+            wp.rank = rs.getInt("id")
+            wp.exp = rs.getInt("exp")
+            wp._tag = rs.getString("tagId")
+          } else {
+            wp.rank = -9999
+            wp.exp = -9999
+            wp._tag = "Unknown"
+          }
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success(wp)
+            }
+          }.runTask(WarsCore.instance)
+        } catch {
+          case e: SQLException =>
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(WarsCore.instance)
+        } finally {
+          ps.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(WarsCore.instance)
+  }
+
   override def close(): Unit = hikari.close()
+
+
 }

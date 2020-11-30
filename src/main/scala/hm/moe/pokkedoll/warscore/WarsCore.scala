@@ -1,5 +1,8 @@
 package hm.moe.pokkedoll.warscore
 
+import com.comphenix.protocol.events.{ListenerPriority, PacketAdapter, PacketEvent}
+import com.comphenix.protocol.wrappers.EnumWrappers
+import com.comphenix.protocol.{PacketType, ProtocolLibrary, ProtocolManager}
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.cspp.CrackShotPP
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
@@ -22,6 +25,8 @@ class WarsCore extends JavaPlugin {
   private val develop = true
 
   var cspp: Option[CrackShotPP] = None
+
+  var protocolManager: ProtocolManager = _
 
   override def onEnable(): Unit = {
     WarsCore.instance = this
@@ -67,6 +72,8 @@ class WarsCore extends JavaPlugin {
     TagUtil.reloadConfig()
 
     setupCSPP()
+
+    protocolManager = ProtocolLibrary.getProtocolManager
 
     if(Bukkit.getOnlinePlayers.size()!=0) {
       Bukkit.getOnlinePlayers.forEach(f => {
