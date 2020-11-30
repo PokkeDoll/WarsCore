@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.commands
 
 import com.google.common.io.ByteStreams
-import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil}
+import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil, WeaponUI}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
@@ -53,14 +53,11 @@ class WarsCoreCommand extends CommandExecutor {
               )
             }
           } else if (args(0).equalsIgnoreCase("test") || args(0).equalsIgnoreCase("t")) {
-            if(args(1).equalsIgnoreCase("vinv")) {
-              if(args(2) == "get") {
-                player.getInventory.clear()
-                player.sendMessage("CLEAR")
-                player.getInventory.setContents(t(args(3).toInt).getContents)
-              } else if(args(2) == "set") {
-                t(args(3).toInt) = player.getInventory
-                player.sendMessage("SET!")
+            if(args(1).equalsIgnoreCase("w")) {
+              if(args(2) == "main") {
+                WeaponUI.openMainUI(player)
+              } else {
+                WeaponUI.openWeaponChestUI(player)
               }
             }
           }
