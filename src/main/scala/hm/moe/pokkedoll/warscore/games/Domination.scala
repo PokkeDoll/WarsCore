@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.events.GameDeathEvent
+import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameStartEvent}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, RankManager, WorldLoader}
 import net.md_5.bungee.api.ChatColor
@@ -196,6 +196,7 @@ class Domination(override val id: String) extends Game {
       }
     })
 
+    Bukkit.getServer.getPluginManager.callEvent(new GameStartEvent(this))
     WarsCoreAPI.playBattleSound(this)
 
     val captureParam = if(members.length >= 10) 1 else 3

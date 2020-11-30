@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.events.GameDeathEvent
+import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameStartEvent}
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, RankManager, WorldLoader}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -202,6 +202,8 @@ class TeamDeathMatch(override val id: String) extends Game {
         p.sendTitle("§7YOU ARE §9BLUE §7TEAM!", "- §6TDM §f- Kill §cRed §fteam!", 30, 20, 20)
       }
     })
+
+    Bukkit.getServer.getPluginManager.callEvent(new GameStartEvent(this))
 
     WarsCoreAPI.playBattleSound(this)
 

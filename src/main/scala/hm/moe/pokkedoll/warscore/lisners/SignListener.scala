@@ -39,7 +39,7 @@ class SignListener(plugin: WarsCore) extends Listener {
               } else {
                 val out = ByteStreams.newDataOutput
                 out.writeUTF("TakeVotePoint")
-                player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
+                player.sendPluginMessage(WarsCore.instance, WarsCore.MODERN_TORUS_CHANNEL, out.toByteArray)
               }
             }
           } catch {

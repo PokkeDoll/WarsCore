@@ -1,8 +1,5 @@
 package hm.moe.pokkedoll.warscore
 
-import com.comphenix.protocol.events.{ListenerPriority, PacketAdapter, PacketEvent}
-import com.comphenix.protocol.wrappers.EnumWrappers
-import com.comphenix.protocol.{PacketType, ProtocolLibrary, ProtocolManager}
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.cspp.CrackShotPP
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
@@ -16,6 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin
 
 /**
  * WarsCoreのメインクラス
+ *
  * @author Emorard
  */
 class WarsCore extends JavaPlugin {
@@ -26,8 +24,6 @@ class WarsCore extends JavaPlugin {
 
   var cspp: Option[CrackShotPP] = None
 
-  var protocolManager: ProtocolManager = _
-
   override def onEnable(): Unit = {
     WarsCore.instance = this
 
@@ -36,7 +32,7 @@ class WarsCore extends JavaPlugin {
     // BungeeCordに送信するのに必要
     getServer.getMessenger.registerOutgoingPluginChannel(this, MODERN_TORUS_CHANNEL)
 
-    if(!develop) {
+    if (!develop) {
       val out1 = ByteStreams.newDataOutput
       out1.writeUTF("ServerProgress")
       out1.writeByte(1)
@@ -73,16 +69,14 @@ class WarsCore extends JavaPlugin {
 
     setupCSPP()
 
-    protocolManager = ProtocolLibrary.getProtocolManager
-
-    if(Bukkit.getOnlinePlayers.size()!=0) {
+    if (Bukkit.getOnlinePlayers.size() != 0) {
       Bukkit.getOnlinePlayers.forEach(f => {
         WarsCoreAPI.getWPlayer(f)
-        WarsCoreAPI.addScoreBoard(f)
+        // WarsCoreAPI.addScoreBoard(f)
       })
     }
 
-    if(!develop) {
+    if (!develop) {
       val out2 = ByteStreams.newDataOutput
       out2.writeUTF("ServerProgress")
       out2.writeByte(2)
@@ -111,10 +105,7 @@ class WarsCore extends JavaPlugin {
 }
 
 object WarsCore {
-  protected [warscore] var instance: WarsCore = _
-
-  @Deprecated
-  val LEGACY_TORUS_CHANNEL = "Torus"
+  protected[warscore] var instance: WarsCore = _
 
   val MODERN_TORUS_CHANNEL = "torus:main"
 }

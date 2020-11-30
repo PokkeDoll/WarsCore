@@ -6,6 +6,7 @@ import java.util.function.Consumer
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
+import hm.moe.pokkedoll.warscore.utils.VirtualInventory
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
@@ -442,6 +443,12 @@ class SQLite(plugin: WarsCore) extends Database {
       if(rs.next()) {
         rs.getString(col)
       }
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      ps.close()
+      c.close()
     }
   }
 
@@ -462,7 +469,7 @@ class SQLite(plugin: WarsCore) extends Database {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT player.uuid, rank.id, rank.exp, tag.tagId FROM player JOIN rank ON player.uuid=rank.uuid JOIN tag ON player.uuid=tag.uuid WHERE player.uuid=?")
+        val ps = c.prepareStatement("SELECT player.uuid, rank.id, rank.exp, tag.tagId, vinv.normal, vinv.game FROM player JOIN rank ON player.uuid=rank.uuid JOIN tag ON player.uuid=tag.uuid JOIN vinv ON player.uuid=vinv.uuid WHERE player.uuid=?")
         try {
           ps.setString(1, wp.player.getUniqueId.toString)
           val rs = ps.executeQuery()
@@ -470,10 +477,14 @@ class SQLite(plugin: WarsCore) extends Database {
             wp.rank = rs.getInt("id")
             wp.exp = rs.getInt("exp")
             wp._tag = rs.getString("tagId")
+            wp.virtualNormalInventory = Option(VirtualInventory.from(rs.getString("normal")))
+            wp.virtualGameInventory = Option(VirtualInventory.from(rs.getString("game")))
           } else {
             wp.rank = -9999
             wp.exp = -9999
             wp._tag = "Unknown"
+            wp.virtualNormalInventory = Option(VirtualInventory.empty())
+            wp.virtualGameInventory = Option(VirtualInventory.empty())
           }
           new BukkitRunnable {
             override def run(): Unit = {

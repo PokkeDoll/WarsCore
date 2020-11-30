@@ -68,7 +68,24 @@ object WarsCoreAPI {
    * @return
    */
   def getWPlayer(player: Player): WPlayer = {
-    wplayers.getOrElseUpdate(player, new WPlayer(player))
+    wplayers.get(player) match {
+      case Some(wp) =>
+        wp
+      case None =>
+        val wp = new WPlayer(player)
+        wplayers.put(player, wp)
+        database.loadWPlayer(wp, new Callback[WPlayer] {
+          override def success(value: WPlayer): Unit = {
+            addScoreBoard(player)
+          }
+
+          override def failure(error: Exception): Unit = {
+            error.printStackTrace()
+            player.sendMessage(ChatColor.RED + "データの読み込みに失敗しました")
+          }
+        })
+        wp
+    }
   }
 
   /**

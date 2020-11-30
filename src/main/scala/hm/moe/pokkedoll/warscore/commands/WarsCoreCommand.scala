@@ -67,11 +67,11 @@ class WarsCoreCommand extends CommandExecutor {
           if (args(0) == "vp") {
             val out = ByteStreams.newDataOutput
             out.writeUTF("TakeVotePoint")
-            player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
+            player.sendPluginMessage(WarsCore.instance, WarsCore.MODERN_TORUS_CHANNEL, out.toByteArray)
           } else if (args(0) == "rs") {
             val out = ByteStreams.newDataOutput
             out.writeUTF("ResourcePack")
-            player.sendPluginMessage(WarsCore.instance, WarsCore.LEGACY_TORUS_CHANNEL, out.toByteArray)
+            player.sendPluginMessage(WarsCore.instance, WarsCore.MODERN_TORUS_CHANNEL, out.toByteArray)
           } else if (args(0) == "cmdesp") {
             if (player.hasMetadata("cmdesp")) {
               player.removeMetadata("cmdesp", WarsCore.instance)

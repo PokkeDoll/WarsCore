@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.games.Game
+import hm.moe.pokkedoll.warscore.utils.VirtualInventory
 import net.md_5.bungee.api.chat.BaseComponent
 import org.bukkit.ChatColor
 import org.bukkit.entity.Player
@@ -24,9 +25,9 @@ class WPlayer(val player: Player) {
    * 現在の経験値のキャッシュ
    */
   var exp = 0
-
-  var _tag = ""
   @Deprecated
+  var _tag = ""
+
   var tag = ""
 
   def sendMessage(string: String): Unit = {
@@ -37,7 +38,7 @@ class WPlayer(val player: Player) {
     player.sendMessage(components: _*)
   }
 
-  var virtualPlayerInventory: Array[ItemStack] = new Array[ItemStack](36)
+  var virtualNormalInventory: Option[VirtualInventory] = None
 
-  var virtualGameInventory: Array[ItemStack] = new Array[ItemStack](36)
+  var virtualGameInventory: Option[VirtualInventory] = None
 }
