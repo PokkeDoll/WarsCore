@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameStartEvent}
+import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
 import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, RankManager, WorldLoader}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -246,6 +246,9 @@ class TeamDeathMatch(override val id: String) extends Game {
     world.setPVP(false)
     // ここで勝敗を決める
     val winner = if (redPoint > bluePoint) "red" else if (redPoint < bluePoint) "blue" else "draw"
+
+    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
+
     log(WarsCoreAPI.LEVEL_INFO, s"End game. winner is $winner")
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("               Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
@@ -317,19 +320,17 @@ class TeamDeathMatch(override val id: String) extends Game {
    * @return 参加できる場合
    */
   override def join(wp: WPlayer): Boolean = {
+    val event = new GameJoinEvent(this, wp)
     if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
-      false
     } else if (!loaded && state == GameState.DISABLE) {
       load()
-      false
     } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
-      false
     } else if (members.length >= maxMember) {
       wp.player.sendMessage("§c人数が満員なので参加できません！")
-      false
     } else {
+      event.setAccept(true)
       wp.sendMessage(
         s"マップ名: &a${mapInfo.mapName}\n" +
           s"製作者: &a${mapInfo.authors}\n" +
@@ -365,8 +366,9 @@ class TeamDeathMatch(override val id: String) extends Game {
         case _ =>
           return false
       }
-      true
     }
+    Bukkit.getPluginManager.callEvent(event)
+    event.isAccept
   }
 
 
