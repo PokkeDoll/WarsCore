@@ -38,6 +38,7 @@ class PresentCommand extends CommandExecutor with TabExecutor {
 
           }
         }
+      case None =>
     }
   }
 }

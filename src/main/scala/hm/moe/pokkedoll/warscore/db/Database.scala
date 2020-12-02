@@ -1,19 +1,21 @@
 package hm.moe.pokkedoll.warscore.db
 
 import java.util.UUID
-import java.util.function.Consumer
 
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 
-import scala.concurrent.Future
+import scala.collection.mutable
 
 /**
- * データベースとのデータをやり取りするトレイト
+ * データベースとのデータをやり取りするトレイト <br>
  *
+ * version2.0にて、コールバックが追加された
  * @author Emorard
+ * @version 2.0
  */
 trait Database {
   /**
@@ -152,9 +154,17 @@ trait Database {
 
   /**
    * データをすべて読み込む
+   * @version 2.0
    * @return
    */
   def loadWPlayer(wp: WPlayer, callback: Callback[WPlayer])
+
+  /**
+   * アイテムを読み込む
+   * @param uuid
+   * @param callback
+   */
+  def getWeaponChest(uuid: String, callback: Callback[mutable.Buffer[(String, Array[Byte], Boolean)]])
 
   def close(): Unit
 }

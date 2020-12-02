@@ -11,6 +11,8 @@ import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
 
+import scala.collection.mutable
+
 /**
  * SQLite3でのDatabase実装
  */
@@ -489,6 +491,43 @@ class SQLite(plugin: WarsCore) extends Database {
           new BukkitRunnable {
             override def run(): Unit = {
               callback.success(wp)
+            }
+          }.runTask(WarsCore.instance)
+        } catch {
+          case e: SQLException =>
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(WarsCore.instance)
+        } finally {
+          ps.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(WarsCore.instance)
+  }
+
+  /**
+   * アイテムを読み込む
+   * @param uuid
+   * @param callback
+   */
+  override def getWeaponChest(uuid: String, callback: Callback[mutable.Buffer[(String, Array[Byte], Boolean)]]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("SELECT * FROM weapon WHERE uuid=?")
+        try {
+          ps.setString(1, uuid)
+          val rs = ps.executeQuery()
+          var buffer = mutable.Buffer.empty[(String, Array[Byte], Boolean)]
+          while(rs.next()) {
+            buffer.+=((rs.getString("type"), rs.getBytes("data"), rs.getBoolean("use")))
+          }
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success(buffer)
             }
           }.runTask(WarsCore.instance)
         } catch {

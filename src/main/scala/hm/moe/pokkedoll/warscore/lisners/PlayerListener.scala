@@ -11,7 +11,7 @@ import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory._
 import org.bukkit.event.player._
 import org.bukkit.event.{EventHandler, Listener}
-import org.bukkit.inventory.{EquipmentSlot, ItemStack}
+import org.bukkit.inventory.{EquipmentSlot, ItemStack, MerchantInventory}
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 
@@ -106,7 +106,18 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       if(e.getCurrentItem != null) {
         TagUtil.onClick(e)
       }
-    } else {
+    } else if(e.getView.getTitle == WeaponUI.WEAPON_CHEST_UI_TITLE) {
+      WeaponUI.onClickWeaponChestUI(e)
+    } else if(inv.getType == InventoryType.MERCHANT) {
+      inv match {
+        case i: MerchantInventory =>
+          e.getWhoClicked.sendMessage(
+            s"サイズ: ${i.getStorageContents.length}\n" +
+            s"0 => ${i.getItem(0)}, 1 => ${i.getItem(1)}, 2 => ${i.getItem(2)}"
+          )
+      }
+    }
+    else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
       if (wp.game.isDefined) {
         if (!wp.changeInventory && e.getSlotType != SlotType.QUICKBAR) {
@@ -116,6 +127,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         }
       }
     }
+
   }
 
   @EventHandler

@@ -6,7 +6,7 @@ import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.{EntityType, Player}
-import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.{Inventory, ItemStack}
 import org.bukkit.metadata.FixedMetadataValue
 
 import scala.collection.mutable
@@ -59,6 +59,16 @@ class WarsCoreCommand extends CommandExecutor {
               } else {
                 WeaponUI.openWeaponChestUI(player)
               }
+            }
+            args(1) match {
+              case "s" =>
+                val i = player.getInventory.getItemInMainHand
+                player.sendMessage(s"ITEM => $i\nBytes => ${i.serializeAsBytes().mkString("Array(", ", ", ")")}")
+                player.setMetadata("i", new FixedMetadataValue(WarsCore.instance, i.serializeAsBytes()))
+              case "g" =>
+                val b = player.getMetadata("i").get(0)
+                val i = ItemStack.deserializeBytes(b.value().asInstanceOf[Array[Byte]])
+                player.getInventory.addItem(i)
             }
           }
           if (args(0) == "vp") {
