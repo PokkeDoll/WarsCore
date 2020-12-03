@@ -107,16 +107,22 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         TagUtil.onClick(e)
       }
     } else if(e.getView.getTitle == WeaponUI.WEAPON_CHEST_UI_TITLE) {
-      WeaponUI.onClickWeaponChestUI(e)
-    } else if(inv.getType == InventoryType.MERCHANT) {
+      WeaponUI.onClickWeaponStorageUI(e)
+    }
+    /*else if(inv.getType == InventoryType.MERCHANT) {
       inv match {
         case i: MerchantInventory =>
+          val rs = i.getItem(2)
+          if(rs != null && WarsCore.instance.cs.getWeaponTitle(rs) != null) {
+            // つまり"銃"を購入したということ！
+
+          }
           e.getWhoClicked.sendMessage(
             s"サイズ: ${i.getStorageContents.length}\n" +
             s"0 => ${i.getItem(0)}, 1 => ${i.getItem(1)}, 2 => ${i.getItem(2)}"
           )
       }
-    }
+    }*/
     else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
       if (wp.game.isDefined) {
@@ -135,10 +141,11 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     val inv = e.getInventory
     val player = e.getPlayer
     if (inv != null && player != null) {
-
       if (e.getView.getTitle.contains(ChatColor.DARK_PURPLE + player.getName + "'s Chest")) {
         val id = e.getView.getTitle.replaceAll(ChatColor.DARK_PURPLE + player.getName + "'s Chest ", "").toInt
         EnderChestManager.closeEnderChest(player, id, inv.getContents)
+      } else if (e.getView.getTitle == WeaponUI.WEAPON_CHEST_UI_TITLE) {
+        WeaponUI.onCloseWeaponStorageUI(e)
       }
     }
   }

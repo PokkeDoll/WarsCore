@@ -2,14 +2,14 @@ package hm.moe.pokkedoll.warscore.db
 
 import java.sql.SQLException
 import java.util.UUID
-import java.util.function.Consumer
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import hm.moe.pokkedoll.warscore.utils.VirtualInventory
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
-import org.bukkit.entity.Player
-import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
+import org.bukkit.enchantments.Enchantment
+import org.bukkit.inventory.ItemStack
+import org.bukkit.scheduler.BukkitRunnable
 
 import scala.collection.mutable
 
@@ -511,9 +511,12 @@ class SQLite(plugin: WarsCore) extends Database {
   /**
    * アイテムを読み込む
    * @param uuid
-   * @param callback
+   * @param callback | String Type
+   *                 | Array[Byte] アイテムのRAWデータ
+   *                 | Int slot
+   *                 | Int use!?
    */
-  override def getWeaponChest(uuid: String, callback: Callback[mutable.Buffer[(String, Array[Byte], Boolean)]]): Unit = {
+  override def getWeaponChest(uuid: String, callback: Callback[mutable.Buffer[(String, Array[Byte], Int, Int)]]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
@@ -521,9 +524,9 @@ class SQLite(plugin: WarsCore) extends Database {
         try {
           ps.setString(1, uuid)
           val rs = ps.executeQuery()
-          var buffer = mutable.Buffer.empty[(String, Array[Byte], Boolean)]
+          var buffer = mutable.Buffer.empty[(String, Array[Byte], Int, Int)]
           while(rs.next()) {
-            buffer.+=((rs.getString("type"), rs.getBytes("data"), rs.getBoolean("use")))
+            buffer.+=((rs.getString("type"), rs.getBytes("data"), rs.getInt("slot"), rs.getInt("use")))
           }
           new BukkitRunnable {
             override def run(): Unit = {
@@ -547,5 +550,102 @@ class SQLite(plugin: WarsCore) extends Database {
 
   override def close(): Unit = hikari.close()
 
+  /**
+   * アイテムを読み込む
+   *
+   * @param uuid
+   * @param baseSlot     ベースページ (page - 1) * 45 で求まる
+   * @param callback | String Type
+   *                 | Array[Byte] アイテムのRAWデータ
+   *                 | Int slot
+   *                 | Int use!?
+   */
+  override def getPagedWeaponStorage(uuid: String, baseSlot: Int, callback: Callback[mutable.Buffer[(Int, Array[Byte], Int)]]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("SELECT * FROM weapon WHERE uuid=? and ?<=slot and slot<?")
+        try {
+          ps.setString(1, uuid)
+          ps.setInt(2, baseSlot)
+          ps.setInt(3, baseSlot + 45)
+          val rs = ps.executeQuery()
+          var buffer = mutable.Buffer.empty[(Int, Array[Byte], Int)]
+          while(rs.next()) {
+            buffer.+=((rs.getInt("slot"), rs.getBytes("data"), rs.getInt("use")))
+          }
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success(buffer)
+            }
+          }.runTask(WarsCore.instance)
+        } catch {
+          case e: SQLException =>
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(WarsCore.instance)
+        } finally {
+          ps.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(WarsCore.instance)
+  }
 
+  /**
+   * アイテムを保存する。
+   * @param uuid
+   * @param baseSlot
+   * @param contents
+   */
+  def setPagedWeaponStorage(uuid: String, baseSlot: Int, contents: Map[Boolean, Seq[(Int, ItemStack)]]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        // 使われてないスロットの削除を行う
+        val ps1 = c.prepareStatement("DELETE FROM weapon WHERE uuid=? and slot=?")
+        try {
+          ps1.setString(1, uuid)
+          contents.get(true) match {
+            case Some(content) =>
+              content.foreach(f => {
+                ps1.setInt(2, baseSlot + f._1)
+                ps1.executeUpdate()
+              })
+            case None =>
+          }
+        } catch {
+          case e: SQLException =>
+            e.printStackTrace()
+        } finally {
+          ps1.close()
+        }
+        // 順にUUID, スロット, データ, 使ってるか(特定のエンチャントされてるか)(関係なし)
+        val ps2 = c.prepareStatement("REPLACE INTO weapon(uuid, slot, data) VALUES(?, ?, ?)")
+        try {
+          ps2.setString(1, uuid)
+          contents.get(false) match {
+            case Some(content) =>
+              // 呪い = useが0以外 = 無視！
+              content.filterNot(pred => pred._2.containsEnchantment(Enchantment.BINDING_CURSE)).foreach(f => {
+                ps2.setInt(2, baseSlot + f._1)
+                //println(f._2.serializeAsBytes().mkString("Array(", ", ", ")"))
+                ps2.setBytes(3, f._2.serializeAsBytes())
+                ps2.executeUpdate()
+                //println(i)
+              })
+            case None =>
+          }
+        } catch {
+          case e: SQLException =>
+            e.printStackTrace()
+        } finally {
+          ps2.close()
+        }
+        c.close()
+      }
+    }.runTaskAsynchronously(WarsCore.instance)
+  }
 }

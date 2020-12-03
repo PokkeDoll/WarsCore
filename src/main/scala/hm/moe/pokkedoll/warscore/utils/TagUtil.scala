@@ -1,19 +1,18 @@
 package hm.moe.pokkedoll.warscore.utils
 
 import java.io.File
-import java.util.Optional
 
 import hm.moe.pokkedoll.warscore.{Test, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
-import org.bukkit.{Bukkit, Material, NamespacedKey}
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
-import org.bukkit.event.inventory.{ClickType, InventoryAction, InventoryClickEvent, InventoryCloseEvent}
+import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent}
 import org.bukkit.inventory.meta.SkullMeta
-import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
+import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.{Bukkit, Material, NamespacedKey}
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.{Failure, Success, Try}
@@ -44,7 +43,7 @@ object TagUtil {
       }
     }
     val cs = config.getKeys(false)
-    cache = cs.asScala.map(f => (f, new TagInfo(f, ChatColor.translateAlternateColorCodes('&', config.getString(s"${f}.name", "null")), config.getInt(s"${f}.price")))).toMap
+    cache = cs.asScala.map(f => (f, new TagInfo(f, ChatColor.translateAlternateColorCodes('&', config.getString(s"$f.name", "null")), config.getInt(s"$f.price")))).toMap
     test.log()
   }
 

@@ -53,14 +53,13 @@ class WarsCoreCommand extends CommandExecutor {
               )
             }
           } else if (args(0).equalsIgnoreCase("test") || args(0).equalsIgnoreCase("t")) {
-            if(args(1).equalsIgnoreCase("w")) {
-              if(args(2) == "main") {
-                WeaponUI.openMainUI(player)
-              } else {
-                WeaponUI.openWeaponChestUI(player)
-              }
-            }
             args(1) match {
+              case "w" =>
+                if(args(2) == "main") {
+                  WeaponUI.openMainUI(player)
+                } else {
+                  WeaponUI.openWeaponStorageUI(player)
+                }
               case "s" =>
                 val i = player.getInventory.getItemInMainHand
                 player.sendMessage(s"ITEM => $i\nBytes => ${i.serializeAsBytes().mkString("Array(", ", ", ")")}")
@@ -69,6 +68,7 @@ class WarsCoreCommand extends CommandExecutor {
                 val b = player.getMetadata("i").get(0)
                 val i = ItemStack.deserializeBytes(b.value().asInstanceOf[Array[Byte]])
                 player.getInventory.addItem(i)
+              case _ =>
             }
           }
           if (args(0) == "vp") {

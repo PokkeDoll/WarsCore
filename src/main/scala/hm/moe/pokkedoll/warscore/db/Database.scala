@@ -162,9 +162,33 @@ trait Database {
   /**
    * アイテムを読み込む
    * @param uuid
-   * @param callback
+   * @param callback | String Type
+   *                 | Array[Byte] アイテムのRAWデータ
+   *                 | Int slot
+   *                 | Int use!?
+   *
    */
-  def getWeaponChest(uuid: String, callback: Callback[mutable.Buffer[(String, Array[Byte], Boolean)]])
+  @Deprecated
+  def getWeaponChest(uuid: String, callback: Callback[mutable.Buffer[(String, Array[Byte], Int, Int)]])
+
+  /**
+   * アイテムを読み込む
+   * @param uuid
+   * @param baseSlot ベースページ (page - 1) * 45 で求まる
+   * @param callback | String Type
+   *                 | Array[Byte] アイテムのRAWデータ
+   *                 | Int slot
+   *                 | Int use!?
+   */
+  def getPagedWeaponStorage(uuid: String, baseSlot: Int, callback: Callback[mutable.Buffer[(Int, Array[Byte], Int)]])
+
+  /**
+   * アイテムを保存する。
+   * @param uuid
+   * @param baseSlot
+   * @param contents
+   */
+  def setPagedWeaponStorage(uuid: String, baseSlot: Int, contents: Map[Boolean, Seq[(Int, ItemStack)]])
 
   def close(): Unit
 }

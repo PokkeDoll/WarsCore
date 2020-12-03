@@ -1,12 +1,12 @@
 package hm.moe.pokkedoll.test
 
 object TestApp extends App {
-  val map = Map(1 -> "1", 2 -> "2", 3 -> "3")
+  val s = Seq((1, 0), (2, 0), (3, 0), (4, 1), (5, 0), (6, 1)).groupBy(f => f._2 == 0)
 
+  s.keys.foreach(f => println(f.getClass))
 
-  val sl = map.filter(pred => pred._1 != 0).slice(0, 45).toIndexedSeq
+  val ss = Range(0, 45)
 
-  println(sl.size)
-  println(sl(3))
+  ss.indices.foreach(f => println(f + 9))
 
 }

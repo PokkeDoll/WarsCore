@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
 import com.google.common.io.ByteStreams
+import com.shampaggon.crackshot.CSUtility
 import hm.moe.pokkedoll.cspp.CrackShotPP
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands._
@@ -23,6 +24,8 @@ class WarsCore extends JavaPlugin {
   private val develop = true
 
   var cspp: Option[CrackShotPP] = None
+
+  var cs: CSUtility = _
 
   override def onEnable(): Unit = {
     WarsCore.instance = this
@@ -68,6 +71,8 @@ class WarsCore extends JavaPlugin {
     TagUtil.reloadConfig()
 
     setupCSPP()
+
+    cs = new CSUtility
 
     if (Bukkit.getOnlinePlayers.size() != 0) {
       Bukkit.getOnlinePlayers.forEach(f => {
