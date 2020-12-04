@@ -1,15 +1,16 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
-import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch}
+import hm.moe.pokkedoll.warscore.games.{Domination, Game, TeamDeathMatch}
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, TagUtil, WorldLoader}
-import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent, TextComponent}
+import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent}
+import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{EntityType, Firework, Player}
 import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
-import org.bukkit._
 
 import scala.collection.mutable
 import scala.util.Random
@@ -463,5 +464,27 @@ object WarsCoreAPI {
 
   def gameLog(gameid: String, level: String, message: String): Unit = {
     database.gameLog(gameid, level, message)
+  }
+
+  object UI {
+    private val PAGE_KEY = new NamespacedKey(WarsCore.instance, "ui-page")
+
+    val PAGE_ICON: Int => ItemStack = (page: Int) => {
+      val i = new ItemStack(Material.WRITABLE_BOOK)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&e${if (page == 1) "-" else page - 1} &7← &a&l$page &r&7→ &e${page + 1}"))
+      m.setLore(java.util.Arrays.asList("左クリック | - | 右クリック"))
+      m.getPersistentDataContainer.set(PAGE_KEY, PersistentDataType.INTEGER, java.lang.Integer.valueOf(page))
+      i.setItemMeta(m)
+      i
+    }
+
+    val PANEL: ItemStack = {
+      val i = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE)
+      val m = i.getItemMeta
+      m.setDisplayName(" ")
+      i.setItemMeta(m)
+      i
+    }
   }
 }

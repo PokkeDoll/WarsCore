@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore.commands
 
 import hm.moe.pokkedoll.warscore.WarsCore
+import hm.moe.pokkedoll.warscore.ui.TagUI
 import hm.moe.pokkedoll.warscore.utils.TagUtil
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{ClickEvent, ComponentBuilder}
@@ -24,9 +25,11 @@ class TagCommand extends CommandExecutor {
     sender match {
       case player: Player =>
         if(args.length > 1) {
-          TagUtil.openTagInventory(player, filter = args(0))
+          TagUI.openUI(player, holding = true)
+          // TagUtil.openTagInventory(player, filter = args(0))
         } else {
-          TagUtil.openTagInventory(player)
+          TagUI.openUI(player)
+          // TagUtil.openTagInventory(player)
         }
         return true
         /*

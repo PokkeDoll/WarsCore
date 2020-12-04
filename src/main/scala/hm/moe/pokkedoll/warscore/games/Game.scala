@@ -59,6 +59,14 @@ trait Game {
    */
   var members: Vector[WPlayer] = Vector.empty[WPlayer]
 
+  import collection.JavaConverters._
+
+  /**
+   * Javaにやさしいメンバー取得メソッド
+   * @return
+   */
+  def getMembersAsJava: java.util.List[WPlayer] = members.asJava
+
   /**
    * ワールド。でも使うかわからん...
    */

@@ -5,9 +5,6 @@ import hm.moe.pokkedoll.warscore.utils.VirtualInventory
 import net.md_5.bungee.api.chat.BaseComponent
 import org.bukkit.ChatColor
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
-
-import scala.collection.mutable
 
 /**
  * WarsCoreのキャッシュを保存するクラス

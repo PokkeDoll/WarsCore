@@ -1,15 +1,13 @@
-package hm.moe.pokkedoll.warscore.utils
+package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.{Callback, WarsCore}
 import net.md_5.bungee.api.ChatColor
-import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
-import org.bukkit.event.inventory.{ClickType, InventoryAction, InventoryClickEvent, InventoryCloseEvent, InventoryType}
-import org.bukkit.inventory.meta.SkullMeta
-import org.bukkit.{Bukkit, Material, NamespacedKey}
-import org.bukkit.inventory.{Inventory, ItemStack}
+import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType}
+import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.{Bukkit, Material, NamespacedKey}
 
 import scala.collection.mutable
 
@@ -80,12 +78,13 @@ object WeaponUI {
         value.foreach(f => {
           println(f)
           val i = if (f._2 == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f._2)
-          if(f._3 != 0) {
+          if (f._3 != 0) {
             i.addEnchantment(Enchantment.BINDING_CURSE, 10)
           }
           inv.setItem(9 + f._1 - baseSlot, i)
         })
       }
+
       override def failure(error: Exception): Unit = {
         (9 until 54).foreach(inv.setItem(_, ERROR_PANEL))
       }
@@ -121,7 +120,7 @@ object WeaponUI {
     val player = e.getPlayer
     val inv = e.getView.getTopInventory
     val pageItem = inv.getItem(4)
-    if(pageItem != null) {
+    if (pageItem != null) {
       val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
       val baseSlot = (page - 1) * 45
       println(s"page is $page $baseSlot")

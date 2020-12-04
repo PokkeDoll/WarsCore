@@ -1,7 +1,6 @@
 package hm.moe.pokkedoll.warscore.utils
 
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 /**

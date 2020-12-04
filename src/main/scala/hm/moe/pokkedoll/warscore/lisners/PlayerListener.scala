@@ -2,6 +2,7 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import java.util
 
+import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player

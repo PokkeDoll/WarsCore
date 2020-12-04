@@ -61,14 +61,10 @@ object TagUtil {
     config.save(configFile)
   }
 
-  /**
-   * データベースのタグコンテナとタグキャッシュに含まれているか確かめる
-   *
-   * @return
-   */
-  def hasTag(player: Player, tagId: String): Boolean = {
-    plugin.database.getTags(uuid = player.getUniqueId.toString).contains(tagId) && cache.contains(tagId)
+  def getTag(tagId: String): TagInfo = {
+    cache.getOrElse(tagId, new TagInfo("", "", -1))
   }
+
 
 
   /**
@@ -180,7 +176,9 @@ object TagUtil {
    * @param page   インベントリの1ページに入るタグ数は45個
    * @param filter allならすべて、ownは所持しているタグのみ
    */
+  @Deprecated
   def openTagInventory(player: HumanEntity, page: Int = 1, filter: String = "all"): Unit = {
+    /*
     val inv = Bukkit.createInventory(null, 54, TAG_INVENTORY_TITLE + s": $page")
     if (page != 1) inv.setItem(0, previous)
     inv.setItem(1, help)
@@ -274,6 +272,7 @@ object TagUtil {
         }
       }
     }.runTaskLater(WarsCore.instance, 1L)
+     */
   }
 
   /**

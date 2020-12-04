@@ -305,66 +305,63 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
-  /**
-   * 所持しているタグを獲得する テーブル tagContainerより
-   *
-   * @param uuid UUID
-   * @return
-   */
-  def getTags(uuid: String): IndexedSeq[String] = {
-    val c = hikari.getConnection()
-    val ps = c.prepareStatement("SELECT `tagId` FROM `tagContainer` WHERE `uuid`=?")
-    var seq = IndexedSeq.empty[String]
-    try {
-      ps.setString(1, uuid)
-      val rs = ps.executeQuery()
-      while (rs.next()) {
-        seq = seq :+ rs.getString("tagId")
+  override def getTags(uuid: String, callback: Callback[mutable.Buffer[(String, Boolean)]]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+
+        callback.async = true
+
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("SELECT * FROM tag WHERE uuid=?")
+        try {
+          ps.setString(1, uuid)
+          val rs = ps.executeQuery()
+          var buffer = mutable.Buffer.empty[(String, Boolean)]
+          while(rs.next()) {
+            buffer.+=((rs.getString("tagId"), rs.getBoolean("use")))
+          }
+          callback.success(buffer)
+        } catch {
+          case e: SQLException =>
+            callback.failure(e)
+        } finally {
+          ps.close()
+          c.close()
+        }
       }
-      seq
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        seq
-    } finally {
-      ps.close()
-      c.close()
-    }
+    }.runTaskAsynchronously(WarsCore.instance)
   }
 
   /**
-   * 現在設定しているタグを獲得する テーブル tagより
-   *
-   * @param uuid UUID
-   * @return
+   * 設定しているタグを返す
+   * @param uuid UUIDを指定
+   * @param callback 非同期で返される
    */
-  def getTag(uuid: String): String = {
-    val c = hikari.getConnection()
-    val ps = c.prepareStatement("SELECT `tagId` FROM `tag` WHERE `uuid`=?")
-    try {
-      ps.setString(1, uuid)
-      val rs = ps.executeQuery()
-      if (rs.next()) {
-        rs.getString("tagId")
-      } else {
-        // 存在しないなら新たにデータを追加する
-        rs.close()
-        ps.close()
-        val ps2 = c.prepareStatement("INSERT INTO `tag` VALUES(?,?)")
-        ps2.setString(1, uuid)
-        ps2.setString(2, "")
-        ps2.executeUpdate()
-        ps2.close()
-        ""
+  override def getTag(uuid: String, callback: Callback[String]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+
+        callback.async = true
+
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("SELECT tagId FROM tag WHERE uuid=? and use=1")
+        try {
+          ps.setString(1, uuid)
+          val rs = ps.executeQuery()
+          if(rs.next()) {
+            callback.success(rs.getString("tagId"))
+          } else {
+            callback.success("")
+          }
+        } catch {
+          case e: SQLException =>
+            callback.failure(e)
+        } finally {
+          ps.close()
+          c.close()
+        }
       }
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        "ERROR!"
-    } finally {
-      if (!ps.isClosed) ps.close()
-      c.close()
-    }
+    }.runTaskAsynchronously(WarsCore.instance)
   }
 
 

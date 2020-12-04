@@ -105,20 +105,19 @@ trait Database {
   }
 
   /**
-   * 現在設定しているタグを獲得する テーブル tagより
-   *
-   * @param uuid UUID
-   * @return
+   * タグを取得する
+   * @param uuid UUIDを指定
+   * @param callback 非同期で返される
    */
-  def getTag(uuid: String): String
+  def getTags(uuid: String, callback: Callback[mutable.Buffer[(String, Boolean)]])
+
 
   /**
-   * 所持しているタグを獲得する テーブル tagContainerより
-   *
-   * @param uuid UUID
-   * @return
+   * 設定しているタグを返す
+   * @param uuid UUIDを指定
+   * @param callback 非同期で返される
    */
-  def getTags(uuid: String): IndexedSeq[String]
+  def getTag(uuid: String, callback: Callback[String])
 
   /**
    * タグをセットする
