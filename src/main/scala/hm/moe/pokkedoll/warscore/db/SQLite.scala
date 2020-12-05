@@ -661,4 +661,33 @@ class SQLite(plugin: WarsCore) extends Database {
       }
     }.runTaskAsynchronously(WarsCore.instance)
   }
+
+  /**
+   * 武器を設定する
+   *
+   * @since v1.3.4
+   * @param uuid
+   * @param slot
+   */
+  override def setPagedWeapon(uuid: String, slot: Int, callback: Callback[Unit]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("UPDATE weapon SET `use`=0 WHERE `uuid`=? and `use`=1; UPDATE weapon SET `use`=1 WHERE `uuid`=? and `slot`=?")
+        try {
+          ps.setString(1, uuid)
+          ps.setString(2, uuid)
+          ps.setInt(3, slot)
+          ps.executeUpdate()
+          callback.success()
+        } catch {
+          case e: SQLException =>
+            e.printStackTrace()
+        } finally {
+          ps.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(WarsCore.instance)
+  }
 }

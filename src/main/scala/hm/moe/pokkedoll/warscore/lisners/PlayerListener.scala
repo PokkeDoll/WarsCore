@@ -73,7 +73,10 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   def onInventoryClick(e: InventoryClickEvent): Unit = {
     val inv = e.getClickedInventory
     val p = e.getWhoClicked
-    if (inv == null) return
+    if (inv == null) return;
+
+    val title = e.getView.getTitle
+
     if (inv.getType == InventoryType.ANVIL && e.getSlot == 2 && e.getClick == ClickType.LEFT) {
       if (!UpgradeUtil.onUpgrade(inv, p)) {
         e.setCancelled(true)
@@ -85,7 +88,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       e.setCancelled(true)
       //plugin.getLogger.info("Event Cancelled!@54")
       // ゲームインベントリ
-    } else if (e.getView.getTitle == WarsCoreAPI.GAME_INVENTORY_TITLE) {
+    } else if (title == WarsCoreAPI.GAME_INVENTORY_TITLE) {
       //plugin.getLogger.info("Event Cancelled!@59")
       e.setCancelled(true)
       val icon = e.getCurrentItem
@@ -98,17 +101,19 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         case None =>
       }
       // エンダーチェストインベントリ
-    } else if (e.getView.getTitle == EnderChestManager.ENDER_CHEST_MENU_TITLE) {
+    } else if (title == EnderChestManager.ENDER_CHEST_MENU_TITLE) {
       val item = e.getCurrentItem
       if (item != null) {
         EnderChestManager.openEnderChest(p, EnderChestManager.parseChestId(item.getItemMeta.getDisplayName))
       }
-    } else if(e.getView.getTitle.contains(TagUI.UI_TITLE)) {
+    } else if(title.contains(TagUI.UI_TITLE)) {
       if(e.getCurrentItem != null) {
         TagUI.onClick(e)
       }
-    } else if(e.getView.getTitle == WeaponUI.WEAPON_CHEST_UI_TITLE) {
+    } else if(title == WeaponUI.WEAPON_CHEST_UI_TITLE) {
       WeaponUI.onClickWeaponStorageUI(e)
+    } else if (title == WeaponUI.SETTING_TITLE) {
+      WeaponUI.onClickSettingUI(e)
     }
     else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])

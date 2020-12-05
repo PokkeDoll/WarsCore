@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore.ui
 import hm.moe.pokkedoll.warscore.{Callback, WarsCore}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.entity.{HumanEntity, Player}
+import org.bukkit.entity.HumanEntity
 import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType}
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -13,7 +13,7 @@ import scala.collection.mutable
 
 object WeaponUI {
 
-  lazy val db = WarsCore.instance.database
+  private lazy val db = WarsCore.instance.database
 
   private val PANEL = {
     val i = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE)
@@ -31,9 +31,16 @@ object WeaponUI {
     i
   }
 
+  val MAIN: String = ChatColor.translateAlternateColorCodes('&', "&e&lMain")
+  val SUB: String = ChatColor.translateAlternateColorCodes('&', "&e&lSub")
+  val MELEE: String = ChatColor.translateAlternateColorCodes('&', "&e&lMelee")
+  val ITEM: String = ChatColor.translateAlternateColorCodes('&', "&e&lItem")
+
+  val WEAPON_TYPES: Array[String] = Array(MAIN, SUB, MELEE, ITEM)
+
   val BASE_WEAPON_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
 
-  def openMainUI(player: Player): Unit = {
+  def openMainUI(player: HumanEntity): Unit = {
     val inv = Bukkit.createInventory(null, 54, BASE_WEAPON_UI_TITLE)
     inv.setContents(Array.fill(54)(PANEL))
     inv.setItem(10, new ItemStack(Material.IRON_SWORD))
@@ -92,6 +99,53 @@ object WeaponUI {
     player.openInventory(inv)
   }
 
+  val SETTING_TITLE = "Weapon Settings"
+
+  val weaponTypeKey = new NamespacedKey(WarsCore.instance, "weapon-type")
+  val weaponUsingKey = new NamespacedKey(WarsCore.instance, "weapon-using")
+
+  /**
+   * 武器設定UIを開く
+   * @param player 対象のプレイヤー
+   * @param page ページ番号
+   */
+  def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: Int = 0): Unit = {
+    val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
+    (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
+    val p = {
+      val ico = pageIcon(page)
+      val m = ico.getItemMeta
+      m.getPersistentDataContainer.set(weaponTypeKey, PersistentDataType.INTEGER, java.lang.Integer.valueOf(weaponType))
+      ico.setItemMeta(m)
+      ico
+    }
+    val baseSlot = (page - 1) * 45
+    db.getPagedWeaponStorage(player.getUniqueId.toString, baseSlot, new Callback[mutable.Buffer[(Int, Array[Byte], Int)]] {
+      // Slot, Item(Byte), Use の順！
+      override def success(value: mutable.Buffer[(Int, Array[Byte], Int)]): Unit = {
+        inv.setItem(4, p)
+        value.foreach(f => {
+          val i = if (f._2 == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f._2)
+          val m = i.getItemMeta
+          if(m.getLore.stream().anyMatch(pred => pred.contains(WEAPON_TYPES(weaponType)))) {
+            if(f._3 != 0) {
+              i.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 10)
+              m.setDisplayName("テスト: 現在の武器")
+              i.setItemMeta(m)
+            }
+            inv.setItem(9 + f._1 - baseSlot, i)
+          } else {
+            inv.setItem(9 + f._1 - baseSlot, PANEL)
+          }
+        })
+      }
+
+      override def failure(error: Exception): Unit = {
+        (9 until 54).foreach(inv.setItem(_, ERROR_PANEL))
+      }
+    })
+  }
+
   def onClickWeaponStorageUI(e: InventoryClickEvent): Unit = {
     e.getClickedInventory.getType match {
       case InventoryType.PLAYER if e.getClick == ClickType.SHIFT_LEFT =>
@@ -115,6 +169,31 @@ object WeaponUI {
     }
   }
 
+  def onClickSettingUI(e: InventoryClickEvent): Unit = {
+    e.setCancelled(true)
+    val player = e.getWhoClicked
+    val inv = e.getClickedInventory
+    inv.getType match {
+      case InventoryType.CHEST =>
+        val i = e.getCurrentItem
+        val pageItem = inv.getItem(4)
+        if(pageItem != null && i != null && i.getType != Material.AIR  && i.getType != PANEL.getType) {
+          val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
+          val baseSlot = (page - 1) * 45
+          db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), new Callback[Unit] {
+            override def success(value: Unit): Unit = {
+              openMainUI(player)
+            }
+
+            override def failure(error: Exception): Unit = {
+              player.sendMessage("エラー！")
+            }
+          })
+        }
+      case _ =>
+    }
+  }
+
   // 1 ~ 8までは使用済みなのを忘れずに！
   def onCloseWeaponStorageUI(e: InventoryCloseEvent): Unit = {
     val player = e.getPlayer
@@ -124,7 +203,6 @@ object WeaponUI {
       val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
       val baseSlot = (page - 1) * 45
       println(s"page is $page $baseSlot")
-      // TODO 用テスト AIRやNULLはforeachの対象か？
       val mappedInv = (0 until 45).map(f => (f, inv.getItem(9 + f)))
       val groupedInv = mappedInv.groupBy(f => f._2 == null || f._2.getType == Material.AIR)
       db.setPagedWeaponStorage(player.getUniqueId.toString, baseSlot, groupedInv)

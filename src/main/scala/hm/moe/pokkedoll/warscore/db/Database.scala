@@ -206,5 +206,13 @@ trait Database {
    */
   def setPagedWeaponStorage(uuid: String, baseSlot: Int, contents: Map[Boolean, Seq[(Int, ItemStack)]])
 
+  /**
+   * 武器を設定する
+   * @since v1.3.4
+   * @param uuid
+   * @param slot
+   */
+  def setPagedWeapon(uuid: String, slot: Int, callback: Callback[Unit])
+
   def close(): Unit
 }
