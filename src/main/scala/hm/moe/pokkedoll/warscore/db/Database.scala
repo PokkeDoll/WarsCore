@@ -14,6 +14,7 @@ import scala.collection.mutable
  * データベースとのデータをやり取りするトレイト <br>
  *
  * version2.0にて、コールバックが追加された
+ *
  * @author Emorard
  * @version 2.0
  */
@@ -106,16 +107,22 @@ trait Database {
 
   /**
    * タグを取得する
-   * @param uuid UUIDを指定
+   *
+   * @param uuid     UUIDを指定
    * @param callback 非同期で返される
+   * @version 2
+   * @since v1.3
    */
   def getTags(uuid: String, callback: Callback[mutable.Buffer[(String, Boolean)]])
 
 
   /**
    * 設定しているタグを返す
-   * @param uuid UUIDを指定
+   *
+   * @param uuid     UUIDを指定
    * @param callback 非同期で返される
+   * @version 2
+   * @since v1.3
    */
   def getTag(uuid: String, callback: Callback[String])
 
@@ -139,6 +146,7 @@ trait Database {
 
   /**
    * 仮想インベントリを読み込む
+   *
    * @param wp
    * @param col normalまたはgame
    */
@@ -146,20 +154,25 @@ trait Database {
 
   /**
    * 仮想インベントリをセーブする
+   *
    * @param wp
    * @param col normalまたはgame
    */
   def setVInventory(wp: WPlayer, col: String = "normal")
 
   /**
-   * データをすべて読み込む
+   * WPプレイヤーの保存データを読み込む
+   *
    * @version 2.0
-   * @return
+   * @since v1.1.18
+   * @param wp       対象のプレイヤー
+   * @param callback 取得したデータを同期的に返す
    */
   def loadWPlayer(wp: WPlayer, callback: Callback[WPlayer])
 
   /**
    * アイテムを読み込む
+   *
    * @param uuid
    * @param callback | String Type
    *                 | Array[Byte] アイテムのRAWデータ
@@ -172,7 +185,9 @@ trait Database {
 
   /**
    * アイテムを読み込む
-   * @param uuid
+   *
+   * @since v1.2
+   * @param uuid     対象のUUID
    * @param baseSlot ベースページ (page - 1) * 45 で求まる
    * @param callback | String Type
    *                 | Array[Byte] アイテムのRAWデータ
@@ -183,9 +198,11 @@ trait Database {
 
   /**
    * アイテムを保存する。
-   * @param uuid
-   * @param baseSlot
-   * @param contents
+   *
+   * @since v1.2
+   * @param uuid     対象のUUID
+   * @param baseSlot ベースページ (page - 1) * 45 で求まる
+   * @param contents 保存するデータ
    */
   def setPagedWeaponStorage(uuid: String, baseSlot: Int, contents: Map[Boolean, Seq[(Int, ItemStack)]])
 

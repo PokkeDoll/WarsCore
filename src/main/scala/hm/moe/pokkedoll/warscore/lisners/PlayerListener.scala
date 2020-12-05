@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import java.util
 
-import hm.moe.pokkedoll.warscore.ui.WeaponUI
+import hm.moe.pokkedoll.warscore.ui.{TagUI, WeaponUI}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
@@ -103,27 +103,13 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       if (item != null) {
         EnderChestManager.openEnderChest(p, EnderChestManager.parseChestId(item.getItemMeta.getDisplayName))
       }
-    } else if(e.getView.getTitle.contains(TagUtil.TAG_INVENTORY_TITLE)) {
+    } else if(e.getView.getTitle.contains(TagUI.UI_TITLE)) {
       if(e.getCurrentItem != null) {
-        TagUtil.onClick(e)
+        TagUI.onClick(e)
       }
     } else if(e.getView.getTitle == WeaponUI.WEAPON_CHEST_UI_TITLE) {
       WeaponUI.onClickWeaponStorageUI(e)
     }
-    /*else if(inv.getType == InventoryType.MERCHANT) {
-      inv match {
-        case i: MerchantInventory =>
-          val rs = i.getItem(2)
-          if(rs != null && WarsCore.instance.cs.getWeaponTitle(rs) != null) {
-            // つまり"銃"を購入したということ！
-
-          }
-          e.getWhoClicked.sendMessage(
-            s"サイズ: ${i.getStorageContents.length}\n" +
-            s"0 => ${i.getItem(0)}, 1 => ${i.getItem(1)}, 2 => ${i.getItem(2)}"
-          )
-      }
-    }*/
     else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
       if (wp.game.isDefined) {
@@ -161,13 +147,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     val item = e.getItem
     if (e.getAction == Action.RIGHT_CLICK_AIR && e.getHand == EquipmentSlot.HAND) {
       if (item != null) {
-        if (item.getType == Material.NAME_TAG) {
-          e.setCancelled(true)
-          //val t = TagUtil.getTagIdFromItemStack(item)
-          val t = TagUtil.getTagKeyFromItemStack(item)
-          e.getPlayer.sendMessage(s"$t を獲得しました！(大嘘)")
-          // ぽっけコインを所持している
-        } else if (EconomyUtil.COIN.isSimilar(item)) {
+        if (EconomyUtil.COIN.isSimilar(item)) {
           val player = e.getPlayer
           if (player.isSneaking) {
             EconomyUtil.coin2ingot(player, item, item.getAmount / 9)

@@ -24,8 +24,6 @@ class WPlayer(val player: Player) {
    * 現在の経験値のキャッシュ
    */
   var exp = 0
-  @Deprecated
-  var _tag = ""
 
   var tag = ""
 

@@ -305,6 +305,14 @@ class SQLite(plugin: WarsCore) extends Database {
     }
   }
 
+  /**
+   * タグを取得する
+   *
+   * @param uuid     UUIDを指定
+   * @param callback 非同期で返される
+   * @version 2
+   * @since v1.3
+   */
   override def getTags(uuid: String, callback: Callback[mutable.Buffer[(String, Boolean)]]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
@@ -317,7 +325,7 @@ class SQLite(plugin: WarsCore) extends Database {
           ps.setString(1, uuid)
           val rs = ps.executeQuery()
           var buffer = mutable.Buffer.empty[(String, Boolean)]
-          while(rs.next()) {
+          while (rs.next()) {
             buffer.+=((rs.getString("tagId"), rs.getBoolean("use")))
           }
           callback.success(buffer)
@@ -334,8 +342,11 @@ class SQLite(plugin: WarsCore) extends Database {
 
   /**
    * 設定しているタグを返す
-   * @param uuid UUIDを指定
+   *
+   * @param uuid     UUIDを指定
    * @param callback 非同期で返される
+   * @version 2
+   * @since v1.3
    */
   override def getTag(uuid: String, callback: Callback[String]): Unit = {
     new BukkitRunnable {
@@ -348,7 +359,7 @@ class SQLite(plugin: WarsCore) extends Database {
         try {
           ps.setString(1, uuid)
           val rs = ps.executeQuery()
-          if(rs.next()) {
+          if (rs.next()) {
             callback.success(rs.getString("tagId"))
           } else {
             callback.success("")
@@ -369,7 +380,7 @@ class SQLite(plugin: WarsCore) extends Database {
    * タグをセットする
    *
    * @param uuid UUID
-   * @param id タグID
+   * @param id   タグID
    */
   override def setTag(uuid: String, id: String): Unit = {
     val c = hikari.getConnection
@@ -391,7 +402,7 @@ class SQLite(plugin: WarsCore) extends Database {
    * タグコンテナにタグを追加する
    *
    * @param uuid UUID
-   * @param id タグID
+   * @param id   タグID
    */
   override def addTag(uuid: String, id: String): Unit = {
     val c = hikari.getConnection
@@ -439,7 +450,7 @@ class SQLite(plugin: WarsCore) extends Database {
       ps.setString(1, col)
       ps.setString(2, wp.player.getUniqueId.toString)
       val rs = ps.executeQuery()
-      if(rs.next()) {
+      if (rs.next()) {
         rs.getString(col)
       }
     } catch {
@@ -460,28 +471,31 @@ class SQLite(plugin: WarsCore) extends Database {
   override def setVInventory(wp: WPlayer, col: String): Unit = ???
 
   /**
-   * データをすべて読み込む
+   * WPプレイヤーの保存データを読み込む
    *
-   * @return
+   * @version 2.0
+   * @since v1.1.18
+   * @param wp       対象のプレイヤー
+   * @param callback 取得したデータを同期的に返す
    */
   override def loadWPlayer(wp: WPlayer, callback: Callback[WPlayer]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT player.uuid, rank.id, rank.exp, tag.tagId, vinv.normal, vinv.game FROM player JOIN rank ON player.uuid=rank.uuid JOIN tag ON player.uuid=tag.uuid JOIN vinv ON player.uuid=vinv.uuid WHERE player.uuid=?")
+        val ps = c.prepareStatement("SELECT player.uuid, rank.id, rank.exp, tag.tagId, vinv.normal, vinv.game FROM player JOIN rank ON player.uuid=rank.uuid JOIN tag ON player.uuid=tag.uuid and tag.use=1 JOIN vinv ON player.uuid=vinv.uuid WHERE player.uuid=?")
         try {
           ps.setString(1, wp.player.getUniqueId.toString)
           val rs = ps.executeQuery()
-          if(rs.next()) {
+          if (rs.next()) {
             wp.rank = rs.getInt("id")
             wp.exp = rs.getInt("exp")
-            wp._tag = rs.getString("tagId")
+            wp.tag = rs.getString("tagId")
             wp.virtualNormalInventory = Option(VirtualInventory.from(rs.getString("normal")))
             wp.virtualGameInventory = Option(VirtualInventory.from(rs.getString("game")))
           } else {
             wp.rank = -9999
             wp.exp = -9999
-            wp._tag = "Unknown"
+            wp.tag = "Unknown"
             wp.virtualNormalInventory = Option(VirtualInventory.empty())
             wp.virtualGameInventory = Option(VirtualInventory.empty())
           }
@@ -507,6 +521,7 @@ class SQLite(plugin: WarsCore) extends Database {
 
   /**
    * アイテムを読み込む
+   *
    * @param uuid
    * @param callback | String Type
    *                 | Array[Byte] アイテムのRAWデータ
@@ -522,7 +537,7 @@ class SQLite(plugin: WarsCore) extends Database {
           ps.setString(1, uuid)
           val rs = ps.executeQuery()
           var buffer = mutable.Buffer.empty[(String, Array[Byte], Int, Int)]
-          while(rs.next()) {
+          while (rs.next()) {
             buffer.+=((rs.getString("type"), rs.getBytes("data"), rs.getInt("slot"), rs.getInt("use")))
           }
           new BukkitRunnable {
@@ -551,7 +566,7 @@ class SQLite(plugin: WarsCore) extends Database {
    * アイテムを読み込む
    *
    * @param uuid
-   * @param baseSlot     ベースページ (page - 1) * 45 で求まる
+   * @param baseSlot ベースページ (page - 1) * 45 で求まる
    * @param callback | String Type
    *                 | Array[Byte] アイテムのRAWデータ
    *                 | Int slot
@@ -568,7 +583,7 @@ class SQLite(plugin: WarsCore) extends Database {
           ps.setInt(3, baseSlot + 45)
           val rs = ps.executeQuery()
           var buffer = mutable.Buffer.empty[(Int, Array[Byte], Int)]
-          while(rs.next()) {
+          while (rs.next()) {
             buffer.+=((rs.getInt("slot"), rs.getBytes("data"), rs.getInt("use")))
           }
           new BukkitRunnable {
@@ -593,6 +608,7 @@ class SQLite(plugin: WarsCore) extends Database {
 
   /**
    * アイテムを保存する。
+   *
    * @param uuid
    * @param baseSlot
    * @param contents

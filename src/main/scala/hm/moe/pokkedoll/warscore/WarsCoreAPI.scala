@@ -250,7 +250,7 @@ object WarsCoreAPI {
         val wp = WarsCoreAPI.wplayers(player)
         // ランクを取得する
         val rankData = (wp.rank, wp.exp)
-        val tagData = TagUtil.cache.getOrElse(wp._tag, "-")
+        val tagData = TagUtil.cache.getOrElse(wp.tag, "-")
 
         wp.rank = rankData._1
         RankManager.updateSidebar(scoreboard, data = rankData)
@@ -467,7 +467,7 @@ object WarsCoreAPI {
   }
 
   object UI {
-    private val PAGE_KEY = new NamespacedKey(WarsCore.instance, "ui-page")
+    val PAGE_KEY = new NamespacedKey(WarsCore.instance, "ui-page")
 
     val PAGE_ICON: Int => ItemStack = (page: Int) => {
       val i = new ItemStack(Material.WRITABLE_BOOK)

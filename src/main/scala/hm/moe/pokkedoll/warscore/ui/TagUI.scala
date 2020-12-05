@@ -1,19 +1,22 @@
 package hm.moe.pokkedoll.warscore.ui
 
-import hm.moe.pokkedoll.warscore.{Callback, WarsCore, WarsCoreAPI}
-import hm.moe.pokkedoll.warscore.ui.WeaponUI.{PANEL, UI_PAGE_KEY, WEAPON_CHEST_UI_TITLE, pageIcon}
 import hm.moe.pokkedoll.warscore.utils.TagUtil
-import hm.moe.pokkedoll.warscore.utils.TagUtil.{cache, key, value}
+import hm.moe.pokkedoll.warscore.utils.TagUtil.cache
+import hm.moe.pokkedoll.warscore.{Callback, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
-import org.bukkit.enchantments.Enchantment
-import org.bukkit.{Bukkit, Material, NamespacedKey}
 import org.bukkit.entity.Player
+import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryType}
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.{Bukkit, Material, NamespacedKey}
 
 import scala.collection.mutable
 
 object TagUI {
+  /**
+   * 実際はmaxPage + 1
+   */
+  private val maxPage = 4
 
   private val HOLDING_ONLY = {
     val i = new ItemStack(Material.LIME_DYE)
@@ -34,20 +37,20 @@ object TagUI {
   private val tagKey = new NamespacedKey(WarsCore.instance, "tag-key")
   private val tagValue = new NamespacedKey(WarsCore.instance, "tag-value")
 
-  val UI_TITLE = ""
+  val UI_TITLE: String = ChatColor.of("#63C7BE") + "TAG Inventory"
 
   def openUI(player: Player, page: Int = 1, holding: Boolean = false): Unit = {
-    val inv = Bukkit.createInventory(null, 54, WEAPON_CHEST_UI_TITLE)
+    val inv = Bukkit.createInventory(null, 54, UI_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, WarsCoreAPI.UI.PANEL))
     val p = WarsCoreAPI.UI.PAGE_ICON(page)
     val baseSlot = (page - 1) * 45
+    player.openInventory(inv)
     WarsCore.instance.database.getTags(player.getUniqueId.toString, new Callback[mutable.Buffer[(String, Boolean)]] {
       override def success(value: mutable.Buffer[(String, Boolean)]): Unit = {
         inv.setItem(4, p)
         val current = value.find(_._2).getOrElse(("", true))
         val currentItem = {
           val i = new ItemStack(Material.NAME_TAG)
-          i.addEnchantment(Enchantment.ARROW_DAMAGE, 0)
           val m = i.getItemMeta
           m.setDisplayName(TagUtil.getTag(current._1).name)
           m.setLore(java.util.Arrays.asList("あ"))
@@ -56,11 +59,11 @@ object TagUI {
         }
         inv.setItem(5, currentItem)
         // 自身が所持しているタグのみ表示
-        if(holding) {
+        if (holding) {
           inv.setItem(3, HOLDING_ONLY)
           val holdTags = TagUtil.cache
             .filter(f => value.map(f => f._1).contains(f._1))
-            .slice((page - 1) * 45, ((page - 1) * 45) + 45)
+            .slice(baseSlot, baseSlot + 45)
             .toIndexedSeq
           holdTags.indices.foreach(f => {
             val item = {
@@ -81,7 +84,7 @@ object TagUI {
           })
         } else {
           inv.setItem(3, ALL)
-          val sliceTags = cache.slice((page - 1) * 45, ((page - 1) * 45) + 45).toIndexedSeq
+          val sliceTags = cache.slice(baseSlot, baseSlot + 45).toIndexedSeq
           sliceTags.indices.foreach(f => {
             val tag = sliceTags(f)
             val item = value.find(p => p._1 == tag._1) match {
@@ -93,9 +96,12 @@ object TagUI {
                   ChatColor.GREEN + "所持済み",
                   ChatColor.RED + "左クリック: " + ChatColor.GRAY + "タグを切り替える"
                 ))
+                val c = m.getPersistentDataContainer
+                c.set(tagKey, PersistentDataType.STRING, tag._1)
+                c.set(tagValue, PersistentDataType.STRING, tag._2.name)
                 i.setItemMeta(m)
                 i
-              case None =>
+              case None if !TagUtil.isLimited(tag._2) =>
                 val i = new ItemStack(Material.PAPER)
                 val m = i.getItemMeta
                 m.setLore(java.util.Arrays.asList(
@@ -108,6 +114,8 @@ object TagUI {
                 c.set(tagValue, PersistentDataType.STRING, tag._2.name)
                 i.setItemMeta(m)
                 i
+              case None =>
+                WarsCoreAPI.UI.PANEL
             }
             inv.setItem(9 + f, item)
           })
@@ -120,4 +128,29 @@ object TagUI {
     })
   }
 
+  def onClick(e: InventoryClickEvent): Unit = {
+    e.setCancelled(true)
+    val item = e.getCurrentItem // Not Nullが保証
+    val inv = e.getClickedInventory
+    val player = e.getWhoClicked.asInstanceOf[Player]
+    if (inv.getType != InventoryType.CHEST) return
+    if(e.getSlot == 4) {
+      val page = inv.getItem(4).getItemMeta.getPersistentDataContainer.get(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER)
+      if (e.getClick == ClickType.RIGHT) {
+        if (page < maxPage) openUI(player, page + 1)
+      } else if (e.getClick == ClickType.LEFT) {
+        if (page != 1) openUI(player, page - 1)
+      }
+    } else if (e.getSlot == 3) {
+      if(inv.getItem(3).getType == Material.GRAY_DYE) {
+        openUI(player, holding = true)
+      } else {
+        openUI(player)
+      }
+    } else if(item.getType == Material.PAPER && e.getClick == ClickType.SHIFT_LEFT) {
+      player.sendMessage("購入！購入！")
+    } else if(item.getType == Material.NAME_TAG && e.getClick == ClickType.LEFT) {
+      player.sendMessage("切り替え！")
+    }
+  }
 }
