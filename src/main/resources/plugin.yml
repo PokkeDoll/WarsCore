@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '1.3.4'
+version: '1.3.5'
 api-version: '1.16'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]

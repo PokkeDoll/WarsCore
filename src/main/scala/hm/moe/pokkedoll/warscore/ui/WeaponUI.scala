@@ -38,10 +38,10 @@ object WeaponUI {
 
   val WEAPON_TYPES: Array[String] = Array(MAIN, SUB, MELEE, ITEM)
 
-  val BASE_WEAPON_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
+  val MAIN_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
 
   def openMainUI(player: HumanEntity): Unit = {
-    val inv = Bukkit.createInventory(null, 54, BASE_WEAPON_UI_TITLE)
+    val inv = Bukkit.createInventory(null, 54, MAIN_UI_TITLE)
     inv.setContents(Array.fill(54)(PANEL))
     inv.setItem(10, new ItemStack(Material.IRON_SWORD))
     inv.setItem(19, new ItemStack(Material.SHIELD))
@@ -57,6 +57,23 @@ object WeaponUI {
     inv.setItem(13, new ItemStack(Material.CHEST))
     inv.setItem(16, new ItemStack(Material.BARRIER))
     player.openInventory(inv)
+  }
+
+  /**
+   * InventoryTypeはCHESTであることがわかる
+   * @param e イベント
+   */
+  def onClickMainUI(e: InventoryClickEvent): Unit = {
+    val player = e.getWhoClicked
+    e.getSlot match {
+      case 10 => openSettingUI(player)
+      case 19 => openSettingUI(player, weaponType = 1)
+      case 28 => openSettingUI(player, weaponType = 2)
+      case 37 => openSettingUI(player, weaponType = 3)
+
+      case 13 => openWeaponStorageUI(player)
+      case 16 => player.closeInventory()
+    }
   }
 
   val UI_PAGE_KEY = new NamespacedKey(WarsCore.instance, "weapon-ui-page")

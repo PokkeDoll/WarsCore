@@ -73,7 +73,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
   def onInventoryClick(e: InventoryClickEvent): Unit = {
     val inv = e.getClickedInventory
     val p = e.getWhoClicked
-    if (inv == null) return;
+    if (inv == null) return
 
     val title = e.getView.getTitle
 
@@ -110,6 +110,8 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       if(e.getCurrentItem != null) {
         TagUI.onClick(e)
       }
+    } else if(title == WeaponUI.MAIN_UI_TITLE && e.getClickedInventory.getType == InventoryType.CHEST) {
+
     } else if(title == WeaponUI.WEAPON_CHEST_UI_TITLE) {
       WeaponUI.onClickWeaponStorageUI(e)
     } else if (title == WeaponUI.SETTING_TITLE) {
