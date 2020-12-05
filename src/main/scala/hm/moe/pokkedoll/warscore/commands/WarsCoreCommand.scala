@@ -4,6 +4,7 @@ import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.{EntityType, Player}
@@ -54,22 +55,30 @@ class WarsCoreCommand extends CommandExecutor {
               )
             }
           } else if (args(0).equalsIgnoreCase("test") || args(0).equalsIgnoreCase("t")) {
-            args(1) match {
-              case "w" =>
-                if(args(2) == "main") {
-                  WeaponUI.openMainUI(player)
-                } else {
-                  WeaponUI.openWeaponStorageUI(player)
-                }
-              case "s" =>
-                val i = player.getInventory.getItemInMainHand
-                player.sendMessage(s"ITEM => $i\nBytes => ${i.serializeAsBytes().mkString("Array(", ", ", ")")}")
-                player.setMetadata("i", new FixedMetadataValue(WarsCore.instance, i.serializeAsBytes()))
-              case "g" =>
-                val b = player.getMetadata("i").get(0)
-                val i = ItemStack.deserializeBytes(b.value().asInstanceOf[Array[Byte]])
-                player.getInventory.addItem(i)
-              case _ =>
+            if(args.length > 1) {
+              args(1) match {
+                case "w" =>
+                  if(args(2) == "main") {
+                    WeaponUI.openMainUI(player)
+                  } else {
+                    WeaponUI.openWeaponStorageUI(player)
+                  }
+                case "s" =>
+                  val i = player.getInventory.getItemInMainHand
+                  player.sendMessage(s"ITEM => $i\nBytes => ${i.serializeAsBytes().mkString("Array(", ", ", ")")}")
+                  player.setMetadata("i", new FixedMetadataValue(WarsCore.instance, i.serializeAsBytes()))
+                case "g" =>
+                  val b = player.getMetadata("i").get(0)
+                  val i = ItemStack.deserializeBytes(b.value().asInstanceOf[Array[Byte]])
+                  player.getInventory.addItem(i)
+                case "tags" =>
+                  val comp = new ComponentBuilder()
+                  TagUtil.cache.foreach(f => comp.append(s"${f._1}: ${f._2}\n"))
+                  player.sendMessage(comp.create():_*)
+                case _ =>
+              }
+            } else {
+              player.sendMessage("エラー！")
             }
           }
           if (args(0) == "vp") {

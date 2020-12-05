@@ -519,46 +519,6 @@ class SQLite(plugin: WarsCore) extends Database {
     }.runTaskAsynchronously(WarsCore.instance)
   }
 
-  /**
-   * アイテムを読み込む
-   *
-   * @param uuid
-   * @param callback | String Type
-   *                 | Array[Byte] アイテムのRAWデータ
-   *                 | Int slot
-   *                 | Int use!?
-   */
-  override def getWeaponChest(uuid: String, callback: Callback[mutable.Buffer[(String, Array[Byte], Int, Int)]]): Unit = {
-    new BukkitRunnable {
-      override def run(): Unit = {
-        val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT * FROM weapon WHERE uuid=?")
-        try {
-          ps.setString(1, uuid)
-          val rs = ps.executeQuery()
-          var buffer = mutable.Buffer.empty[(String, Array[Byte], Int, Int)]
-          while (rs.next()) {
-            buffer.+=((rs.getString("type"), rs.getBytes("data"), rs.getInt("slot"), rs.getInt("use")))
-          }
-          new BukkitRunnable {
-            override def run(): Unit = {
-              callback.success(buffer)
-            }
-          }.runTask(WarsCore.instance)
-        } catch {
-          case e: SQLException =>
-            new BukkitRunnable {
-              override def run(): Unit = {
-                callback.failure(e)
-              }
-            }.runTask(WarsCore.instance)
-        } finally {
-          ps.close()
-          c.close()
-        }
-      }
-    }.runTaskAsynchronously(WarsCore.instance)
-  }
 
   override def close(): Unit = hikari.close()
 
@@ -673,16 +633,61 @@ class SQLite(plugin: WarsCore) extends Database {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
-        val ps = c.prepareStatement("UPDATE weapon SET `use`=0 WHERE `uuid`=? and `use`=1; UPDATE weapon SET `use`=1 WHERE `uuid`=? and `slot`=?")
+        val s = c.createStatement()
+        s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and use=1")
+        s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and slot=$slot")
         try {
-          ps.setString(1, uuid)
-          ps.setString(2, uuid)
-          ps.setInt(3, slot)
-          ps.executeUpdate()
-          callback.success()
+          s.executeBatch()
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success()
+            }
+          }.runTask(WarsCore.instance)
         } catch {
           case e: SQLException =>
-            e.printStackTrace()
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(WarsCore.instance)
+        } finally {
+          s.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(WarsCore.instance)
+  }
+
+  /**
+   * 現在使用している(use=1)の武器を読み込む
+   *
+   * @param uuid
+   * @param callback
+   */
+  override def getWeapon(uuid: String, callback: Callback[mutable.Buffer[Array[Byte]]]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("SELECT data FROM weapon WHERE uuid=? and use=1")
+        try {
+          ps.setString(1, uuid)
+          var buffer = mutable.Buffer.empty[Array[Byte]]
+          val rs = ps.executeQuery()
+          while(rs.next()) {
+            buffer.+=(rs.getBytes("data"))
+          }
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success(buffer)
+            }
+          }.runTask(WarsCore.instance)
+        } catch {
+          case e: SQLException =>
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(WarsCore.instance)
         } finally {
           ps.close()
           c.close()

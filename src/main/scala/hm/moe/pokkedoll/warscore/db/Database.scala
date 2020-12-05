@@ -173,19 +173,6 @@ trait Database {
   /**
    * アイテムを読み込む
    *
-   * @param uuid
-   * @param callback | String Type
-   *                 | Array[Byte] アイテムのRAWデータ
-   *                 | Int slot
-   *                 | Int use!?
-   *
-   */
-  @Deprecated
-  def getWeaponChest(uuid: String, callback: Callback[mutable.Buffer[(String, Array[Byte], Int, Int)]])
-
-  /**
-   * アイテムを読み込む
-   *
    * @since v1.2
    * @param uuid     対象のUUID
    * @param baseSlot ベースページ (page - 1) * 45 で求まる
@@ -213,6 +200,13 @@ trait Database {
    * @param slot
    */
   def setPagedWeapon(uuid: String, slot: Int, callback: Callback[Unit])
+
+  /**
+   * 現在使用している(use=1)の武器を読み込む
+   * @param uuid
+   * @param callback
+   */
+  def getWeapon(uuid: String, callback: Callback[mutable.Buffer[Array[Byte]]])
 
   def close(): Unit
 }

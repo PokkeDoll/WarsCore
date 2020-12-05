@@ -111,7 +111,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
         TagUI.onClick(e)
       }
     } else if(title == WeaponUI.MAIN_UI_TITLE && e.getClickedInventory.getType == InventoryType.CHEST) {
-
+      WeaponUI.onClickMainUI(e)
     } else if(title == WeaponUI.WEAPON_CHEST_UI_TITLE) {
       WeaponUI.onClickWeaponStorageUI(e)
     } else if (title == WeaponUI.SETTING_TITLE) {

@@ -83,5 +83,9 @@ object TagUtil {
 
   }
 
-  class TagInfo(val id: String, val name: String, val price: Int = -1, val rank: Int = -1)
+  class TagInfo(val id: String, val name: String, val price: Int = -1, val rank: Int = -1) {
+    override def toString: String = {
+      s"TagInfo{id: $id,name: $name,price: $price,rank: $rank"
+    }
+  }
 }

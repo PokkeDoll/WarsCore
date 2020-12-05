@@ -1,9 +1,9 @@
 package hm.moe.pokkedoll.warscore.ui
 
-import hm.moe.pokkedoll.warscore.{Callback, WarsCore}
+import hm.moe.pokkedoll.warscore.{Callback, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.entity.HumanEntity
+import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType}
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -18,7 +18,15 @@ object WeaponUI {
   private val PANEL = {
     val i = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE)
     val m = i.getItemMeta
-    m.setDisplayName(" ")
+    m.setDisplayName(ChatColor.GRAY + "-")
+    i.setItemMeta(m)
+    i
+  }
+
+  private val EMPTY = {
+    val i = new ItemStack(Material.BARRIER)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.RED + "まだ設定されていません!")
     i.setItemMeta(m)
     i
   }
@@ -48,22 +56,39 @@ object WeaponUI {
     inv.setItem(28, new ItemStack(Material.CROSSBOW))
     inv.setItem(37, new ItemStack(Material.HONEY_BOTTLE))
 
-    // 武器セット
-    inv.setItem(11, new ItemStack(Material.STONE))
-    inv.setItem(20, new ItemStack(Material.STONE))
-    inv.setItem(29, new ItemStack(Material.STONE))
-    inv.setItem(38, new ItemStack(Material.STONE))
-
     inv.setItem(13, new ItemStack(Material.CHEST))
     inv.setItem(16, new ItemStack(Material.BARRIER))
     player.openInventory(inv)
+    db.getWeapon(player.getUniqueId.toString, new Callback[mutable.Buffer[Array[Byte]]] {
+      override def success(value: mutable.Buffer[Array[Byte]]): Unit = {
+        val items = value.map(f => if (f == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f))
+        val main = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(MAIN))).getOrElse(EMPTY)
+        val sub = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(SUB))).getOrElse(EMPTY)
+        val melee = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(MELEE))).getOrElse(EMPTY)
+        val item = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(ITEM))).getOrElse(EMPTY)
+
+        inv.setItem(11, main)
+        inv.setItem(20, sub)
+        inv.setItem(29, melee)
+        inv.setItem(38, item)
+
+        WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).weapons = Some(Array(main, sub, melee, item))
+      }
+
+      override def failure(error: Exception): Unit = {
+        error.printStackTrace()
+        player.sendMessage("エラー！")
+      }
+    })
   }
 
   /**
    * InventoryTypeはCHESTであることがわかる
+   *
    * @param e イベント
    */
   def onClickMainUI(e: InventoryClickEvent): Unit = {
+    e.setCancelled(true)
     val player = e.getWhoClicked
     e.getSlot match {
       case 10 => openSettingUI(player)
@@ -73,6 +98,7 @@ object WeaponUI {
 
       case 13 => openWeaponStorageUI(player)
       case 16 => player.closeInventory()
+      case _ =>
     }
   }
 
@@ -123,8 +149,9 @@ object WeaponUI {
 
   /**
    * 武器設定UIを開く
+   *
    * @param player 対象のプレイヤー
-   * @param page ページ番号
+   * @param page   ページ番号
    */
   def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: Int = 0): Unit = {
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
@@ -143,14 +170,18 @@ object WeaponUI {
         inv.setItem(4, p)
         value.foreach(f => {
           val i = if (f._2 == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f._2)
-          val m = i.getItemMeta
-          if(m.getLore.stream().anyMatch(pred => pred.contains(WEAPON_TYPES(weaponType)))) {
-            if(f._3 != 0) {
-              i.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 10)
-              m.setDisplayName("テスト: 現在の武器")
-              i.setItemMeta(m)
+          if (i.getType != Material.AIR && i.hasItemMeta) {
+            val m = i.getItemMeta
+            if (m.hasLore && m.getLore.stream().anyMatch(pred => pred.contains(WEAPON_TYPES(weaponType)))) {
+              if (f._3 != 0) {
+                i.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 10)
+                m.setDisplayName("テスト: 現在の武器")
+                i.setItemMeta(m)
+              }
+              inv.setItem(9 + f._1 - baseSlot, i)
+            } else {
+              inv.setItem(9 + f._1 - baseSlot, PANEL)
             }
-            inv.setItem(9 + f._1 - baseSlot, i)
           } else {
             inv.setItem(9 + f._1 - baseSlot, PANEL)
           }
@@ -161,6 +192,7 @@ object WeaponUI {
         (9 until 54).foreach(inv.setItem(_, ERROR_PANEL))
       }
     })
+    player.openInventory(inv)
   }
 
   def onClickWeaponStorageUI(e: InventoryClickEvent): Unit = {
@@ -194,7 +226,7 @@ object WeaponUI {
       case InventoryType.CHEST =>
         val i = e.getCurrentItem
         val pageItem = inv.getItem(4)
-        if(pageItem != null && i != null && i.getType != Material.AIR  && i.getType != PANEL.getType) {
+        if (pageItem != null && i != null && i.getType != Material.AIR && i.getType != PANEL.getType) {
           val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
           val baseSlot = (page - 1) * 45
           db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), new Callback[Unit] {
@@ -203,6 +235,7 @@ object WeaponUI {
             }
 
             override def failure(error: Exception): Unit = {
+              error.printStackTrace()
               player.sendMessage("エラー！")
             }
           })
