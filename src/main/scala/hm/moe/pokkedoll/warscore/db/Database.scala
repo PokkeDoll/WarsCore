@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.db
 
+import java.rmi.server.UnicastRemoteObject
 import java.util.UUID
 
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
@@ -40,6 +41,7 @@ trait Database {
   /**
    * テーブルにデータを保存するメソッド
    */
+  @Deprecated
   def saveWPlayer(wp: WPlayer): Option[WPlayer]
 
   /**
@@ -70,6 +72,7 @@ trait Database {
    * @param uuid UUID
    * @return
    */
+  @Deprecated
   def getStorage(id: Int, uuid: String): Option[String]
 
   /**
@@ -79,6 +82,7 @@ trait Database {
    * @param uuid UUID
    * @param item アイテムの文字列
    */
+  @Deprecated
   def setStorage(id: Int, uuid: String, item: String): Unit
 
   /**
@@ -195,18 +199,47 @@ trait Database {
 
   /**
    * 武器を設定する
+   *
    * @since v1.3.4
-   * @param uuid
-   * @param slot
+   * @param uuid     対象のUUID
+   * @param slot     新しく設定するスロット
+   * @param usedSlot 以前設定していた純粋なスロット(ベースページとかインベントリ上段の処理を考える必要がない)
    */
-  def setPagedWeapon(uuid: String, slot: Int, callback: Callback[Unit])
+  def setPagedWeapon(uuid: String, slot: Int, usedSlot: Int, callback: Callback[Unit])
 
   /**
    * 現在使用している(use=1)の武器を読み込む
+   *
    * @param uuid
    * @param callback
    */
   def getWeapon(uuid: String, callback: Callback[mutable.Buffer[Array[Byte]]])
+
+  /**
+   * 仮のインベントリ(ロビーのインベントリを取得する
+   *
+   * @version v1.3.15
+   * @param uuid
+   * @param callback (スロット番号, シリアライズされたアイテムスタック)のタプル
+   */
+  def getVInv(uuid: String, callback: Callback[mutable.Buffer[(Int, Array[Byte])]])
+
+  /**
+   * ロビーのインベントリを退避する
+   *
+   * @version v1.3.15
+   * @param uuid
+   * @param contents
+   */
+  def setVInv(uuid: String, contents: Array[ItemStack], callback: Callback[Unit])
+
+  /**
+   * 試合中に切断した場合(Gameインスタンスが設定している場合)にtrueにする
+   *
+   * @version v1.3.22
+   * @param uuid 対象のUUID
+   */
+  def setDisconnect(uuid: String, disconnect: Boolean)
 
   def close(): Unit
 }

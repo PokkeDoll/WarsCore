@@ -23,7 +23,7 @@ object WeaponUI {
     i
   }
 
-  private val EMPTY = {
+  val EMPTY: ItemStack = {
     val i = new ItemStack(Material.BARRIER)
     val m = i.getItemMeta
     m.setDisplayName(ChatColor.RED + "まだ設定されていません!")
@@ -35,6 +35,14 @@ object WeaponUI {
     val i = new ItemStack(Material.BARRIER)
     val m = i.getItemMeta
     m.setDisplayName(ChatColor.RED + "-")
+    i.setItemMeta(m)
+    i
+  }
+
+  private val BACK_MAIN_UI = {
+    val i = new ItemStack(Material.ITEM_FRAME)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.RED + "メイン設定に戻る")
     i.setItemMeta(m)
     i
   }
@@ -118,18 +126,22 @@ object WeaponUI {
 
   def openWeaponStorageUI(player: HumanEntity, page: Int = 1): Unit = {
     val inv = Bukkit.createInventory(null, 54, WEAPON_CHEST_UI_TITLE)
-    (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
+    (0 to 8).filterNot(f => f == 4 || f == 0).foreach(inv.setItem(_, PANEL))
+
+    inv.setItem(0, new ItemStack(Material.BARRIER))
+
     val p = pageIcon(page)
     val baseSlot = (page - 1) * 45
 
     db.getPagedWeaponStorage(player.getUniqueId.toString, baseSlot, new Callback[mutable.Buffer[(Int, Array[Byte], Int)]] {
       override def success(value: mutable.Buffer[(Int, Array[Byte], Int)]): Unit = {
+        inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
         value.foreach(f => {
           println(f)
           val i = if (f._2 == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f._2)
           if (f._3 != 0) {
-            i.addEnchantment(Enchantment.BINDING_CURSE, 10)
+            i.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 10)
           }
           inv.setItem(9 + f._1 - baseSlot, i)
         })
@@ -147,6 +159,8 @@ object WeaponUI {
   val weaponTypeKey = new NamespacedKey(WarsCore.instance, "weapon-type")
   val weaponUsingKey = new NamespacedKey(WarsCore.instance, "weapon-using")
 
+  private val usedSlotKey = new NamespacedKey(WarsCore.instance, "weapon-used-slot")
+
   /**
    * 武器設定UIを開く
    *
@@ -156,6 +170,8 @@ object WeaponUI {
   def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: Int = 0): Unit = {
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
+    val barrier = new ItemStack(Material.BARRIER)
+
     val p = {
       val ico = pageIcon(page)
       val m = ico.getItemMeta
@@ -167,16 +183,18 @@ object WeaponUI {
     db.getPagedWeaponStorage(player.getUniqueId.toString, baseSlot, new Callback[mutable.Buffer[(Int, Array[Byte], Int)]] {
       // Slot, Item(Byte), Use の順！
       override def success(value: mutable.Buffer[(Int, Array[Byte], Int)]): Unit = {
+        inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
         value.foreach(f => {
-          val i = if (f._2 == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f._2)
+          val i = if (f._2 == null) PANEL else ItemStack.deserializeBytes(f._2)
           if (i.getType != Material.AIR && i.hasItemMeta) {
             val m = i.getItemMeta
             if (m.hasLore && m.getLore.stream().anyMatch(pred => pred.contains(WEAPON_TYPES(weaponType)))) {
               if (f._3 != 0) {
                 i.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 10)
-                m.setDisplayName("テスト: 現在の武器")
-                i.setItemMeta(m)
+                val mm = barrier.getItemMeta
+                mm.getPersistentDataContainer.set(usedSlotKey, PersistentDataType.INTEGER, java.lang.Integer.valueOf(f._1))
+                barrier.setItemMeta(mm)
               }
               inv.setItem(9 + f._1 - baseSlot, i)
             } else {
@@ -186,6 +204,7 @@ object WeaponUI {
             inv.setItem(9 + f._1 - baseSlot, PANEL)
           }
         })
+        inv.setItem(0, barrier)
       }
 
       override def failure(error: Exception): Unit = {
@@ -200,10 +219,11 @@ object WeaponUI {
       case InventoryType.PLAYER if e.getClick == ClickType.SHIFT_LEFT =>
         e.getWhoClicked.sendMessage(e.getWhoClicked.getOpenInventory.getType.toString)
       case InventoryType.CHEST =>
+        val i = e.getCurrentItem
         if (e.getSlot >= 0 && e.getSlot < 9) {
           e.setCancelled(true)
-          if (e.getCurrentItem != null && e.getCurrentItem.getType == Material.BARRIER) {
-            e.setCancelled(true)
+          if(e.getSlot == 0) {
+           e.getWhoClicked.closeInventory()
           } else if (e.getSlot == 4) {
             val pageIcon = e.getClickedInventory.getItem(4)
             val page = pageIcon.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
@@ -212,7 +232,11 @@ object WeaponUI {
             } else if (e.getClick == ClickType.LEFT) {
               if (page != 1) openWeaponStorageUI(e.getWhoClicked, page = page - 1)
             }
+          } else if (e.getSlot == 1) {
+            openMainUI(e.getWhoClicked)
           }
+        } else if (i != null && (i.getType == Material.BARRIER || i.containsEnchantment(Enchantment.BINDING_CURSE))) {
+          e.setCancelled(true)
         }
       case _ =>
     }
@@ -226,10 +250,16 @@ object WeaponUI {
       case InventoryType.CHEST =>
         val i = e.getCurrentItem
         val pageItem = inv.getItem(4)
-        if (pageItem != null && i != null && i.getType != Material.AIR && i.getType != PANEL.getType) {
+        val usedSlotItem = inv.getItem(0)
+        if (e.getSlot == 0) {
+          player.closeInventory()
+        } else if(e.getSlot == 1) {
+          openMainUI(player)
+        } else if (pageItem != null && usedSlotItem != null && i != null && i.getType != Material.AIR && i.getType != PANEL.getType && e.getSlot > 8 && !i.containsEnchantment(Enchantment.BINDING_CURSE)) {
           val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
+          val usedSlot = usedSlotItem.getItemMeta.getPersistentDataContainer.get(usedSlotKey, PersistentDataType.INTEGER)
           val baseSlot = (page - 1) * 45
-          db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), new Callback[Unit] {
+          db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), baseSlot + usedSlot ,new Callback[Unit] {
             override def success(value: Unit): Unit = {
               openMainUI(player)
             }

@@ -173,6 +173,7 @@ class Tactics(override val id: String) extends Game {
         WarsCoreAPI.unfreeze(wp.player)
       }
       wp.game = None
+      WarsCoreAPI.restoreLobbyInventory(wp.player)
       wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
     })
     /* ワールド削除処理 */
@@ -214,6 +215,9 @@ class Tactics(override val id: String) extends Game {
           "§a/invite <player>§fで他プレイヤーを招待することができます!"
       )
       wp.game = Some(this)
+      wp.player.sendMessage("テスト: インベントリをクリアしてWPを獲得")
+      WarsCoreAPI.changeWeaponInventory(wp)
+
       wp.player.setScoreboard(WarsCoreAPI.scoreboard)
       bossbar.addPlayer(wp.player)
       members = members :+ wp

@@ -27,8 +27,6 @@ class LoginListener(plugin: WarsCore) extends Listener {
       override def run(): Unit = {
         if (!player.hasPlayedBefore) {
           player.teleport(WarsCoreAPI.FIRST_SPAWN)
-        } else if (player.getWorld.getName != "p-lobby") {
-          player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
         }
         // リソースパックの送信
         val out = ByteStreams.newDataOutput
@@ -53,6 +51,7 @@ class LoginListener(plugin: WarsCore) extends Listener {
     wp.game match {
       case Some(game) =>
         game.hub(wp)
+        plugin.database.setDisconnect(player.getUniqueId.toString, disconnect = true)
       case _ =>
     }
     // キャッシュから削除

@@ -40,7 +40,5 @@ class WPlayer(val player: Player) {
 
   var weapons: Option[Array[ItemStack]] = None
 
-  var virtualNormalInventory: Option[VirtualInventory] = None
-
-  var virtualGameInventory: Option[VirtualInventory] = None
+  var disconnect: Boolean = false
 }

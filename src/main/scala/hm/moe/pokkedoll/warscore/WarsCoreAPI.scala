@@ -1,7 +1,8 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
-import hm.moe.pokkedoll.warscore.games.{Domination, Game, TeamDeathMatch}
+import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch}
+import hm.moe.pokkedoll.warscore.ui.WeaponUI.{EMPTY, ITEM, MAIN, MELEE, SUB}
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, TagUtil, WorldLoader}
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent}
 import org.bukkit._
@@ -78,6 +79,12 @@ object WarsCoreAPI {
         database.loadWPlayer(wp, new Callback[WPlayer] {
           override def success(value: WPlayer): Unit = {
             addScoreBoard(player)
+            if(value.disconnect) {
+              value.disconnect = false
+              database.setDisconnect(player.getUniqueId.toString, disconnect = false)
+              WarsCoreAPI.restoreLobbyInventory(player)
+              player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
+            }
           }
 
           override def failure(error: Exception): Unit = {
@@ -168,12 +175,9 @@ object WarsCoreAPI {
       games.put(s"dom-$id", new Domination(s"dom-$id"))
       if (Bukkit.getWorld(s"dom-$id") != null) WorldLoader.syncUnloadWorld(s"dom-$id")
     })
-/*
-    (1 to 2) foreach (id => {
-      games.put(s"tactics-$id", new Tactics(s"tactics-$id"))
-      if (Bukkit.getWorld(s"tactics-$id") != null) WorldLoader.syncUnloadWorld(s"tactics-$id")
-    })
- */
+
+    games.put("tactics-1", new Tactics("tactics-1"))
+    if (Bukkit.getWorld("tactics-1") != null) WorldLoader.syncUnloadWorld("tactics-1")
   }
 
   /**
@@ -445,7 +449,7 @@ object WarsCoreAPI {
     var count = 5
     new BukkitRunnable {
       override def run(): Unit = {
-        if(count > 0) {
+        if (count > 0) {
           wp.player.sendMessage(ChatColor.BLUE + s"インベントリを移動することができなくなるまであと $count 秒...")
           count -= 1
         } else {
@@ -486,5 +490,75 @@ object WarsCoreAPI {
       i.setItemMeta(m)
       i
     }
+  }
+
+  /**
+   * データベースで指定されているアイテムを取得する
+   *
+   * @param wp     対象のプレイヤー
+   * @param cached WPlayerに保存されているキャッシュを利用する
+   */
+  def loadWeaponInventory(wp: WPlayer, cached: Boolean = true): Unit = {
+    val player = wp.player
+    wp.weapons match {
+      case Some(weapon) if cached =>
+        player.getInventory.setContents(weapon)
+      case _ =>
+        database.getWeapon(wp.player.getUniqueId.toString, new Callback[mutable.Buffer[Array[Byte]]] {
+          override def success(value: mutable.Buffer[Array[Byte]]): Unit = {
+            val items = value.map(f => if (f == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f))
+            val main = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(MAIN))).getOrElse(EMPTY)
+            val sub = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(SUB))).getOrElse(EMPTY)
+            val melee = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(MELEE))).getOrElse(EMPTY)
+            val item = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(ITEM))).getOrElse(EMPTY)
+
+            val array = Array(main, sub, melee, item)
+
+            player.getInventory.setContents(array)
+            wp.weapons = Some(array)
+          }
+
+          override def failure(error: Exception): Unit = {
+            player.sendMessage("エラー！")
+          }
+        })
+    }
+  }
+
+  /**
+   * ロビーのインベントリを退避する
+   * @version v1.3.16
+   */
+  def changeWeaponInventory(wp: WPlayer): Unit = {
+    val player = wp.player
+    database.setVInv(player.getUniqueId.toString, player.getInventory.getStorageContents, new Callback[Unit] {
+      override def success(value: Unit): Unit = {
+        loadWeaponInventory(wp)
+      }
+
+      override def failure(error: Exception): Unit = {
+        wp.sendMessage("ロビーインベントリの読み込みに失敗しました")
+      }
+    })
+  }
+
+  /**
+   *
+   * @version v1.3.16
+   * @param player
+   */
+  // TODO 途中退出したときにリストアできるようにしておく
+  def restoreLobbyInventory(player: Player): Unit = {
+    database.getVInv(player.getUniqueId.toString, new Callback[mutable.Buffer[(Int, Array[Byte])]] {
+      override def success(value: mutable.Buffer[(Int, Array[Byte])]): Unit = {
+        val contents = Array.fill(36)(new ItemStack(Material.AIR))
+        value.foreach(f => { contents(f._1) = ItemStack.deserializeBytes(f._2) })
+        player.getInventory.setStorageContents(contents)
+      }
+
+      override def failure(error: Exception): Unit = {
+        player.sendMessage("なんと復元できませんでした")
+      }
+    })
   }
 }
