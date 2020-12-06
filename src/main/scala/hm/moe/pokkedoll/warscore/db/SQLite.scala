@@ -37,90 +37,11 @@ class SQLite(private val plugin: WarsCore) extends Database {
     val c = hikari.getConnection()
     try {
       val st = c.createStatement()
-      /* 基本情報これさえあれば困らないデータ */
-      // TDM... play, win, kill, death, assist, damage: Int = _
-
-      st.execute(
-        """
-          |CREATE TABLE IF NOT EXISTS player (
-          | uuid TEXT PRIMARY KEY,
-          | donateID INTEGER DEFAULT 0
-          |);
-          |
-          |CREATE TABLE IF NOT EXISTS rank (
-          | uuid TEXT PRIMARY KEY,
-          | id INTEGER DEFAULT 1,
-          | exp INTEGER DEFAULT 0,
-          | FOREIGN KEY(uuid) REFERENCES player(uuid)
-          | ON DELETE CASCADE ON UPDATE CASCADE
-          |);
-          |
-          |CREATE TABLE IF NOT EXISTS tag (
-          | uuid TEXT PRIMARY KEY,
-          | tagId TEXT DEFAULT "",
-          | FOREIGN KEY(uuid) REFERENCES player(uuid)
-          | ON DELETE CASCADE ON UPDATE CASCADE
-          |);
-          |
-          |CREATE TABLE IF NOT EXISTS enderchest (
-          | uuid TEXT PRIMARY KEY,
-          | s0 BLOB,
-          | s1 BLOB,
-          | s2 BLOB,
-          | s3 BLOB,
-          | s4 BLOB,
-          | s5 BLOB,
-          | s6 BLOB,
-          | s7 BLOB,
-          | s8 BLOB,
-          | s9 BLOB,
-          | s10 BLOB,
-          | s11 BLOB,
-          | s12 BLOB,
-          | s13 BLOB,
-          | s14 BLOB,
-          | s15 BLOB,
-          | s16 BLOB,
-          | s17 BLOB,
-          | s18 BLOB,
-          | s19 BLOB,
-          | s20 BLOB,
-          | s21 BLOB,
-          | s22 BLOB,
-          | s23 BLOB,
-          | s24 BLOB,
-          | s25 BLOB,
-          | s26 BLOB,
-          | FOREIGN KEY(uuid) REFERENCES player(uuid)
-          | ON DELETE CASCADE ON UPDATE CASCADE
-          |);
-          |
-          |CREATE TABLE IF NOT EXISTS tdm (
-          | uuid TEXT,
-          | play INTEGER DEFAULT 0,
-          | win INTEGER DEFAULT 0,
-          | kill INTEGER DEFAULT 0,
-          | death INTEGER DEFAULT 0,
-          | assist INTEGER DEFAULT 0,
-          | damage INTEGER DEFAULT 0
-          |);
-          |
-          |CREATE TABLE IF NOT EXISTS tactics (
-          | uuid TEXT,
-          | play INTEGER DEFAULT 0,
-          | win INTEGER DEFAULT 0,
-          | FOREIGN KEY(uuid) REFERENCES player(uuid)
-          | ON DELETE CASCADE ON UPDATE CASCADE
-          |);
-          |
-          |CREATE TABLE IF NOT EXISTS tagContainer (
-          | uuid TEXT,
-          | tagId TEXT
-          |);
-          |
-          |""".stripMargin)
+      st.execute("SELECT * FROM player LIMIT 1")
     } catch {
       case e: SQLException => e.printStackTrace()
+    } finally {
+
     }
   }
 
@@ -489,12 +410,15 @@ class SQLite(private val plugin: WarsCore) extends Database {
         try {
           ps.setString(1, wp.player.getUniqueId.toString)
           val rs = ps.executeQuery()
+
           if (rs.next()) {
+            println("true!")
             wp.rank = rs.getInt("id")
             wp.exp = rs.getInt("exp")
             wp.tag = rs.getString("tagId")
-            wp.disconnect = Option(rs.getBoolean("disconnect")).getOrElse(false)
+            wp.disconnect = ((i: Int) => (if(i == 1) true else false)) (rs.getInt("disconnect"))
           } else {
+            println("false!!!")
             wp.rank = -9999
             wp.exp = -9999
             wp.tag = "Unknown"

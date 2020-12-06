@@ -79,6 +79,7 @@ object WarsCoreAPI {
         database.loadWPlayer(wp, new Callback[WPlayer] {
           override def success(value: WPlayer): Unit = {
             addScoreBoard(player)
+            println(value.disconnect)
             if(value.disconnect) {
               value.disconnect = false
               database.setDisconnect(player.getUniqueId.toString, disconnect = false)

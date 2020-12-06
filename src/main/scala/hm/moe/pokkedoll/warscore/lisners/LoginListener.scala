@@ -50,8 +50,8 @@ class LoginListener(plugin: WarsCore) extends Listener {
     val wp = WarsCoreAPI.getWPlayer(player)
     wp.game match {
       case Some(game) =>
-        game.hub(wp)
         plugin.database.setDisconnect(player.getUniqueId.toString, disconnect = true)
+        game.hub(wp)
       case _ =>
     }
     // キャッシュから削除

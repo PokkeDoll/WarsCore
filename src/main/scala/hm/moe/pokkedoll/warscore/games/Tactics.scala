@@ -242,11 +242,12 @@ class Tactics(override val id: String) extends Game {
     bossbar.removePlayer(wp.player)
     // ゲーム情報をリセット
     wp.game = None
-    // スコアボードをリセット
-    wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
     sendMessage(s"${wp.player.getName} が退出しました")
     if(wp.player.isOnline) {
+      // スコアボードをリセット
+      wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
       wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
+      WarsCoreAPI.restoreLobbyInventory(wp.player)
     }
   }
 
