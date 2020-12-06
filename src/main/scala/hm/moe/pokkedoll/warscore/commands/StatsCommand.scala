@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore.commands
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI
+import hm.moe.pokkedoll.warscore.ui.GameUI
 import org.bukkit.{Bukkit, ChatColor}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
@@ -9,7 +10,7 @@ class StatsCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {
       case player: Player =>
-        val open = WarsCoreAPI.openStatsInventory(player, _)
+        val open = GameUI.openStatsUI(player, _)
         if (args.length == 0) {
           open(player)
         } else {

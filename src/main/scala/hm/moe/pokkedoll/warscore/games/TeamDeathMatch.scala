@@ -516,7 +516,6 @@ class TeamDeathMatch(override val id: String) extends Game {
                     player.teleport(locationData._3)
                   }
                   player.addPotionEffect(PotionEffectType.ABSORPTION.createEffect(100, 10), true)
-                  WarsCoreAPI.setChangeInventory(WarsCoreAPI.getWPlayer(player))
                   player.setGameMode(GameMode.SURVIVAL)
                   cancel()
                 } else {

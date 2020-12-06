@@ -5,7 +5,6 @@ import java.util.UUID
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.utils.VirtualInventory
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
@@ -28,36 +27,18 @@ class SQLite(private val plugin: WarsCore) extends Database {
 
   val hikari = new HikariDataSource(config)
 
-
-
   /**
-   * インスタンス作成時に呼び出されるメソッド
-   */
-  def init(): Unit = {
-    val c = hikari.getConnection()
-    try {
-      val st = c.createStatement()
-      st.execute("SELECT * FROM player LIMIT 1")
-    } catch {
-      case e: SQLException => e.printStackTrace()
-    } finally {
-
-    }
-  }
-
-  //init()
-
-  /**
-   * UUID(=データ、つまりテーブル)があるか確認するメソッド
+   * データベースに自分のデータがあるか確認するメソッド
    *
-   * @param uuid UUID
-   * @return データがあるならtrueを返す
+   * @since v1.4.1
+   * @param uuid 対象のUUID
+   * @return UUIDが存在すればtrue
    */
-  override def hasUUID(uuid: UUID): Boolean = {
+  override def hasUUID(uuid: String): Boolean = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("SELECT uuid FROM player WHERE uuid=?")
     try {
-      ps.setString(1, uuid.toString)
+      ps.setString(1, uuid)
       val rs = ps.executeQuery()
       rs.next()
     } catch {
@@ -71,26 +52,21 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
-   * テーブルにデータを保存するメソッド
-   */
-  override def saveWPlayer(wp: WPlayer): Option[WPlayer] = None
-
-  /**
    * データを登録するメソッド
    *
    * @param uuid UUID
    * @return
    */
-  override def insert(uuid: UUID): Boolean = {
+  override def insert(uuid: String): Boolean = {
     val c = hikari.getConnection()
     val s = c.createStatement()
     try {
-      val build = (table: String) => s"INSERT INTO $table(`uuid`) VALUES('${uuid.toString}')"
-      s.executeUpdate(build("player"))
-      s.executeUpdate(build("rank"))
-      s.executeUpdate(build("enderchest"))
-      s.executeUpdate(build("tdm"))
-      s.executeUpdate(build("tactics"))
+      s.addBatch(s"INSERT INTO player(uuid) VALUES('$uuid')'")
+      s.addBatch(s"INSERT INTO rank(uuid) VALUES('$uuid')")
+      s.addBatch(s"INSERT INTO tag(uuid, use) VALUES('$uuid', 1)")
+      s.addBatch(s"INSERT INTO tdm(uuid) VALUES('$uuid')")
+      s.addBatch(s"INSERT INTO tactics(uuid) VALUES('$uuid')")
+      s.executeBatch()
       true
     } catch {
       case e: SQLException =>

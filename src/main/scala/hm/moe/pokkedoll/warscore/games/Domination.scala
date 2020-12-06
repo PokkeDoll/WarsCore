@@ -584,14 +584,12 @@ class Domination(override val id: String) extends Game {
               if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
                   WarsCoreAPI.unfreeze(player)
-                  WarsCoreAPI.setChangeInventory(WarsCoreAPI.getWPlayer(player))
                   if (d.team == "red") {
                     player.teleport(redPoint)
                   } else {
                     player.teleport(bluePoint)
                   }
                   player.addPotionEffect(PotionEffectType.ABSORPTION.createEffect(100, 10), true)
-                  WarsCoreAPI.setChangeInventory(WarsCoreAPI.getWPlayer(player))
                   player.setGameMode(GameMode.SURVIVAL)
                   cancel()
                 } else {

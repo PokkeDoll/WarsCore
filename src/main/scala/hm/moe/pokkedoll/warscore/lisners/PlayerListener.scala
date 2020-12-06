@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import java.util
 
-import hm.moe.pokkedoll.warscore.ui.{TagUI, WeaponUI}
+import hm.moe.pokkedoll.warscore.ui.{GameUI, TagUI, WeaponUI}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
@@ -86,7 +86,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
     else if (inv.getType == InventoryType.PLAYER && e.getSlotType == SlotType.CRAFTING) {
       e.setCancelled(true)
       // ゲームインベントリ
-    } else if (title == WarsCoreAPI.GAME_INVENTORY_TITLE) {
+    } else if (title == GameUI.GAME_INVENTORY_TITLE) {
       e.setCancelled(true)
       val icon = e.getCurrentItem
       if (icon == null || !icon.hasItemMeta || !icon.getItemMeta.hasDisplayName) return
@@ -99,6 +99,7 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       }
       // エンダーチェストインベントリ
     } else if (title == EnderChestManager.ENDER_CHEST_MENU_TITLE) {
+      e.getWhoClicked.sendMessage(ChatColor.RED  + "v1.4.1より非推奨！ v1.5.0より使用できなくなる！！")
       val item = e.getCurrentItem
       if (item != null) {
         EnderChestManager.openEnderChest(p, EnderChestManager.parseChestId(item.getItemMeta.getDisplayName))

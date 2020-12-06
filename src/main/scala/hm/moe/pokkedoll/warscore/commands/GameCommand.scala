@@ -3,6 +3,7 @@ package hm.moe.pokkedoll.warscore.commands
 import java.util
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI
+import hm.moe.pokkedoll.warscore.ui.GameUI
 import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender, ConsoleCommandSender, TabCompleter}
@@ -18,7 +19,7 @@ class GameCommand extends CommandExecutor with TabCompleter {
     sender match {
       case player: Player =>
         if (args.length == 0) {
-          WarsCoreAPI.openGameInventory(player)
+          GameUI.openMainUI(player)
         } else if (args(0) == "list") {
           val sb = new StringBuilder("§bゲームリスト")
           WarsCoreAPI.games.values.foreach(game => {

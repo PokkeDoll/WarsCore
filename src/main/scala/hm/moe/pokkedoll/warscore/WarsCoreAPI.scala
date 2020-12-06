@@ -23,6 +23,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
   // 内部バージョン. 特に意味はない
+  @Deprecated
   val VERSION = 1
 
   val LOBBY = "p-lobby"
@@ -196,48 +197,6 @@ object WarsCoreAPI {
     }
   }
 
-  val GAME_INVENTORY_TITLE = "§aゲーム一覧！"
-
-  private val openGameInventoryIcon: ItemStack = {
-    val i = new ItemStack(Material.ARROW, 1)
-    val m = i.getItemMeta
-    m.setUnbreakable(true)
-    i.setItemMeta(m)
-    i
-  }
-
-  /**
-   * ゲーム情報GUI版<br>
-   * 重み:<br>
-   * tdm: 0<br>
-   * tactics: 1(暫定)
-   *
-   * @param player Player
-   */
-  def openGameInventory(player: Player): Unit = {
-    val inv = Bukkit.createInventory(null, 27, GAME_INVENTORY_TITLE)
-    var slot = (0, 9, 18)
-    inv.setItem(0, openGameInventoryIcon)
-    inv.setItem(9, new ItemStack(Material.IRON_SWORD))
-    games.foreach(f => {
-      val weight = if (f._1.startsWith("tdm")) {
-        slot = (slot._1 + 1, slot._2, slot._3)
-        slot._1
-      } else if (f._1.startsWith("dom")) {
-        slot = (slot._1, slot._2 + 1, slot._3)
-        slot._2
-      } else slot._3
-      // TODO tacticsが死んじゃった！この人でなし！
-      val icon = ((damage => new ItemStack(Material.STONE, f._2.members.size + 1, damage)): Short => ItemStack) (if (f._2.state.join) 10 else 8)
-      val meta = icon.getItemMeta
-      meta.setDisplayName((if (f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._1}")
-      meta.setLore(java.util.Arrays.asList(s"§f${f._2.title}", s"§e${f._2.description}", s"§a${f._2.members.size} §7/ §a${f._2.maxMember} プレイ中", s"§a${f._2.state.title}"))
-      icon.setItemMeta(meta)
-      inv.setItem(weight, icon)
-    })
-    player.openInventory(inv)
-  }
-
   private val database = WarsCore.instance.database
 
   /**
@@ -320,11 +279,9 @@ object WarsCoreAPI {
     test.log(20L)
   }
 
-
   def addScoreBoard(player: Player): Unit = {
     updateScoreboard(player, scoreboards.getOrElseUpdate(player, scoreboardManager.getNewScoreboard))
   }
-
 
   def removeScoreboard(player: Player): Unit = {
     scoreboards.remove(player)
@@ -332,43 +289,6 @@ object WarsCoreAPI {
       Option(b.getTeam(player.getName)).foreach(_.unregister())
       b.resetScores(player.getName)
     })
-  }
-
-  /**
-   * 統計
-   *
-   * @param player Player
-   * @param target Target
-   */
-  def openStatsInventory(player: Player, target: Player): Unit = {
-    val inv = Bukkit.createInventory(null, 18, s"${target.getName}'s stats'")
-    val wp = getWPlayer(target)
-    val tdmIcon = new ItemStack(Material.IRON_SWORD)
-    val tdmIconMeta = tdmIcon.getItemMeta
-    tdmIconMeta.setDisplayName(ChatColor.YELLOW + "TDM")
-    tdmIconMeta.setLore(java.util.Arrays.asList(
-      ChatColor.GRAY + "プレイした記録: " + -1,
-      ChatColor.GRAY + "勝利した回数: " + -1,
-      ChatColor.GRAY + "敵を倒した回数: " + -1,
-      ChatColor.GRAY + "死んだ回数: " + -1,
-      ChatColor.GRAY + "与えたダメージ: " + -1,
-      ChatColor.GRAY + "*",
-      ChatColor.GRAY + "占領に成功した回数: " + -1,
-      ChatColor.GRAY + "Kill MVPを取得した回数: " + -1,
-      ChatColor.GRAY + "Damage MVPを取得した回数: " * -1
-    ))
-    tdmIconMeta.setUnbreakable(true)
-    tdmIconMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE)
-    tdmIcon.setItemMeta(tdmIconMeta)
-
-    val tacticsIcon = new ItemStack(Material.REDSTONE, 1)
-    val tacticsIconMeta = tacticsIcon.getItemMeta
-    tacticsIconMeta.setDisplayName(ChatColor.DARK_AQUA + "Tactics")
-    tacticsIconMeta.setLore(java.util.Arrays.asList(
-      "",
-      "",
-      ""
-    ))
   }
 
   def randomChance(chance: Double): Boolean = (chance / 100.0) > Math.random()
@@ -443,23 +363,6 @@ object WarsCoreAPI {
     val meta = fw.getFireworkMeta
     meta.addEffect(FireworkEffect.builder().withColor(color).`with`(`type`).build())
     fw.setFireworkMeta(meta)
-  }
-
-  def setChangeInventory(wp: WPlayer): Unit = {
-    wp.changeInventory = true
-    var count = 5
-    new BukkitRunnable {
-      override def run(): Unit = {
-        if (count > 0) {
-          wp.player.sendMessage(ChatColor.BLUE + s"インベントリを移動することができなくなるまであと $count 秒...")
-          count -= 1
-        } else {
-          wp.changeInventory = false
-          wp.sendMessage(ChatColor.RED + "インベントリを移動することができなくなりました")
-          cancel()
-        }
-      }
-    }.runTaskTimer(WarsCore.instance, 0L, 20L)
   }
 
   val LEVEL_INFO = "INFO"
@@ -548,7 +451,6 @@ object WarsCoreAPI {
    * @version v1.3.16
    * @param player
    */
-  // TODO 途中退出したときにリストアできるようにしておく
   def restoreLobbyInventory(player: Player): Unit = {
     database.getVInv(player.getUniqueId.toString, new Callback[mutable.Buffer[(Int, Array[Byte])]] {
       override def success(value: mutable.Buffer[(Int, Array[Byte])]): Unit = {

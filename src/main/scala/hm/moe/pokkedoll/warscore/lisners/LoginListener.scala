@@ -11,11 +11,12 @@ class LoginListener(plugin: WarsCore) extends Listener {
   @EventHandler
   def onJoin(e: PlayerJoinEvent): Unit = {
     val player = e.getPlayer
+    val uuid = player.getUniqueId.toString
 
     e.setJoinMessage(ChatColor.GREEN + s"Connect: ${player.getName}")
 
-    if (!plugin.database.hasUUID(player)) {
-      plugin.database.insert(player)
+    if (!plugin.database.hasUUID(uuid)) {
+      plugin.database.insert(uuid)
     }
 
     //リソースパックのデータ送信を行う

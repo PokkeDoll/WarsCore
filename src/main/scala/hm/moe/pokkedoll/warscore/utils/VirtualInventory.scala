@@ -6,6 +6,7 @@ import org.bukkit.inventory.ItemStack
 /**
  * PlayerInventoryが普通に使えないことに怒ったインベントリ
  */
+@Deprecated
 class VirtualInventory {
   // 多分 36
   var storage: Array[ItemStack] = _

@@ -15,34 +15,32 @@ import scala.collection.mutable
  * データベースとのデータをやり取りするトレイト <br>
  *
  * version2.0にて、コールバックが追加された
+ * version3.0では、リファクタリングが行われた
  *
  * @author Emorard
- * @version 2.0
+ * @version 3.0
  */
 trait Database {
   /**
-   * インスタンス作成時に呼び出されるメソッド
-   */
-  def init(): Unit
-
-  /**
-   * UUID(=データ、つまりテーブル)があるか確認するメソッド
-   *
-   * @param uuid UUID
-   * @return データがあるならtrueを返す
-   */
-  def hasUUID(uuid: UUID): Boolean
-
-  /**
-   * @see hasUUID(uuid: UUID): Boolean
-   */
-  def hasUUID(player: Player): Boolean = hasUUID(player.getUniqueId)
-
-  /**
-   * テーブルにデータを保存するメソッド
+   * @see hasUUID(uuid: String): Boolean
    */
   @Deprecated
-  def saveWPlayer(wp: WPlayer): Option[WPlayer]
+  def hasUUID(uuid: UUID): Boolean = hasUUID(uuid.toString)
+
+  /**
+   * @see hasUUID(uuid: String): Boolean
+   */
+  @Deprecated
+  def hasUUID(player: Player): Boolean = hasUUID(player.getUniqueId.toString)
+
+  /**
+   * データベースに自分のデータがあるか確認するメソッド
+   *
+   * @since v1.4.1
+   * @param uuid 対象のUUID
+   * @return UUIDが存在すればtrue
+   */
+  def hasUUID(uuid: String): Boolean
 
   /**
    * データを登録するメソッド
@@ -50,12 +48,13 @@ trait Database {
    * @param uuid UUID
    * @return
    */
-  def insert(uuid: UUID): Boolean
+  def insert(uuid: String): Boolean
 
   /**
    * @see insert(uuid: UUID): Boolean
    */
-  def insert(player: Player): Boolean = insert(player.getUniqueId)
+  @Deprecated
+  def insert(player: Player): Boolean = insert(player.getUniqueId.toString)
 
   /**
    * データベースから一つのInt型のデータを取得する
