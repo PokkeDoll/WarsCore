@@ -1,6 +1,5 @@
 package hm.moe.pokkedoll.warscore.db
 
-import java.rmi.server.UnicastRemoteObject
 import java.util.UUID
 
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
@@ -239,6 +238,29 @@ trait Database {
    * @param uuid 対象のUUID
    */
   def setDisconnect(uuid: String, disconnect: Boolean)
+
+  /**
+   * マイセットを読み込む
+   *
+   * @since v1.4.3
+   * @param uuid     対象のUUID
+   * @param callback 順にslot, title, main, sub, melee, itemのタプル
+   */
+  def getMySet(uuid: String, callback: Callback[mutable.Buffer[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]])
+
+  /**
+   * マイセットを設定する
+   *
+   * @since v1.4.3
+   * @param uuid
+   * @param slot
+   * @param main
+   * @param sub
+   * @param melee
+   * @param item
+   * @param callback
+   */
+  def setMySet(uuid: String, slot: Int, main: Array[Byte], sub: Array[Byte], melee: Array[Byte], item: Array[Byte], callback: Callback[Unit])
 
   def close(): Unit
 }

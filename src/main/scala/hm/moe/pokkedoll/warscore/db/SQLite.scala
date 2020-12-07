@@ -1,11 +1,13 @@
 package hm.moe.pokkedoll.warscore.db
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.sql.SQLException
 import java.util.UUID
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
+import org.apache.commons.lang.SerializationUtils
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
@@ -392,7 +394,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
             wp.rank = rs.getInt("id")
             wp.exp = rs.getInt("exp")
             wp.tag = rs.getString("tagId")
-            wp.disconnect = ((i: Int) => (if(i == 1) true else false)) (rs.getInt("disconnect"))
+            wp.disconnect = ((i: Int) => (if (i == 1) true else false)) (rs.getInt("disconnect"))
           } else {
             println("false!!!")
             wp.rank = -9999
@@ -645,7 +647,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param contents
    */
   override def setVInv(uuid: String, contents: Array[ItemStack], callback: Callback[Unit]): Unit = {
-    if(contents.isEmpty) {
+    if (contents.isEmpty) {
       callback.success()
     } else {
       new BukkitRunnable {
@@ -704,6 +706,97 @@ class SQLite(private val plugin: WarsCore) extends Database {
         } catch {
           case e: SQLException =>
             e.printStackTrace()
+        } finally {
+          ps.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(plugin)
+  }
+
+  /**
+   * マイセットを読み込む
+   *
+   * @since v1.4.3
+   * @param uuid     対象のUUID
+   * @param callback 順にslot, title, main, sub, melee, itemのタプル
+   */
+  override def getMySet(uuid: String, callback: Callback[mutable.Buffer[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("SELECT slot, title, main, sub, melee, item FROM myset WHERE uuid=?")
+        try {
+          ps.setString(1, uuid)
+          val rs = ps.executeQuery()
+          val buffer = mutable.Buffer.empty[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]
+          while (rs.next()) {
+            buffer.+=((
+              rs.getInt("slot"),
+              rs.getString("title"),
+              rs.getBytes("main"),
+              rs.getBytes("sub"),
+              rs.getBytes("melee"),
+              rs.getBytes("item")))
+          }
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success(buffer)
+            }
+          }.runTask(plugin)
+        } catch {
+          case e: SQLException =>
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(plugin)
+        } finally {
+          ps.close()
+          c.close()
+        }
+      }
+    }
+  }.runTaskAsynchronously(plugin)
+
+  /**
+   * マイセットを設定する
+   *
+   * @since v1.4.3
+   * @param uuid
+   * @param slot
+   * @param main
+   * @param sub
+   * @param melee
+   * @param item
+   * @param callback
+   */
+  override def setMySet(uuid: String, slot: Int, main: Array[Byte], sub: Array[Byte], melee: Array[Byte], item: Array[Byte], callback: Callback[Unit]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val ps = c.prepareStatement("REPLACE INTO myset(uuid, slot, title, main, sub, melee, item) VALUES(?, ?, ?, ?, ?, ?, ?)")
+        try {
+          ps.setString(1, uuid)
+          ps.setInt(2, slot)
+          ps.setString(3, s"無題のマイセット$slot")
+          ps.setBytes(4, main)
+          ps.setBytes(5, sub)
+          ps.setBytes(6, melee)
+          ps.setBytes(7, item)
+          ps.executeUpdate()
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success()
+            }
+          }.runTask(plugin)
+        } catch {
+          case e: SQLException =>
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(plugin)
         } finally {
           ps.close()
           c.close()

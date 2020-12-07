@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore.commands
 
 import com.google.common.io.ByteStreams
+import hm.moe.pokkedoll.warscore.db.SQLite
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
@@ -75,6 +76,8 @@ class WarsCoreCommand extends CommandExecutor {
                   val comp = new ComponentBuilder()
                   TagUtil.cache.foreach(f => comp.append(s"${f._1}: ${f._2}\n"))
                   player.sendMessage(comp.create():_*)
+                case "myset" =>
+                  WeaponUI.openMySetUI(player)
                 case _ =>
               }
             } else {

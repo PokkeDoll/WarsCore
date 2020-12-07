@@ -65,7 +65,9 @@ object WeaponUI {
     inv.setItem(37, new ItemStack(Material.HONEY_BOTTLE))
 
     inv.setItem(13, new ItemStack(Material.CHEST))
+    inv.setItem(14, new ItemStack(Material.CRAFTING_TABLE))
     inv.setItem(16, new ItemStack(Material.BARRIER))
+
     player.openInventory(inv)
     db.getWeapon(player.getUniqueId.toString, new Callback[mutable.Buffer[Array[Byte]]] {
       override def success(value: mutable.Buffer[Array[Byte]]): Unit = {
@@ -105,6 +107,7 @@ object WeaponUI {
       case 37 => openSettingUI(player, weaponType = 3)
 
       case 13 => openWeaponStorageUI(player)
+      case 14 => openMySetUI(player)
       case 16 => player.closeInventory()
       case _ =>
     }
@@ -222,8 +225,8 @@ object WeaponUI {
         val i = e.getCurrentItem
         if (e.getSlot >= 0 && e.getSlot < 9) {
           e.setCancelled(true)
-          if(e.getSlot == 0) {
-           e.getWhoClicked.closeInventory()
+          if (e.getSlot == 0) {
+            e.getWhoClicked.closeInventory()
           } else if (e.getSlot == 4) {
             val pageIcon = e.getClickedInventory.getItem(4)
             val page = pageIcon.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
@@ -253,13 +256,13 @@ object WeaponUI {
         val usedSlotItem = inv.getItem(0)
         if (e.getSlot == 0) {
           player.closeInventory()
-        } else if(e.getSlot == 1) {
+        } else if (e.getSlot == 1) {
           openMainUI(player)
         } else if (pageItem != null && usedSlotItem != null && i != null && i.getType != Material.AIR && i.getType != PANEL.getType && e.getSlot > 8 && !i.containsEnchantment(Enchantment.BINDING_CURSE)) {
           val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
           val usedSlot = usedSlotItem.getItemMeta.getPersistentDataContainer.get(usedSlotKey, PersistentDataType.INTEGER)
           val baseSlot = (page - 1) * 45
-          db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), baseSlot + usedSlot ,new Callback[Unit] {
+          db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), baseSlot + usedSlot, new Callback[Unit] {
             override def success(value: Unit): Unit = {
               openMainUI(player)
             }
@@ -286,6 +289,95 @@ object WeaponUI {
       val mappedInv = (0 until 45).map(f => (f, inv.getItem(9 + f)))
       val groupedInv = mappedInv.groupBy(f => f._2 == null || f._2.getType == Material.AIR)
       db.setPagedWeaponStorage(player.getUniqueId.toString, baseSlot, groupedInv)
+    }
+  }
+
+
+  val MY_SET_TITLE = "MySet Settings"
+
+  def openMySetUI(player: HumanEntity): Unit = {
+    val inv = Bukkit.createInventory(null, 18, MY_SET_TITLE)
+    inv.setItem(1, BACK_MAIN_UI)
+    db.getMySet(player.getUniqueId.toString, new Callback[mutable.Buffer[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]] {
+      override def success(value: mutable.Buffer[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]): Unit = {
+        value.foreach(f => {
+          println(f)
+          val icon = new ItemStack(Material.LIME_DYE, f._1 + 1)
+          val m = icon.getItemMeta
+
+          val main = ItemStack.deserializeBytes(f._3)
+          val sub = ItemStack.deserializeBytes(f._4)
+          val melee = ItemStack.deserializeBytes(f._5)
+          val item = ItemStack.deserializeBytes(f._6)
+
+          m.setDisplayName(f._2)
+          m.setLore(java.util.Arrays.asList(
+            ChatColor.RED + "(動作しない)右クリックで現在の装備をこのマイセットに登録",
+            ChatColor.RED + "(動作しない)左クリックで現在の装備をセット",
+            ChatColor.RED + "(動作しない)シフト + 左クリックでマイセットの名前をセットする",
+            s"めいん: ${if (main.hasItemMeta && main.getItemMeta.hasDisplayName) main.getItemMeta.getDisplayName else "なし"}",
+            s"さぶ: ${if (sub.hasItemMeta && sub.getItemMeta.hasDisplayName) sub.getItemMeta.getDisplayName else "なし"}",
+            s"近接: ${if (melee.hasItemMeta && melee.getItemMeta.hasDisplayName) melee.getItemMeta.getDisplayName else "なし"}",
+            s"アイテム: ${if (item.hasItemMeta && item.getItemMeta.hasDisplayName) item.getItemMeta.getDisplayName else "なし"}"
+          ))
+
+          icon.setItemMeta(m)
+          inv.setItem(9 + f._1, icon)
+        })
+        (0 to 8).filterNot(pred => value.map(_._1).contains(pred)).foreach(f => {
+          inv.setItem(9 + f, {
+            val i = new ItemStack(Material.GRAY_DYE)
+            val m = i.getItemMeta
+            m.setDisplayName("設定されていない！")
+            m.setLore(java.util.Arrays.asList(ChatColor.RED + "(動作しない)右クリックで現在の装備をこのマイセットに登録"))
+            i.setItemMeta(m)
+            i
+          })
+        })
+      }
+
+      override def failure(error: Exception): Unit = {
+
+      }
+    })
+
+    player.openInventory(inv)
+  }
+
+  def onClickMySetUI(e: InventoryClickEvent): Unit = {
+    e.setCancelled(true)
+    e.getClickedInventory.getType match {
+      case InventoryType.CHEST =>
+        if (e.getClick == ClickType.RIGHT) {
+          val slot = e.getSlot
+          val item = e.getCurrentItem
+          println(slot > 8 && item != null && item.getType == Material.GRAY_DYE)
+          if (slot > 8 && item != null && item.getType == Material.GRAY_DYE) {
+            val player = e.getWhoClicked
+            WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).weapons match {
+              case Some(weapons) =>
+                println("saved!")
+                db.setMySet(
+                  player.getUniqueId.toString,
+                  slot - 9,
+                  weapons(0).serializeAsBytes(),
+                  weapons(1).serializeAsBytes(),
+                  weapons(2).serializeAsBytes(),
+                  weapons(3).serializeAsBytes(),
+                  new Callback[Unit] {
+                    override def success(value: Unit): Unit = {
+                      openMySetUI(player)
+                    }
+                    override def failure(error: Exception): Unit = {
+                      player.sendMessage("失敗！！！！")
+                    }
+                  })
+              case _ =>
+
+            }
+          }
+        }
+      case _ =>
     }
   }
 }

@@ -99,21 +99,23 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       }
       // エンダーチェストインベントリ
     } else if (title == EnderChestManager.ENDER_CHEST_MENU_TITLE) {
-      e.getWhoClicked.sendMessage(ChatColor.RED  + "v1.4.1より非推奨！ v1.5.0より使用できなくなる！！")
+      e.getWhoClicked.sendMessage(ChatColor.RED + "v1.4.1より非推奨！ v1.5.0より使用できなくなる！！")
       val item = e.getCurrentItem
       if (item != null) {
         EnderChestManager.openEnderChest(p, EnderChestManager.parseChestId(item.getItemMeta.getDisplayName))
       }
-    } else if(title.contains(TagUI.UI_TITLE)) {
-      if(e.getCurrentItem != null) {
+    } else if (title.contains(TagUI.UI_TITLE)) {
+      if (e.getCurrentItem != null) {
         TagUI.onClick(e)
       }
-    } else if(title == WeaponUI.MAIN_UI_TITLE && e.getClickedInventory.getType == InventoryType.CHEST) {
+    } else if (title == WeaponUI.MAIN_UI_TITLE && e.getClickedInventory.getType == InventoryType.CHEST) {
       WeaponUI.onClickMainUI(e)
-    } else if(title == WeaponUI.WEAPON_CHEST_UI_TITLE) {
+    } else if (title == WeaponUI.WEAPON_CHEST_UI_TITLE) {
       WeaponUI.onClickWeaponStorageUI(e)
     } else if (title == WeaponUI.SETTING_TITLE) {
       WeaponUI.onClickSettingUI(e)
+    } else if (title == WeaponUI.MY_SET_TITLE) {
+      WeaponUI.onClickMySetUI(e)
     }
     else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
