@@ -204,15 +204,15 @@ trait Database {
    * @param slot     新しく設定するスロット
    * @param usedSlot 以前設定していた純粋なスロット(ベースページとかインベントリ上段の処理を考える必要がない)
    */
-  def setPagedWeapon(uuid: String, slot: Int, usedSlot: Int, callback: Callback[Unit])
+  def setPagedWeapon(uuid: String, slot: Int, usedSlot: Int, usedType: Int, callback: Callback[Unit])
 
   /**
-   * 現在使用している(use=1)の武器を読み込む
+   * 現在使用している(use>0)の武器を読み込む
    *
    * @param uuid
-   * @param callback
+   * @param callback (アイテムのバイトデータ, 使用タイプ)
    */
-  def getWeapon(uuid: String, callback: Callback[mutable.Buffer[Array[Byte]]])
+  def getWeapon(uuid: String, callback: Callback[mutable.Buffer[(Array[Byte], Int)]])
 
   /**
    * 仮のインベントリ(ロビーのインベントリを取得する
@@ -255,14 +255,15 @@ trait Database {
    * @since v1.4.3
    * @param uuid
    * @param slot
-   * @param main
-   * @param sub
-   * @param melee
-   * @param item
    * @param callback
    */
-  def setMySet(uuid: String, slot: Int, main: Array[Byte], sub: Array[Byte], melee: Array[Byte], item: Array[Byte], callback: Callback[Unit])
+  def setMySet(uuid: String, slot: Int, callback: Callback[Unit])
 
+  /**
+   * マイセットを適用する
+   * @since v1.4.18
+   */
+  def applyMySet(uuid: String, slot: Int, callback: Callback[Unit])
 
   def close(): Unit
 }

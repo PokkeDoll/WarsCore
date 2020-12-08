@@ -408,14 +408,25 @@ object WarsCoreAPI {
       case Some(weapon) if cached =>
         player.getInventory.setContents(weapon)
       case _ =>
-        database.getWeapon(wp.player.getUniqueId.toString, new Callback[mutable.Buffer[Array[Byte]]] {
-          override def success(value: mutable.Buffer[Array[Byte]]): Unit = {
-            val items = value.map(f => if (f == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f))
-            val main = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(MAIN))).getOrElse(EMPTY)
-            val sub = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(SUB))).getOrElse(EMPTY)
-            val melee = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(MELEE))).getOrElse(EMPTY)
-            val item = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(ITEM))).getOrElse(EMPTY)
+        database.getWeapon(wp.player.getUniqueId.toString, new Callback[mutable.Buffer[(Array[Byte], Int)]] {
+          override def success(value: mutable.Buffer[(Array[Byte], Int)]): Unit = {
 
+            val main = value.find(p => p._2 == 1) match {
+              case Some(f) => ItemStack.deserializeBytes(f._1)
+              case None => EMPTY
+            }
+            val sub = value.find(p => p._2 == 2) match {
+              case Some(f) => ItemStack.deserializeBytes(f._1)
+              case None => EMPTY
+            }
+            val melee = value.find(p => p._2 == 3) match {
+              case Some(f) => ItemStack.deserializeBytes(f._1)
+              case None => EMPTY
+            }
+            val item = value.find(p => p._2 == 4) match {
+              case Some(f) => ItemStack.deserializeBytes(f._1)
+              case None => EMPTY
+            }
             val array = Array(main, sub, melee, item)
 
             player.getInventory.setContents(array)

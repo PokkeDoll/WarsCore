@@ -59,6 +59,7 @@ class WarsCore extends JavaPlugin {
     getCommand("merchant").setExecutor(new MerchantCommand)
     getCommand("tag").setExecutor(new TagCommand)
     getCommand("spawn").setExecutor(new SpawnCommand)
+    getCommand("wp").setExecutor(new WeaponCommand)
     saveDefaultConfig()
     WarsCoreAPI.DEFAULT_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.default", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
     WarsCoreAPI.FIRST_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.first", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)

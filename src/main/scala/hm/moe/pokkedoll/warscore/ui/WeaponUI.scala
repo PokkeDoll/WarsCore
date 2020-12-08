@@ -69,13 +69,24 @@ object WeaponUI {
     inv.setItem(16, new ItemStack(Material.BARRIER))
 
     player.openInventory(inv)
-    db.getWeapon(player.getUniqueId.toString, new Callback[mutable.Buffer[Array[Byte]]] {
-      override def success(value: mutable.Buffer[Array[Byte]]): Unit = {
-        val items = value.map(f => if (f == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f))
-        val main = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(MAIN))).getOrElse(EMPTY)
-        val sub = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(SUB))).getOrElse(EMPTY)
-        val melee = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(MELEE))).getOrElse(EMPTY)
-        val item = items.find(p => p.hasItemMeta && p.getItemMeta.hasLore && p.getItemMeta.getLore.stream().anyMatch(pred => pred.contains(ITEM))).getOrElse(EMPTY)
+    db.getWeapon(player.getUniqueId.toString, new Callback[mutable.Buffer[(Array[Byte], Int)]] {
+      override def success(value: mutable.Buffer[(Array[Byte], Int)]): Unit = {
+        val main = value.find(p => p._2 == 1) match {
+          case Some(f) => ItemStack.deserializeBytes(f._1)
+          case None => EMPTY
+        }
+        val sub = value.find(p => p._2 == 2) match {
+          case Some(f) => ItemStack.deserializeBytes(f._1)
+          case None => EMPTY
+        }
+        val melee = value.find(p => p._2 == 3) match {
+          case Some(f) => ItemStack.deserializeBytes(f._1)
+          case None => EMPTY
+        }
+        val item = value.find(p => p._2 == 4) match {
+          case Some(f) => ItemStack.deserializeBytes(f._1)
+          case None => EMPTY
+        }
 
         inv.setItem(11, main)
         inv.setItem(20, sub)
@@ -164,6 +175,8 @@ object WeaponUI {
 
   private val usedSlotKey = new NamespacedKey(WarsCore.instance, "weapon-used-slot")
 
+  private val usedTypeKey = new NamespacedKey(WarsCore.instance, "weapon-used-type")
+
   /**
    * 武器設定UIを開く
    *
@@ -173,7 +186,7 @@ object WeaponUI {
   def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: Int = 0): Unit = {
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
-    val barrier = new ItemStack(Material.BARRIER)
+
 
     val p = {
       val ico = pageIcon(page)
@@ -188,6 +201,9 @@ object WeaponUI {
       override def success(value: mutable.Buffer[(Int, Array[Byte], Int)]): Unit = {
         inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
+        val barrier = new ItemStack(Material.BARRIER)
+        val mm = barrier.getItemMeta
+        mm.getPersistentDataContainer.set(usedTypeKey, PersistentDataType.INTEGER, java.lang.Integer.valueOf(weaponType + 1))
         value.foreach(f => {
           val i = if (f._2 == null) PANEL else ItemStack.deserializeBytes(f._2)
           if (i.getType != Material.AIR && i.hasItemMeta) {
@@ -195,9 +211,7 @@ object WeaponUI {
             if (m.hasLore && m.getLore.stream().anyMatch(pred => pred.contains(WEAPON_TYPES(weaponType)))) {
               if (f._3 != 0) {
                 i.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 10)
-                val mm = barrier.getItemMeta
                 mm.getPersistentDataContainer.set(usedSlotKey, PersistentDataType.INTEGER, java.lang.Integer.valueOf(f._1))
-                barrier.setItemMeta(mm)
               }
               inv.setItem(9 + f._1 - baseSlot, i)
             } else {
@@ -207,6 +221,7 @@ object WeaponUI {
             inv.setItem(9 + f._1 - baseSlot, PANEL)
           }
         })
+        barrier.setItemMeta(mm)
         inv.setItem(0, barrier)
       }
 
@@ -261,8 +276,11 @@ object WeaponUI {
         } else if (pageItem != null && usedSlotItem != null && i != null && i.getType != Material.AIR && i.getType != PANEL.getType && e.getSlot > 8 && !i.containsEnchantment(Enchantment.BINDING_CURSE)) {
           val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
           val usedSlot = usedSlotItem.getItemMeta.getPersistentDataContainer.get(usedSlotKey, PersistentDataType.INTEGER)
+          val usedType = usedSlotItem.getItemMeta.getPersistentDataContainer.get(usedTypeKey, PersistentDataType.INTEGER)
+
           val baseSlot = (page - 1) * 45
-          db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), baseSlot + usedSlot, new Callback[Unit] {
+          println(s"page = $page, usedSlot = $usedSlot, usedType = $usedType")
+          db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), baseSlot + usedSlot, usedType, new Callback[Unit] {
             override def success(value: Unit): Unit = {
               openMainUI(player)
             }
@@ -307,12 +325,11 @@ object WeaponUI {
     db.getMySet(player.getUniqueId.toString, new Callback[mutable.Buffer[MySet]] {
       override def success(value: mutable.Buffer[MySet]): Unit = {
         value.foreach(f => {
-          val icon = if (f.main.isDefined && f.sub.isDefined && f.melee.isDefined && f.item.isDefined) {
-            new ItemStack(Material.LIME_DYE, f.slot + 1)
-          } else {
-            new ItemStack(Material.RED_DYE, f.slot + 1)
-          }
+
+          val icon = new ItemStack(Material.LIME_DYE, f.slot + 1)
+
           val m = icon.getItemMeta
+
           val main = f.main match {
             case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
             case _ => new ItemStack(Material.AIR)
@@ -377,32 +394,31 @@ object WeaponUI {
         if (slot == 1) {
           openMainUI(player)
         } else if (e.getClick == ClickType.RIGHT) {
-          if (slot > 8 && item != null && item.getType == Material.GRAY_DYE) {
-            WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).weapons match {
-              case Some(weapons) =>
-                db.setMySet(
-                  player.getUniqueId.toString,
-                  slot - 9,
-                  checkedSerialize(weapons(0)),
-                  checkedSerialize(weapons(1)),
-                  checkedSerialize(weapons(2)),
-                  checkedSerialize(weapons(3)),
-                  new Callback[Unit] {
-                    override def success(value: Unit): Unit = {
-                      openMySetUI(player)
-                    }
+          if (slot > 8 && item != null) {
+            db.setMySet(
+              player.getUniqueId.toString,
+              slot - 9,
+              new Callback[Unit] {
+                override def success(value: Unit): Unit = {
+                  openMySetUI(player)
+                }
 
-                    override def failure(error: Exception): Unit = {
-                      player.sendMessage("失敗！！！！")
-                    }
-                  })
-              case _ =>
-
-            }
+                override def failure(error: Exception): Unit = {
+                  player.sendMessage("失敗！！！！")
+                }
+              })
           }
         } else if (e.getClick == ClickType.LEFT) {
           if (slot > 8 && item != null && item.getType == Material.LIME_DYE) {
+            db.applyMySet(player.getUniqueId.toString, slot - 9, new Callback[Unit] {
+              override def success(value: Unit): Unit = {
+                openMainUI(player)
+              }
 
+              override def failure(error: Exception): Unit = {
+                player.sendMessage("失敗の音")
+              }
+            })
           }
         }
       case _ =>

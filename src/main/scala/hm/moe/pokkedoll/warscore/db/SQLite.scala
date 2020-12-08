@@ -534,13 +534,13 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param slot     新しく設定するスロット
    * @param usedSlot 以前設定していた純粋なスロット(ベースページとかインベントリ上段の処理を考える必要がない)
    */
-  override def setPagedWeapon(uuid: String, slot: Int, usedSlot: Int, callback: Callback[Unit]): Unit = {
+  override def setPagedWeapon(uuid: String, slot: Int, usedSlot: Int, usedType: Int, callback: Callback[Unit]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
         val s = c.createStatement()
-        s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and use=1 and slot=$usedSlot")
-        s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and slot=$slot")
+        s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and use=$usedType and slot=$usedSlot")
+        s.addBatch(s"UPDATE weapon SET use=$usedType WHERE uuid='$uuid' and slot=$slot")
         try {
           s.executeBatch()
           new BukkitRunnable {
@@ -564,22 +564,22 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
-   * 現在使用している(use=1)の武器を読み込む
+   * 現在使用している(use>0)の武器を読み込む
    *
    * @param uuid
-   * @param callback
+   * @param callback (アイテムのバイトデータ, 使用タイプ)
    */
-  override def getWeapon(uuid: String, callback: Callback[mutable.Buffer[Array[Byte]]]): Unit = {
+  override def getWeapon(uuid: String, callback: Callback[mutable.Buffer[(Array[Byte], Int)]]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT data FROM weapon WHERE uuid=? and use=1")
+        val ps = c.prepareStatement("SELECT data, use FROM weapon WHERE uuid=? and use>0")
         try {
           ps.setString(1, uuid)
-          var buffer = mutable.Buffer.empty[Array[Byte]]
+          var buffer = mutable.Buffer.empty[(Array[Byte], Int)]
           val rs = ps.executeQuery()
           while (rs.next()) {
-            buffer.+=(rs.getBytes("data"))
+            buffer.+=((rs.getBytes("data"), rs.getInt("use")))
           }
           new BukkitRunnable {
             override def run(): Unit = {
@@ -735,25 +735,25 @@ class SQLite(private val plugin: WarsCore) extends Database {
           s"FROM myset WHERE uuid='$uuid'"
 
         try {
-          val rs = s.executeQuery(s"SELECT slot, title, main, sub, melee, item FROM myset WHERE uuid='$uuid'")
+          val rs = s.executeQuery(sql)
           val buffer = mutable.Buffer.empty[WeaponUI.MySet]
           while (rs.next()) {
             val slot = rs.getInt("slot")
             val title = rs.getString("title")
-            println(s"${slot} + $title")
-            val main = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT main FROM myset WHERE uuid='$uuid' and slot=$slot)")
-            val sub = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT sub FROM myset WHERE uuid='$uuid' and slot=$slot)")
-            val melee = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT melee FROM myset WHERE uuid='$uuid' and slot=$slot)")
-            val item = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT item FROM myset WHERE uuid='$uuid' and slot=$slot)")
+            val main = rs.getBytes("main")
+            val sub = rs.getBytes("sub")
+            val melee = rs.getBytes("melee")
+            val item = rs.getBytes("item")
 
+            println(s"${slot} + $title")
             buffer.+=(
               new WeaponUI.MySet(
                 slot,
                 title,
-                if (main.next()) Some(main.getBytes("data")) else None,
-                if (sub.next()) Some(sub.getBytes("data")) else None,
-                if (melee.next()) Some(melee.getBytes("data")) else None,
-                if (item.next()) Some(item.getBytes("data")) else None
+                Option(main),
+                Option(sub),
+                Option(melee),
+                Option(item)
               )
             )
           }
@@ -783,26 +783,21 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @since v1.4.3
    * @param uuid
    * @param slot
-   * @param main
-   * @param sub
-   * @param melee
-   * @param item
    * @param callback
    */
-  override def setMySet(uuid: String, slot: Int, main: Array[Byte], sub: Array[Byte], melee: Array[Byte], item: Array[Byte], callback: Callback[Unit]): Unit = {
+  override def setMySet(uuid: String, slot: Int, callback: Callback[Unit]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
-        val ps = c.prepareStatement("REPLACE INTO myset(uuid, slot, title, main, sub, melee, item) VALUES(?, ?, ?, ?, ?, ?, ?)")
+        val s = c.createStatement()
+        val sql =
+          s"REPLACE INTO myset(uuid, slot, title, main, sub, melee, item) VALUES('$uuid', $slot, '無題のマイセット$slot', " +
+            s"(SELECT data FROM weapon WHERE uuid='$uuid' and use=1), " +
+            s"(SELECT data FROM weapon WHERE uuid='$uuid' and use=2), " +
+            s"(SELECT data FROM weapon WHERE uuid='$uuid' and use=3), " +
+            s"(SELECT data FROM weapon WHERE uuid='$uuid' and use=4))"
         try {
-          ps.setString(1, uuid)
-          ps.setInt(2, slot)
-          ps.setString(3, s"無題のマイセット$slot")
-          ps.setBytes(4, main)
-          ps.setBytes(5, sub)
-          ps.setBytes(6, melee)
-          ps.setBytes(7, item)
-          ps.executeUpdate()
+          s.executeUpdate(sql)
           new BukkitRunnable {
             override def run(): Unit = {
               callback.success()
@@ -816,7 +811,45 @@ class SQLite(private val plugin: WarsCore) extends Database {
               }
             }.runTask(plugin)
         } finally {
-          ps.close()
+          s.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(plugin)
+  }
+
+  /**
+   * マイセットを適用する
+   *
+   * @since v1.4.18
+   */
+  override def applyMySet(uuid: String, slot: Int, callback: Callback[Unit]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val s = c.createStatement()
+            s"(SELECT data FROM weapon WHERE uuid='$uuid' and use=4))"
+        try {
+          s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='${uuid}' and use>0")
+          s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='${uuid}' and data=(SELECT main FROM myset WHERE uuid='${uuid}' and slot=$slot)")
+          s.addBatch(s"UPDATE weapon SET use=2 WHERE uuid='${uuid}' and data=(SELECT sub FROM myset WHERE uuid='${uuid}' and slot=$slot)")
+          s.addBatch(s"UPDATE weapon SET use=3 WHERE uuid='${uuid}' and data=(SELECT melee FROM myset WHERE uuid='${uuid}' and slot=$slot)")
+          s.addBatch(s"UPDATE weapon SET use=4 WHERE uuid='${uuid}' and data=(SELECT item FROM myset WHERE uuid='${uuid}' and slot=$slot)")
+          s.executeBatch()
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success()
+            }
+          }.runTask(plugin)
+        } catch {
+          case e: SQLException =>
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(plugin)
+        } finally {
+          s.close()
           c.close()
         }
       }
