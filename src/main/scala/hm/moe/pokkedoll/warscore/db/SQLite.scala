@@ -6,6 +6,7 @@ import java.util.UUID
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
+import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.apache.commons.lang.SerializationUtils
 import org.bukkit.Material
@@ -721,23 +722,40 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param uuid     対象のUUID
    * @param callback 順にslot, title, main, sub, melee, itemのタプル
    */
-  override def getMySet(uuid: String, callback: Callback[mutable.Buffer[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]]): Unit = {
+  override def getMySet(uuid: String, callback: Callback[mutable.Buffer[WeaponUI.MySet]]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT slot, title, main, sub, melee, item FROM myset WHERE uuid=?")
+        val s = c.createStatement()
+        val sql = "SELECT myset.slot, myset.title, " +
+          s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.main) as main, " +
+          s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.sub) as sub, " +
+          s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.melee) as melee, " +
+          s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.item) as item " +
+          s"FROM myset WHERE uuid='$uuid'"
+
         try {
-          ps.setString(1, uuid)
-          val rs = ps.executeQuery()
-          val buffer = mutable.Buffer.empty[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]
+          val rs = s.executeQuery(s"SELECT slot, title, main, sub, melee, item FROM myset WHERE uuid='$uuid'")
+          val buffer = mutable.Buffer.empty[WeaponUI.MySet]
           while (rs.next()) {
-            buffer.+=((
-              rs.getInt("slot"),
-              rs.getString("title"),
-              rs.getBytes("main"),
-              rs.getBytes("sub"),
-              rs.getBytes("melee"),
-              rs.getBytes("item")))
+            val slot = rs.getInt("slot")
+            val title = rs.getString("title")
+            println(s"${slot} + $title")
+            val main = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT main FROM myset WHERE uuid='$uuid' and slot=$slot)")
+            val sub = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT sub FROM myset WHERE uuid='$uuid' and slot=$slot)")
+            val melee = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT melee FROM myset WHERE uuid='$uuid' and slot=$slot)")
+            val item = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT item FROM myset WHERE uuid='$uuid' and slot=$slot)")
+
+            buffer.+=(
+              new WeaponUI.MySet(
+                slot,
+                title,
+                if (main.next()) Some(main.getBytes("data")) else None,
+                if (sub.next()) Some(sub.getBytes("data")) else None,
+                if (melee.next()) Some(melee.getBytes("data")) else None,
+                if (item.next()) Some(item.getBytes("data")) else None
+              )
+            )
           }
           new BukkitRunnable {
             override def run(): Unit = {
@@ -752,7 +770,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
               }
             }.runTask(plugin)
         } finally {
-          ps.close()
+          s.close()
           c.close()
         }
       }
@@ -804,4 +822,35 @@ class SQLite(private val plugin: WarsCore) extends Database {
       }
     }.runTaskAsynchronously(plugin)
   }
+
+  def checkMySet(uuid: String, slot: Int, callback: Callback[Array[Boolean]]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val s = c.createStatement()
+        try {
+          val main = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT main FROM myset WHERE uuid='$uuid' and slot=$slot").next()
+          val sub = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT sub FROM myset WHERE uuid='$uuid' and slot=$slot").next()
+          val melee = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT melee FROM myset WHERE uuid='$uuid' and slot=$slot").next()
+          val item = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and data=(SELECT item FROM myset WHERE uuid='$uuid' and slot=$slot").next()
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success(Array(main, sub, melee, item))
+            }
+          }.runTask(plugin)
+        } catch {
+          case e: SQLException =>
+            new BukkitRunnable {
+              override def run(): Unit = {
+                callback.failure(e)
+              }
+            }.runTask(plugin)
+        } finally {
+          s.close()
+          c.close()
+        }
+      }
+    }
+  }.runTaskAsynchronously(plugin)
+
 }

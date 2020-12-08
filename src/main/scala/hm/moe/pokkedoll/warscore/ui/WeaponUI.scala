@@ -292,25 +292,45 @@ object WeaponUI {
     }
   }
 
+  class MySet(val slot: Int, val title: String, val main: Option[Array[Byte]], val sub: Option[Array[Byte]], val melee: Option[Array[Byte]], val item: Option[Array[Byte]])
 
   val MY_SET_TITLE = "MySet Settings"
 
+  /**
+   * NoneはAIRにしておこう
+   *
+   * @param player
+   */
   def openMySetUI(player: HumanEntity): Unit = {
     val inv = Bukkit.createInventory(null, 18, MY_SET_TITLE)
     inv.setItem(1, BACK_MAIN_UI)
-    db.getMySet(player.getUniqueId.toString, new Callback[mutable.Buffer[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]] {
-      override def success(value: mutable.Buffer[(Int, String, Array[Byte], Array[Byte], Array[Byte], Array[Byte])]): Unit = {
+    db.getMySet(player.getUniqueId.toString, new Callback[mutable.Buffer[MySet]] {
+      override def success(value: mutable.Buffer[MySet]): Unit = {
         value.foreach(f => {
-          println(f)
-          val icon = new ItemStack(Material.LIME_DYE, f._1 + 1)
+          val icon = if (f.main.isDefined && f.sub.isDefined && f.melee.isDefined && f.item.isDefined) {
+            new ItemStack(Material.LIME_DYE, f.slot + 1)
+          } else {
+            new ItemStack(Material.RED_DYE, f.slot + 1)
+          }
           val m = icon.getItemMeta
+          val main = f.main match {
+            case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
+            case _ => new ItemStack(Material.AIR)
+          }
+          val sub = f.sub match {
+            case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
+            case _ => new ItemStack(Material.AIR)
+          }
+          val melee = f.melee match {
+            case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
+            case _ => new ItemStack(Material.AIR)
+          }
+          val item = f.item match {
+            case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
+            case _ => new ItemStack(Material.AIR)
+          }
 
-          val main = ItemStack.deserializeBytes(f._3)
-          val sub = ItemStack.deserializeBytes(f._4)
-          val melee = ItemStack.deserializeBytes(f._5)
-          val item = ItemStack.deserializeBytes(f._6)
-
-          m.setDisplayName(f._2)
+          m.setDisplayName(f.title)
           m.setLore(java.util.Arrays.asList(
             ChatColor.RED + "(動作しない)右クリックで現在の装備をこのマイセットに登録",
             ChatColor.RED + "(動作しない)左クリックで現在の装備をセット",
@@ -322,9 +342,9 @@ object WeaponUI {
           ))
 
           icon.setItemMeta(m)
-          inv.setItem(9 + f._1, icon)
+          inv.setItem(9 + f.slot, icon)
         })
-        (0 to 8).filterNot(pred => value.map(_._1).contains(pred)).foreach(f => {
+        (0 to 8).filterNot(pred => value.map(_.slot).contains(pred)).foreach(f => {
           inv.setItem(9 + f, {
             val i = new ItemStack(Material.GRAY_DYE)
             val m = i.getItemMeta
@@ -337,37 +357,41 @@ object WeaponUI {
       }
 
       override def failure(error: Exception): Unit = {
-
+        error.printStackTrace()
+        player.sendMessage("エラー！")
       }
     })
 
     player.openInventory(inv)
   }
 
+  private def checkedSerialize(i: ItemStack): Array[Byte] = if (i.getType == Material.BARRIER) null else i.serializeAsBytes()
+
   def onClickMySetUI(e: InventoryClickEvent): Unit = {
     e.setCancelled(true)
     e.getClickedInventory.getType match {
       case InventoryType.CHEST =>
-        if (e.getClick == ClickType.RIGHT) {
-          val slot = e.getSlot
-          val item = e.getCurrentItem
-          println(slot > 8 && item != null && item.getType == Material.GRAY_DYE)
+        val slot = e.getSlot
+        val item = e.getCurrentItem
+        val player = e.getWhoClicked
+        if (slot == 1) {
+          openMainUI(player)
+        } else if (e.getClick == ClickType.RIGHT) {
           if (slot > 8 && item != null && item.getType == Material.GRAY_DYE) {
-            val player = e.getWhoClicked
             WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).weapons match {
               case Some(weapons) =>
-                println("saved!")
                 db.setMySet(
                   player.getUniqueId.toString,
                   slot - 9,
-                  weapons(0).serializeAsBytes(),
-                  weapons(1).serializeAsBytes(),
-                  weapons(2).serializeAsBytes(),
-                  weapons(3).serializeAsBytes(),
+                  checkedSerialize(weapons(0)),
+                  checkedSerialize(weapons(1)),
+                  checkedSerialize(weapons(2)),
+                  checkedSerialize(weapons(3)),
                   new Callback[Unit] {
                     override def success(value: Unit): Unit = {
                       openMySetUI(player)
                     }
+
                     override def failure(error: Exception): Unit = {
                       player.sendMessage("失敗！！！！")
                     }
@@ -375,6 +399,10 @@ object WeaponUI {
               case _ =>
 
             }
+          }
+        } else if (e.getClick == ClickType.LEFT) {
+          if (slot > 8 && item != null && item.getType == Material.LIME_DYE) {
+
           }
         }
       case _ =>
