@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.ui
 
-import hm.moe.pokkedoll.warscore.{Callback, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{Callback, Test, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
@@ -46,6 +46,47 @@ object WeaponUI {
     i.setItemMeta(m)
     i
   }
+
+  private val OPEN_CHEST_ICON = {
+    val i = new ItemStack(Material.CHEST)
+    val m = i.getItemMeta
+    m.setDisplayName("チェストを開く")
+    m.setLore(java.util.Arrays.asList(
+      "説明1",
+      "説明2",
+      "説明3"
+    ))
+    i.setItemMeta(m)
+    i
+  }
+
+  private val CLOSE_INVENTORY_ICON = {
+    val i = new ItemStack(Material.BARRIER)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.RED + "インベントリを閉じる")
+    m.setLore(java.util.Arrays.asList(
+      "説明1",
+      "説明2",
+      "説明3"
+    ))
+    i.setItemMeta(m)
+    i
+  }
+
+  private val OPEN_MY_SET_ICON = {
+    val i = new ItemStack(Material.CRAFTING_TABLE)
+    val m = i.getItemMeta
+    m.setDisplayName("マイセットを開く")
+    m.setLore(java.util.Arrays.asList(
+      "説明1",
+      "説明2",
+      "説明3"
+    ))
+    i.setItemMeta(m)
+    i
+  }
+
+
 
   val MAIN: String = ChatColor.translateAlternateColorCodes('&', "&e&lMain")
   val SUB: String = ChatColor.translateAlternateColorCodes('&', "&e&lSub")
@@ -139,6 +180,7 @@ object WeaponUI {
   val WEAPON_CHEST_UI_TITLE = "Weapon Chest"
 
   def openWeaponStorageUI(player: HumanEntity, page: Int = 1): Unit = {
+    val test = new Test("openWeaponStorageUI")
     val inv = Bukkit.createInventory(null, 54, WEAPON_CHEST_UI_TITLE)
     (0 to 8).filterNot(f => f == 4 || f == 0).foreach(inv.setItem(_, PANEL))
 
@@ -166,6 +208,7 @@ object WeaponUI {
       }
     })
     player.openInventory(inv)
+    test.log()
   }
 
   val SETTING_TITLE = "Weapon Settings"

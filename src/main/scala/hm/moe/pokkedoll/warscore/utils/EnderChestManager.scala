@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import hm.moe.pokkedoll.warscore.WarsCore
+import hm.moe.pokkedoll.warscore.{Test, WarsCore}
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.inventory.meta.SkullMeta
@@ -15,6 +15,7 @@ import scala.util.Try
  *
  * @author Emorard
  */
+@Deprecated
 object EnderChestManager {
 
   private lazy val db = WarsCore.instance.database
@@ -79,6 +80,7 @@ object EnderChestManager {
    * @param id     開くエンダーチェストのID, プレゼントボックスは0
    */
   def openEnderChest(player: HumanEntity, id: Int): Unit = {
+    val test = new Test("openEnderChest")
     val inv = Bukkit.createInventory(null, 54, ChatColor.DARK_PURPLE + player.getName + "'s Chest " + id)
     new BukkitRunnable {
       override def run(): Unit = {
@@ -100,6 +102,7 @@ object EnderChestManager {
       }
     }.runTaskAsynchronously(WarsCore.instance)
     player.openInventory(inv)
+    test.log()
   }
 
   def closeEnderChest(player: HumanEntity, id: Int, content: Array[ItemStack]): Unit = {

@@ -12,9 +12,8 @@ import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.inventory._
 import org.bukkit.event.player._
 import org.bukkit.event.{EventHandler, Listener}
-import org.bukkit.inventory.{EquipmentSlot, ItemStack, MerchantInventory}
-import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
+import org.bukkit.inventory.EquipmentSlot
+import org.bukkit.{Bukkit, ChatColor, GameMode}
 
 class PlayerListener(plugin: WarsCore) extends Listener {
 
