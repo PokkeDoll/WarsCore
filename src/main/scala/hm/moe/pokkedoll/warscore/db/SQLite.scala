@@ -391,13 +391,13 @@ class SQLite(private val plugin: WarsCore) extends Database {
           val rs = ps.executeQuery()
 
           if (rs.next()) {
-            println("true!")
+            //println("true!")
             wp.rank = rs.getInt("id")
             wp.exp = rs.getInt("exp")
             wp.tag = rs.getString("tagId")
             wp.disconnect = ((i: Int) => (if (i == 1) true else false)) (rs.getInt("disconnect"))
           } else {
-            println("false!!!")
+            // println("false!!!")
             wp.rank = -9999
             wp.exp = -9999
             wp.tag = "Unknown"
@@ -745,7 +745,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
             val melee = rs.getBytes("melee")
             val item = rs.getBytes("item")
 
-            println(s"${slot} + $title")
+            // println(s"${slot} + $title")
             buffer.+=(
               new WeaponUI.MySet(
                 slot,
@@ -886,4 +886,49 @@ class SQLite(private val plugin: WarsCore) extends Database {
     }
   }.runTaskAsynchronously(plugin)
 
+  override def addItem(uuid: String, array: Array[Byte]*): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val s = c.createStatement()
+        val ps = c.prepareStatement("INSERT INTO weapon(uuid, slot, data) VALUES(?, ?, ?)")
+        try {
+          val rs = s.executeQuery(s"SELECT MIN(slot), MAX(slot) FROM weapon WHERE uuid=${uuid}")
+          if(rs.next()) {
+            ps.setString(1, uuid)
+            var min = rs.getInt(0)
+            var max = rs.getInt(0)
+            array.foreach(f => {
+              /**
+               * https://www.techscore.com/tech/Java/JavaEE/JDBC/2-3/
+               *
+               * 「PreparedStatement」の場合は、値をセットしてから（10〜13行目）、「addBatch」メソッドで追加します。この時点でSQL文ができているので引数は必要ありません。繰り返す事により（16〜20行目）、同じようなSQL文をバッチ処理リストに追加していく事ができます。
+               *
+               * また「PreparedStatement」は「Statement」クラスを拡張したクラスなので、「Statement」クラスと同じような使用（22〜23行目）の仕方もできます。ただし複数の「PreparedStatement」オブジェクトを組み合わせて1つのバッチ処理を作り上げる事はできません。
+               */
+              if(min != 0) {
+                min -= 1
+                ps.setInt(2, min)
+                ps.setBytes(3, f)
+                ps.addBatch()
+              } else {
+                max += 1
+                ps.setInt(2, max)
+                ps.setBytes(3, f)
+                ps.addBatch()
+              }
+            })
+            ps.executeBatch()
+          }
+        } catch {
+          case e: SQLException =>
+            e.printStackTrace()
+        } finally {
+          ps.close()
+          s.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(plugin)
+  }
 }

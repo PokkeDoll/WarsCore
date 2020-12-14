@@ -15,14 +15,14 @@ import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
 
 import scala.collection.mutable
-//TODO ChangeInventory!!!!!!
 /**
  * 10vs10で行うゲームモード <br>
+ * version2.0では 10 vs 10というわけではない。<br>
  * 1点 = 1キル<br>
  * 10分 or 50点先取で勝利<br>
  *
  * @author Emorard
- * @version 1.0
+ * @version 2.0
  */
 class TeamDeathMatch(override val id: String) extends Game {
 
@@ -282,6 +282,8 @@ class TeamDeathMatch(override val id: String) extends Game {
           wp.sendMessage(createResult(d, winner): _*)
           // ゲーム情報のリセット
           wp.game = None
+          // インベントリのリストア
+          WarsCoreAPI.restoreLobbyInventory(wp.player)
           // スコアボードのリセット
           wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
           RankManager.giveExp(wp, d.calcExp())
@@ -338,6 +340,9 @@ class TeamDeathMatch(override val id: String) extends Game {
           "&a/invite <player>&fで他プレイヤーを招待することができます!"
       )
       wp.game = Some(this)
+      // インベントリを変更
+      WarsCoreAPI.changeWeaponInventory(wp)
+
       wp.player.setScoreboard(scoreboard)
       data.put(wp.player, new TDMData)
       bossbar.addPlayer(wp.player)
@@ -395,6 +400,8 @@ class TeamDeathMatch(override val id: String) extends Game {
       // スコアボード情報をリセット
       wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
       wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
+      // インベントリをリストア
+      WarsCoreAPI.restoreLobbyInventory(wp.player)
     }
   }
 
@@ -416,10 +423,12 @@ class TeamDeathMatch(override val id: String) extends Game {
         case Some(attacker) =>
           val aData = data(attacker)
           aData.kill += 1
+          /*
           // 同じIPアドレスなら報酬をスキップする
           if (attacker.isOp || victim.getAddress != attacker.getAddress) {
             EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
           }
+           */
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
           e.setDeathSoundVolume(2f)

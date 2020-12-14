@@ -105,9 +105,9 @@ object WeaponUI {
     inv.setItem(28, new ItemStack(Material.CROSSBOW))
     inv.setItem(37, new ItemStack(Material.HONEY_BOTTLE))
 
-    inv.setItem(13, new ItemStack(Material.CHEST))
-    inv.setItem(14, new ItemStack(Material.CRAFTING_TABLE))
-    inv.setItem(16, new ItemStack(Material.BARRIER))
+    inv.setItem(13, OPEN_CHEST_ICON)
+    inv.setItem(14, OPEN_MY_SET_ICON)
+    inv.setItem(16, CLOSE_INVENTORY_ICON)
 
     player.openInventory(inv)
     db.getWeapon(player.getUniqueId.toString, new Callback[mutable.Buffer[(Array[Byte], Int)]] {
@@ -152,6 +152,7 @@ object WeaponUI {
   def onClickMainUI(e: InventoryClickEvent): Unit = {
     e.setCancelled(true)
     val player = e.getWhoClicked
+    if(WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     e.getSlot match {
       case 10 => openSettingUI(player)
       case 19 => openSettingUI(player, weaponType = 1)
@@ -180,7 +181,7 @@ object WeaponUI {
   val WEAPON_CHEST_UI_TITLE = "Weapon Chest"
 
   def openWeaponStorageUI(player: HumanEntity, page: Int = 1): Unit = {
-    val test = new Test("openWeaponStorageUI")
+    if(WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     val inv = Bukkit.createInventory(null, 54, WEAPON_CHEST_UI_TITLE)
     (0 to 8).filterNot(f => f == 4 || f == 0).foreach(inv.setItem(_, PANEL))
 
@@ -194,7 +195,7 @@ object WeaponUI {
         inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
         value.foreach(f => {
-          println(f)
+          // println(f)
           val i = if (f._2 == null) new ItemStack(Material.AIR) else ItemStack.deserializeBytes(f._2)
           if (f._3 != 0) {
             i.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 10)
@@ -208,7 +209,6 @@ object WeaponUI {
       }
     })
     player.openInventory(inv)
-    test.log()
   }
 
   val SETTING_TITLE = "Weapon Settings"
@@ -227,9 +227,9 @@ object WeaponUI {
    * @param page   ページ番号
    */
   def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: Int = 0): Unit = {
+    if(WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
-
 
     val p = {
       val ico = pageIcon(page)
@@ -322,7 +322,7 @@ object WeaponUI {
           val usedType = usedSlotItem.getItemMeta.getPersistentDataContainer.get(usedTypeKey, PersistentDataType.INTEGER)
 
           val baseSlot = (page - 1) * 45
-          println(s"page = $page, usedSlot = $usedSlot, usedType = $usedType")
+          // println(s"page = $page, usedSlot = $usedSlot, usedType = $usedType")
           db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), baseSlot + usedSlot, usedType, new Callback[Unit] {
             override def success(value: Unit): Unit = {
               openMainUI(player)
@@ -346,7 +346,7 @@ object WeaponUI {
     if (pageItem != null) {
       val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
       val baseSlot = (page - 1) * 45
-      println(s"page is $page $baseSlot")
+      // println(s"page is $page $baseSlot")
       val mappedInv = (0 until 45).map(f => (f, inv.getItem(9 + f)))
       val groupedInv = mappedInv.groupBy(f => f._2 == null || f._2.getType == Material.AIR)
       db.setPagedWeaponStorage(player.getUniqueId.toString, baseSlot, groupedInv)
@@ -392,11 +392,10 @@ object WeaponUI {
 
           m.setDisplayName(f.title)
           m.setLore(java.util.Arrays.asList(
-            ChatColor.RED + "(動作しない)右クリックで現在の装備をこのマイセットに登録",
-            ChatColor.RED + "(動作しない)左クリックで現在の装備をセット",
-            ChatColor.RED + "(動作しない)シフト + 左クリックでマイセットの名前をセットする",
-            s"めいん: ${if (main.hasItemMeta && main.getItemMeta.hasDisplayName) main.getItemMeta.getDisplayName else "なし"}",
-            s"さぶ: ${if (sub.hasItemMeta && sub.getItemMeta.hasDisplayName) sub.getItemMeta.getDisplayName else "なし"}",
+            ChatColor.RED + "右クリックで現在の装備をマイセットに登録",
+            ChatColor.RED + "左クリックでマイセットを装備",
+            s"メイン: ${if (main.hasItemMeta && main.getItemMeta.hasDisplayName) main.getItemMeta.getDisplayName else "なし"}",
+            s"サブ: ${if (sub.hasItemMeta && sub.getItemMeta.hasDisplayName) sub.getItemMeta.getDisplayName else "なし"}",
             s"近接: ${if (melee.hasItemMeta && melee.getItemMeta.hasDisplayName) melee.getItemMeta.getDisplayName else "なし"}",
             s"アイテム: ${if (item.hasItemMeta && item.getItemMeta.hasDisplayName) item.getItemMeta.getDisplayName else "なし"}"
           ))

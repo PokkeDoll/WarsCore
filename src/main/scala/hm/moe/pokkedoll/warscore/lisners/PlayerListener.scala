@@ -13,9 +13,9 @@ import org.bukkit.event.inventory._
 import org.bukkit.event.player._
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
-import org.bukkit.{Bukkit, ChatColor, GameMode}
+import org.bukkit.{Bukkit, ChatColor, GameMode, Material}
 
-class PlayerListener(plugin: WarsCore) extends Listener {
+class PlayerListener(val plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onDeath(e: PlayerDeathEvent): Unit = {
@@ -96,13 +96,6 @@ class PlayerListener(plugin: WarsCore) extends Listener {
           player.closeInventory()
         case None =>
       }
-      // エンダーチェストインベントリ
-    } else if (title == EnderChestManager.ENDER_CHEST_MENU_TITLE) {
-      e.getWhoClicked.sendMessage(ChatColor.RED + "v1.4.1より非推奨！ v1.5.0より使用できなくなる！！")
-      val item = e.getCurrentItem
-      if (item != null) {
-        EnderChestManager.openEnderChest(p, EnderChestManager.parseChestId(item.getItemMeta.getDisplayName))
-      }
     } else if (title.contains(TagUI.UI_TITLE)) {
       if (e.getCurrentItem != null) {
         TagUI.onClick(e)
@@ -121,12 +114,6 @@ class PlayerListener(plugin: WarsCore) extends Listener {
       if (wp.game.isDefined) {
         e.setCancelled(true)
         p.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
-        /*
-        if (!wp.changeInventory && e.getSlotType != SlotType.QUICKBAR) {
-          e.setCancelled(true)
-          p.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
-        }
-        */
       }
     }
   }
@@ -169,9 +156,14 @@ class PlayerListener(plugin: WarsCore) extends Listener {
           } else {
             EconomyUtil.ingot2coin(player, item)
           }
+        } else {
+          WarsCoreAPI.getWPlayer(e.getPlayer).game match {
+            case Some(game) if item.getType == Material.CLOCK =>
+              WeaponUI.openMySetUI(e.getPlayer)
+            case _ =>
+          }
         }
       }
-
     }
   }
 

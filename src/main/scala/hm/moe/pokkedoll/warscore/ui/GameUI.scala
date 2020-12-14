@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.{games, getWPlayer}
+import hm.moe.pokkedoll.warscore.games.{Game, GameState}
 import org.bukkit.{Bukkit, ChatColor, Material}
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.inventory.{ItemFlag, ItemStack}
@@ -17,6 +18,36 @@ object GameUI {
     i
   }
 
+  private def createIcon(game: Game): ItemStack = {
+    val i = new ItemStack(Material.STONE)
+    val m = i.getItemMeta
+    if(game.state == GameState.PLAY || game.state == GameState.WAIT || game.state == GameState.READY) {
+      i.setType(Material.LIME_DYE)
+      m.setDisplayName(ChatColor.GREEN + game.id)
+      m.setLore(java.util.Arrays.asList(
+        ChatColor.LIGHT_PURPLE + game.title,
+        ChatColor.GREEN + game.mapInfo.mapName,
+        ChatColor.GREEN + (if(game.state == GameState.PLAY) "試合中！" else if (game.state == GameState.WAIT) s"${game.members.size} / ${game.maxMember} 待機中！" else s"${game.members.size} / ${game.maxMember} 準備中！"),
+      ))
+    } else if (game.state == GameState.INIT) {
+      i.setType(Material.PINK_DYE)
+      m.setDisplayName(ChatColor.LIGHT_PURPLE + game.id)
+      m.setLore(java.util.Arrays.asList(
+        ChatColor.LIGHT_PURPLE + game.title,
+        ChatColor.WHITE + "初期化中..."
+      ))
+    } else {
+      i.setType(Material.GRAY_DYE)
+      m.setDisplayName(ChatColor.GRAY + game.id)
+      m.setLore(java.util.Arrays.asList(
+        ChatColor.LIGHT_PURPLE + game.title,
+        ChatColor.RED + "クリックして部屋を作成します"
+      ))
+    }
+    i.setItemMeta(m)
+    i
+  }
+
   /**
    * ゲームインベントリを開く
    *
@@ -24,24 +55,26 @@ object GameUI {
    * @param player 対象のプレイヤー
    */
   def openMainUI(player: HumanEntity): Unit = {
-    val inv = Bukkit.createInventory(null, 27, GAME_INVENTORY_TITLE)
-    var slot = (0, 9, 18)
+    val inv = Bukkit.createInventory(null, 36, GAME_INVENTORY_TITLE)
+    //var slot = (0, 9, 18)
     inv.setItem(0, openGameInventoryIcon)
     inv.setItem(9, new ItemStack(Material.IRON_SWORD))
-    games.foreach(f => {
-      val weight = if (f._1.startsWith("tdm")) {
-        slot = (slot._1 + 1, slot._2, slot._3)
-        slot._1
-      } else if (f._1.startsWith("dom")) {
-        slot = (slot._1, slot._2 + 1, slot._3)
-        slot._2
-      } else slot._3
-      val icon = ((damage => new ItemStack(Material.STONE, f._2.members.size + 1, damage)): Short => ItemStack) (if (f._2.state.join) 10 else 8)
-      val meta = icon.getItemMeta
-      meta.setDisplayName((if (f._1.contains("test")) ChatColor.RED else ChatColor.WHITE) + s"${f._1}")
-      meta.setLore(java.util.Arrays.asList(s"§f${f._2.title}", s"§e${f._2.description}", s"§a${f._2.members.size} §7/ §a${f._2.maxMember} プレイ中", s"§a${f._2.state.title}"))
-      icon.setItemMeta(meta)
-      inv.setItem(weight, icon)
+    val g = games.groupBy(f => f._2.title)
+    var slot = 0
+    g.foreach(f => {
+      var s = slot
+      f._2.foreach(ff => {
+        inv.setItem(s, createIcon(ff._2))
+        s += 1
+      })
+      slot += 9
+    })
+    inv.setItem(27, {
+      val i = new ItemStack(Material.SNOWBALL)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.GRAY + "snowball-war")
+      i.setItemMeta(m)
+      i
     })
     player.openInventory(inv)
   }

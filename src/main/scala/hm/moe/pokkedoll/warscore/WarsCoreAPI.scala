@@ -22,10 +22,6 @@ import scala.util.Random
  * @author Emorard
  */
 object WarsCoreAPI {
-  // 内部バージョン. 特に意味はない
-  @Deprecated
-  val VERSION = 1
-
   val LOBBY = "p-lobby"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
@@ -37,6 +33,9 @@ object WarsCoreAPI {
   protected[warscore] var DEFAULT_SPAWN: Location = _
 
   protected[warscore] var FIRST_SPAWN: Location = _
+
+  /** データベース */
+  private val database = WarsCore.instance.database
 
   /** ゲーム情報 */
   val games = mutable.HashMap.empty[String, Game]
@@ -81,7 +80,7 @@ object WarsCoreAPI {
           override def success(value: WPlayer): Unit = {
             addScoreBoard(player)
             println(value.disconnect)
-            if(value.disconnect) {
+            if (value.disconnect) {
               value.disconnect = false
               database.setDisconnect(player.getUniqueId.toString, disconnect = false)
               WarsCoreAPI.restoreLobbyInventory(player)
@@ -197,8 +196,6 @@ object WarsCoreAPI {
     }
   }
 
-  private val database = WarsCore.instance.database
-
   /**
    * スコアボードを更新する
    * スコアボードはscoreboardsにすでに存在するものとする
@@ -313,6 +310,12 @@ object WarsCoreAPI {
       .create()
 
 
+  /**
+   * 数字から時間を日本語にして返す
+   *
+   * @param biggy 試合の残り時間。秒
+   * @return 時間、分、秒のタプル
+   */
   def splitToComponentTimes(biggy: BigDecimal): (Int, Int, Int) = {
     val long = biggy.longValue
     val hours = (long / 3600).toInt
@@ -374,27 +377,6 @@ object WarsCoreAPI {
     database.gameLog(gameid, level, message)
   }
 
-  object UI {
-    val PAGE_KEY = new NamespacedKey(WarsCore.instance, "ui-page")
-
-    val PAGE_ICON: Int => ItemStack = (page: Int) => {
-      val i = new ItemStack(Material.WRITABLE_BOOK)
-      val m = i.getItemMeta
-      m.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&e${if (page == 1) "-" else page - 1} &7← &a&l$page &r&7→ &e${page + 1}"))
-      m.setLore(java.util.Arrays.asList("左クリック | - | 右クリック"))
-      m.getPersistentDataContainer.set(PAGE_KEY, PersistentDataType.INTEGER, java.lang.Integer.valueOf(page))
-      i.setItemMeta(m)
-      i
-    }
-
-    val PANEL: ItemStack = {
-      val i = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE)
-      val m = i.getItemMeta
-      m.setDisplayName(" ")
-      i.setItemMeta(m)
-      i
-    }
-  }
 
   /**
    * データベースで指定されているアイテムを取得する
@@ -427,7 +409,7 @@ object WarsCoreAPI {
               case Some(f) => ItemStack.deserializeBytes(f._1)
               case None => EMPTY
             }
-            val array = Array(main, sub, melee, item)
+            val array = Array(main, sub, melee, item, EMPTY, EMPTY, EMPTY, EMPTY, new ItemStack(Material.CLOCK))
 
             player.getInventory.setContents(array)
             wp.weapons = Some(array)
@@ -442,6 +424,7 @@ object WarsCoreAPI {
 
   /**
    * ロビーのインベントリを退避する
+   *
    * @version v1.3.16
    */
   def changeWeaponInventory(wp: WPlayer): Unit = {
@@ -466,7 +449,9 @@ object WarsCoreAPI {
     database.getVInv(player.getUniqueId.toString, new Callback[mutable.Buffer[(Int, Array[Byte])]] {
       override def success(value: mutable.Buffer[(Int, Array[Byte])]): Unit = {
         val contents = Array.fill(36)(new ItemStack(Material.AIR))
-        value.foreach(f => { contents(f._1) = ItemStack.deserializeBytes(f._2) })
+        value.foreach(f => {
+          contents(f._1) = ItemStack.deserializeBytes(f._2)
+        })
         player.getInventory.setStorageContents(contents)
       }
 
@@ -475,4 +460,52 @@ object WarsCoreAPI {
       }
     })
   }
+
+  def addResult(player: Player, result: ItemStack, amount: Int): Unit = {
+    var output = (0, amount)
+    while (output._2 > 64) {
+      output = (output._1 + 1, output._2 - 64)
+    }
+    database.addItem(player.getUniqueId.toString, (1 to output._1)
+      .map(_ => {
+        val i = result.clone()
+        i.setAmount(64)
+        i
+      })
+      .map(i => i.serializeAsBytes()).:+(
+      {
+        val i = result.clone()
+        i.setAmount(output._2)
+        i.serializeAsBytes()
+      }
+    ): _*)
+  }
+
+  /**
+   * 共通して使えるUIを定義する
+   *
+   * @author Emorard
+   */
+  object UI {
+    val PAGE_KEY = new NamespacedKey(WarsCore.instance, "ui-page")
+
+    val PAGE_ICON: Int => ItemStack = (page: Int) => {
+      val i = new ItemStack(Material.WRITABLE_BOOK)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&e${if (page == 1) "-" else page - 1} &7← &a&l$page &r&7→ &e${page + 1}"))
+      m.setLore(java.util.Arrays.asList("左クリック | - | 右クリック"))
+      m.getPersistentDataContainer.set(PAGE_KEY, PersistentDataType.INTEGER, java.lang.Integer.valueOf(page))
+      i.setItemMeta(m)
+      i
+    }
+
+    val PANEL: ItemStack = {
+      val i = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE)
+      val m = i.getItemMeta
+      m.setDisplayName(" ")
+      i.setItemMeta(m)
+      i
+    }
+  }
+
 }

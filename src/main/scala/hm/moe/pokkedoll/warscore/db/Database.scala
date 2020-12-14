@@ -265,5 +265,12 @@ trait Database {
    */
   def applyMySet(uuid: String, slot: Int, callback: Callback[Unit])
 
+  /**
+   * アイテムを自動でストレージに保存する
+   * @param uuid
+   * @param array
+   */
+  def addItem(uuid: String, array: Array[Byte]*)
+
   def close(): Unit
 }
