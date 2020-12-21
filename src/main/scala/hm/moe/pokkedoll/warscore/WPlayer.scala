@@ -16,6 +16,12 @@ class WPlayer(val player: Player) {
 
   var game: Option[Game] = None
 
+  /**
+   * ゲームインスタンスを取得する
+   * @return ゲームに参加していないならnull。必ずチェックすること！
+   */
+  def getGameAsJava: Game = game.orNull
+
   var changeInventory = true
 
   /**

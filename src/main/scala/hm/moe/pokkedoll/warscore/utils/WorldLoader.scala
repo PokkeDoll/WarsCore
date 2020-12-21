@@ -2,7 +2,9 @@ package hm.moe.pokkedoll.warscore.utils
 
 import java.io.{DataOutputStream, File, IOException}
 
-import hm.moe.pokkedoll.warscore.WarsCore
+import hm.moe.pokkedoll.warscore.utils.WorldLoader.reSession
+import hm.moe.pokkedoll.warscore.{Callback, WarsCore}
+import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, World, WorldCreator}
 
 import scala.util.control.Breaks
@@ -40,6 +42,13 @@ object WorldLoader {
       case None =>
         false
     }
+  }
+
+  private def unload(world: World): Boolean = {
+    if(world.getPlayerCount != 0) {
+      world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
+    }
+    Bukkit.unloadWorld(world, false)
   }
 
   import java.io.{BufferedInputStream, BufferedOutputStream, FileOutputStream}
@@ -157,6 +166,40 @@ object WorldLoader {
     }
     // 読み込む
     if (unzip(s"/server/$path.zip", world)) Option(load(world)) else None
+  }
+
+  def asyncLoadWorld(path: String, world: String, callback: Callback[World]): Unit = {
+    asyncUnloadWorld(world)
+    new BukkitRunnable {
+      override def run(): Unit = {
+        if(unzip(s"/server/$path.zip", world)) {
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success(load(world))
+            }
+          }.runTask(WarsCore.instance)
+        } else {
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.failure(null)
+            }
+          }.runTask(WarsCore.instance)
+        }
+      }
+    }.runTaskAsynchronously(WarsCore.instance)
+  }
+
+  def asyncUnloadWorld(world: String): Unit = {
+    val file = new File(s"./$world")
+    Option(Bukkit.getWorld(world)) match {
+      case Some(w) if(unload(w)) | file.exists() =>
+        new BukkitRunnable {
+          override def run(): Unit = {
+            delete(file)
+          }
+        }.runTaskAsynchronously(WarsCore.instance)
+      case _ =>
+    }
   }
 
   /**

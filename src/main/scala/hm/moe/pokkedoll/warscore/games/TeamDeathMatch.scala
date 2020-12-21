@@ -241,6 +241,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   /**
    * ゲームを終了する
    */
+  // TODO addResultの追加
   override def end(): Unit = {
     state = GameState.END
     world.setPVP(false)

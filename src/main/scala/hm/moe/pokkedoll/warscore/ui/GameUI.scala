@@ -56,7 +56,6 @@ object GameUI {
    */
   def openMainUI(player: HumanEntity): Unit = {
     val inv = Bukkit.createInventory(null, 36, GAME_INVENTORY_TITLE)
-    //var slot = (0, 9, 18)
     inv.setItem(0, openGameInventoryIcon)
     inv.setItem(9, new ItemStack(Material.IRON_SWORD))
     val g = games.groupBy(f => f._2.title)
