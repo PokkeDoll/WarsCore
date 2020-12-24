@@ -25,6 +25,11 @@ trait Game {
   val id: String
 
   /**
+   * 読み込むワールドのID.  最初は必ず0
+   */
+  var worldId: String
+
+  /**
    * ゲームのタイトル
    */
   val title: String
@@ -82,7 +87,7 @@ trait Game {
   /**
    * ゲームを読み込む
    */
-  def load(): Unit
+  def load(players: Player*): Unit
 
   /**
    * ゲームを初期化する
@@ -107,6 +112,7 @@ trait Game {
   /**
    * ゲームを削除する
    */
+  @Deprecated
   def delete(): Unit
 
   /**

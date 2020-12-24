@@ -51,11 +51,7 @@ object WeaponUI {
     val i = new ItemStack(Material.CHEST)
     val m = i.getItemMeta
     m.setDisplayName("チェストを開く")
-    m.setLore(java.util.Arrays.asList(
-      "説明1",
-      "説明2",
-      "説明3"
-    ))
+    m.setLore(java.util.Arrays.asList())
     i.setItemMeta(m)
     i
   }
@@ -64,11 +60,7 @@ object WeaponUI {
     val i = new ItemStack(Material.BARRIER)
     val m = i.getItemMeta
     m.setDisplayName(ChatColor.RED + "インベントリを閉じる")
-    m.setLore(java.util.Arrays.asList(
-      "説明1",
-      "説明2",
-      "説明3"
-    ))
+    m.setLore(java.util.Arrays.asList())
     i.setItemMeta(m)
     i
   }
@@ -77,11 +69,7 @@ object WeaponUI {
     val i = new ItemStack(Material.CRAFTING_TABLE)
     val m = i.getItemMeta
     m.setDisplayName("マイセットを開く")
-    m.setLore(java.util.Arrays.asList(
-      "説明1",
-      "説明2",
-      "説明3"
-    ))
+    m.setLore(java.util.Arrays.asList())
     i.setItemMeta(m)
     i
   }
@@ -100,10 +88,34 @@ object WeaponUI {
   def openMainUI(player: HumanEntity): Unit = {
     val inv = Bukkit.createInventory(null, 54, MAIN_UI_TITLE)
     inv.setContents(Array.fill(54)(PANEL))
-    inv.setItem(10, new ItemStack(Material.IRON_SWORD))
-    inv.setItem(19, new ItemStack(Material.SHIELD))
-    inv.setItem(28, new ItemStack(Material.CROSSBOW))
-    inv.setItem(37, new ItemStack(Material.HONEY_BOTTLE))
+    inv.setItem(10, {
+      val i = new ItemStack(Material.IRON_SWORD)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.RED + "" + ChatColor.UNDERLINE + "メイン武器を設定する")
+      i.setItemMeta(m)
+      i
+    })
+    inv.setItem(19, {
+      val i = new ItemStack(Material.SHIELD)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.BLUE + "" + ChatColor.UNDERLINE + "サブ武器を設定する")
+      i.setItemMeta(m)
+      i
+    })
+    inv.setItem(28, {
+      val i = new ItemStack(Material.CROSSBOW)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.GREEN + "" + ChatColor.UNDERLINE + "近接武器を設定する")
+      i.setItemMeta(m)
+      i
+    })
+    inv.setItem(37, {
+      val i = new ItemStack(Material.HONEY_BOTTLE)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.YELLOW + "" + ChatColor.UNDERLINE + "その他を設定する")
+      i.setItemMeta(m)
+      i
+    })
 
     inv.setItem(13, OPEN_CHEST_ICON)
     inv.setItem(14, OPEN_MY_SET_ICON)

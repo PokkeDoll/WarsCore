@@ -112,6 +112,7 @@ class WarsCore extends JavaPlugin {
 
 object WarsCore {
   protected[warscore] var instance: WarsCore = _
-
   val MODERN_TORUS_CHANNEL = "torus:main"
+
+  def log(string: String): Unit = instance.getLogger.info(string)
 }

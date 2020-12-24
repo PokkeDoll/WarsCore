@@ -1,7 +1,8 @@
 package hm.moe.pokkedoll.warscore.games
 
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, WorldLoader}
-import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import net.md_5.bungee.api.ChatColor
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
@@ -13,10 +14,17 @@ import org.bukkit._
  * 1vs1 で行うゲームモード<br>
  * 1点 = キル<br>
  * 5本中3点先取で勝利となる<br>
+ * あまり重要ではないので新機能はどんどん入れていく
  *
+ * @version 2.0
  * @author Emorard
  */
 class Tactics(override val id: String) extends Game {
+  /**
+   * 読み込むワールドのID.  最初は必ず0
+   */
+  var worldId: String = s"${id}-0"
+
   /**
    * ゲームのタイトル
    */
@@ -59,37 +67,37 @@ class Tactics(override val id: String) extends Game {
     locationData = (new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5), new Location(world, red._1, red._2, red._3, red._4, red._5), new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5))
   }
 
-  override def load(): Unit = {
+  override def load(players: Player*): Unit = {
     state = GameState.INIT
     val worlds = WarsCoreAPI.mapinfo.filter(_.gameId == "tdm")
     val info = scala.util.Random.shuffle(worlds).head
-    WorldLoader.syncLoadWorld(s"worlds/${info.mapId}", id) match {
-      case Some(world) =>
+    WorldLoader.asyncLoadWorld(s"worlds/${info.mapId}", worldId, new Callback[World] {
+      override def success(value: World): Unit = {
         mapInfo = info
-        // 一応代入したが別のインスタンス(load, init)中にworldを参照するのは危険！読み込みエラーとなってコンソールを汚しまくる
-        this.world = world
-        //
-        if (!loaded) loaded = true
-        // 無効化を解除
-        if (disable) disable = false
-        // 読み込みに成功したので次のステージへ
+        world = value
+        loaded = true
+        disable = false
         init()
-      case None =>
-        WarsCore.instance.getLogger.severe(s"World loading failed at ${info.mapId} on $id!")
-        // 通常失敗することはないので不具合を拡大させないために無効化する
-        state = GameState.DISABLE
-    }
+        players.foreach(join)
+      }
+
+      override def failure(error: Exception): Unit = {
+        WarsCore.log(s"Failed to load world! id=${id}, worldId=${worldId}, MapInfo.mapId=${info.mapId}")
+        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
+        state = GameState.ERROR
+      }
+    })
   }
 
   override def init(): Unit = {
-    if (state != GameState.INIT) state = GameState.INIT
+    state = GameState.INIT
 
     // getPlayer().clear()よりよいはず
     bossbar.removeAll()
     bossbar.setProgress(1d)
-    bossbar.setTitle(s"(TDM) ${mapInfo.mapName} §7|| §a-1")
+    bossbar.setTitle(s"${mapInfo.mapName} §7|| §a-1")
 
-    first = 0;
+    first = 0
     second = 0
 
     setLocationData()
@@ -103,12 +111,12 @@ class Tactics(override val id: String) extends Game {
   }
 
   override def ready(): Unit = {
-    sendMessage("§a5秒後に試合を始めます！")
+    sendMessage("§a10秒後に試合を始めます！")
     new BukkitRunnable {
       override def run(): Unit = {
         play()
       }
-    }.runTaskLater(WarsCore.instance, 100L)
+    }.runTaskLater(WarsCore.instance, 200L)
   }
 
   override def play(): Unit = {
@@ -124,11 +132,11 @@ class Tactics(override val id: String) extends Game {
     state = GameState.PLAY2
     world.setPVP(true)
     bossbar.setTitle(
-      s"(Tactics) ${mapInfo.mapName} §7|| §a$turn §7|| §a${members.head.player.getName}: $first §f: §a${members.last.player.getName}: $second"
+      s"${mapInfo.mapName} §7|| §a$turn §7|| §a${members.head.player.getName}: $first §f: §a${members.last.player.getName}: $second"
     )
     new BukkitRunnable {
       override def run(): Unit = {
-        if(members.length < 2 || disable) {
+        if (members.length < 2 || disable) {
           end()
           cancel()
         } else if (stop) {
@@ -145,7 +153,7 @@ class Tactics(override val id: String) extends Game {
   private def turnEnd(): Unit = {
     world.setPVP(false)
     state = GameState.END
-    if (Math.abs(first - second) >= 3) {
+    if (first >= 3 || second >= 3) {
       end()
     } else {
       turn += 1
@@ -165,10 +173,10 @@ class Tactics(override val id: String) extends Game {
         "§7                Game Over!                \n" +
         s"              §e$winner §7won!                \n" +
         "§7==========================================\n" +
-        "§95秒後にロビーに戻ります..."
+        ChatColor.of("#000080") + "(> 1.16) Navy Color"
     )
     members.foreach(wp => {
-      if(wp.player.getGameMode == GameMode.SPECTATOR) {
+      if (wp.player.getGameMode == GameMode.SPECTATOR) {
         wp.player.setGameMode(GameMode.SURVIVAL)
         WarsCoreAPI.unfreeze(wp.player)
       }
@@ -176,35 +184,31 @@ class Tactics(override val id: String) extends Game {
       WarsCoreAPI.restoreLobbyInventory(wp.player)
       wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
     })
-    /* ワールド削除処理 */
+    bossbar.removeAll()
+    val beforeId = worldId
+    val beforeMembers = members.map(_.player)
+    worldId = WarsCoreAPI.createWorldHash(this)
+    load(beforeMembers:_*)
     new BukkitRunnable {
       override def run(): Unit = {
-        bossbar.removeAll()
-        delete()
+        WorldLoader.asyncUnloadWorld(beforeId)
       }
     }.runTaskLater(WarsCore.instance, 100L)
   }
 
-  override def delete(): Unit = {
-    WorldLoader.syncUnloadWorld(id)
-    new BukkitRunnable {
-      override def run(): Unit = {
-        load()
-      }
-    }.runTaskLater(WarsCore.instance, 100L)
-  }
+  override def delete(): Unit = return
 
   override def join(wp: WPlayer): Boolean = {
-    if(wp.game.isDefined) {
+    if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
       false
-    } else if(!loaded && state == GameState.DISABLE) {
-      load()
+    } else if (!loaded && state == GameState.DISABLE) {
+      load(wp.player)
       false
-    } else if(!state.join) {
+    } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
       false
-    } else if(members.length >= maxMember) {
+    } else if (members.length >= maxMember) {
       wp.player.sendMessage("§c人数が満員なので参加できません！")
       false
     } else {
@@ -225,7 +229,7 @@ class Tactics(override val id: String) extends Game {
       state match {
         case GameState.WAIT =>
           wp.player.teleport(locationData._1)
-          if(members.length >= 2) {
+          if (members.length >= 2) {
             ready()
           }
         case _ =>
@@ -243,7 +247,7 @@ class Tactics(override val id: String) extends Game {
     // ゲーム情報をリセット
     wp.game = None
     sendMessage(s"${wp.player.getName} が退出しました")
-    if(wp.player.isOnline) {
+    if (wp.player.isOnline) {
       // スコアボードをリセット
       wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
       wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
@@ -308,7 +312,7 @@ class Tactics(override val id: String) extends Game {
       override def run(): Unit = {
         members.foreach(wp => {
           val player = wp.player
-          if(player.getGameMode != GameMode.SPECTATOR) {
+          if (player.getGameMode != GameMode.SPECTATOR) {
             if (members.head == wp) {
               player.teleport(locationData._2)
             } else {

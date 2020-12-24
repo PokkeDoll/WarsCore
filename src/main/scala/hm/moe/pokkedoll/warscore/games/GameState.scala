@@ -12,6 +12,8 @@ object GameState {
   case object PLAY extends GameState("play", "試合中!",true)
   case object PLAY2 extends GameState("play2", "試合中(参加不可)",false)
   case object END extends GameState("end", "終了", false)
+
+  case object ERROR extends GameState("error", "読み込み失敗", false)
 }
 
 protected sealed abstract class GameState(val name: String, val title: String, val join: Boolean)

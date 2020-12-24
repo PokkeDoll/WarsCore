@@ -2,13 +2,13 @@ package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
 import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch}
-import hm.moe.pokkedoll.warscore.ui.WeaponUI.{EMPTY, ITEM, MAIN, MELEE, SUB}
+import hm.moe.pokkedoll.warscore.ui.WeaponUI.EMPTY
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, TagUtil, WorldLoader}
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent}
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{EntityType, Firework, Player}
-import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
@@ -368,11 +368,6 @@ object WarsCoreAPI {
     fw.setFireworkMeta(meta)
   }
 
-  val LEVEL_INFO = "INFO"
-  val LEVEL_WARN = "WARN"
-  val LEVEL_ERROR = "ERROR"
-  val LEVEL_DEBUG = "DEBUG"
-
   def gameLog(gameid: String, level: String, message: String): Unit = {
     database.gameLog(gameid, level, message)
   }
@@ -482,6 +477,27 @@ object WarsCoreAPI {
   }
 
   /**
+   * ワールドの識別子を設定する
+   *
+   * @since v1.6.1
+   * @return 0から999までの**文字列**を返す
+   */
+  def getWorldHash(): String = random.nextInt(1000).toString
+
+  /**
+   * @since v1.6.1
+   * @param game
+   * @return
+   */
+  def createWorldHash(game: Game): String = {
+    val id = game.id + getWorldHash()
+    if(game.worldId == id)
+      createWorldHash(game)
+    else
+      id
+  }
+
+  /**
    * 共通して使えるUIを定義する
    *
    * @author Emorard
@@ -507,5 +523,4 @@ object WarsCoreAPI {
       i
     }
   }
-
 }

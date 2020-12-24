@@ -265,6 +265,8 @@ trait Database {
    */
   def applyMySet(uuid: String, slot: Int, callback: Callback[Unit])
 
+  def deleteMySet(uuid: String, slot: Int)
+
   /**
    * アイテムを自動でストレージに保存する
    * @param uuid

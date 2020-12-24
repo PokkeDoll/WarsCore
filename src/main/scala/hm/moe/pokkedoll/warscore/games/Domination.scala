@@ -85,7 +85,7 @@ class Domination(override val id: String) extends Game {
   /**
    * ゲームを読み込む
    */
-  override def load(): Unit = {
+  override def load(players: Player*): Unit = {
     state = GameState.INIT
     //WarsCoreAPI.mapinfo.foreach(f => println(s"LKIST! + ${f.gameId} ${f.mapId}"))
     val worlds = WarsCoreAPI.mapinfo.filter(_.gameId == "dom")
@@ -752,4 +752,9 @@ class Domination(override val id: String) extends Game {
     }
   }
 
+  /**
+   * 読み込むワールドのID.  最初は必ず0
+   *
+   */
+  override var worldId: String = _
 }

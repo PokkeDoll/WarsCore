@@ -931,4 +931,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
       }
     }.runTaskAsynchronously(plugin)
   }
+
+  override def deleteMySet(uuid: String, slot: Int): Unit = ???
 }
