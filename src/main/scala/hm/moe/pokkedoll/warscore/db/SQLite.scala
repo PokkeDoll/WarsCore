@@ -508,8 +508,8 @@ class SQLite(private val plugin: WarsCore) extends Database {
               // 呪い = useが0以外 = 無視！
               content.filterNot(pred => pred._2.containsEnchantment(Enchantment.BINDING_CURSE)).foreach(f => {
                 ps2.setInt(2, baseSlot + f._1)
-                //println(f._2.serializeAsBytes().mkString("Array(", ", ", ")"))
                 ps2.setBytes(3, f._2.serializeAsBytes())
+                plugin.getLogger.info(s"REPLACE INTO ${baseSlot + f._1}, ${f._2}")
                 ps2.executeUpdate()
                 //println(i)
               })
@@ -524,6 +524,31 @@ class SQLite(private val plugin: WarsCore) extends Database {
         c.close()
       }
     }.runTaskAsynchronously(plugin)
+  }
+
+  /**
+   * すべてのアイテムを読み込む！！
+   * @param uuid UUID
+   */
+  override def getWeaponStorage(uuid: String): Vector[ItemStack] = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    val sql = s"SELECT data FROM weapon WHERE uuid='$uuid'"
+    var vec = Vector.empty[ItemStack]
+    try {
+      val rs = s.executeQuery(sql)
+      while (rs.next()) {
+        vec :+= ItemStack.deserializeBytes(rs.getBytes("data"))
+      }
+      vec
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        vec
+    } finally {
+      s.close()
+      c.close()
+    }
   }
 
   /**
@@ -716,6 +741,73 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
+   * アクティブなマイセットを獲得する
+   *
+   * @param uuid     対象のUUID
+   * @param callback コールバック
+   */
+  override def getActiveMySet(uuid: String, callback: Callback[Array[Array[Byte]]]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val s = c.createStatement()
+        val sql = s"SELECT * FROM myset WHERE uuid='$uuid' and use=1"
+        try {
+          val rs = s.executeQuery(sql)
+          new BukkitRunnable {
+            override def run(): Unit = {
+              callback.success(
+                if (rs.next()) {
+                  Array(
+                    rs.getBytes("main"),
+                    rs.getBytes("sub"),
+                    rs.getBytes("melee"),
+                    rs.getBytes("item"))
+                } else {
+                  Array.empty[Array[Byte]]
+                }
+              )
+            }
+          }.runTask(plugin)
+          rs.close()
+        } catch {
+          case e: SQLException =>
+            e.printStackTrace()
+        } finally {
+          s.close()
+          c.close()
+        }
+      }
+    }
+  }
+
+  override def checkMySet(uuid: String, slot: Int): Boolean = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    val sql = "SELECT CASE WHEN " +
+      s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.main and myset.use=1) IS NOT NULL and " +
+      s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.sub and myset.use=1) IS NOT NULL and " +
+      s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.melee and myset.use=1) IS NOT NULL and " +
+      s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.item and myset.use=1) IS NOT NULL THEN 1" +
+      "ELSE 0 FROM myset"
+    try {
+      val rs = s.executeQuery(sql)
+      if(rs.next()) {
+        rs.getBoolean(0)
+      } else {
+        false
+      }
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        false
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
    * マイセットを読み込む
    *
    * @since v1.4.3
@@ -828,7 +920,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
       override def run(): Unit = {
         val c = hikari.getConnection
         val s = c.createStatement()
-            s"(SELECT data FROM weapon WHERE uuid='$uuid' and use=4))"
+        s"(SELECT data FROM weapon WHERE uuid='$uuid' and use=4))"
         try {
           s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='${uuid}' and use>0")
           s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='${uuid}' and data=(SELECT main FROM myset WHERE uuid='${uuid}' and slot=$slot)")
@@ -894,7 +986,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
         val ps = c.prepareStatement("INSERT INTO weapon(uuid, slot, data) VALUES(?, ?, ?)")
         try {
           val rs = s.executeQuery(s"SELECT MIN(slot), MAX(slot) FROM weapon WHERE uuid=${uuid}")
-          if(rs.next()) {
+          if (rs.next()) {
             ps.setString(1, uuid)
             var min = rs.getInt(0)
             var max = rs.getInt(0)
@@ -906,7 +998,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
                *
                * また「PreparedStatement」は「Statement」クラスを拡張したクラスなので、「Statement」クラスと同じような使用（22〜23行目）の仕方もできます。ただし複数の「PreparedStatement」オブジェクトを組み合わせて1つのバッチ処理を作り上げる事はできません。
                */
-              if(min != 0) {
+              if (min != 0) {
                 min -= 1
                 ps.setInt(2, min)
                 ps.setBytes(3, f)

@@ -3,8 +3,8 @@ package hm.moe.pokkedoll.warscore
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
 import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch}
 import hm.moe.pokkedoll.warscore.ui.WeaponUI.EMPTY
-import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, TagUtil, WorldLoader}
-import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent}
+import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, TagUtil, UpgradeUtil, WorldLoader}
+import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent, TextComponent}
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{EntityType, Firework, Player}
@@ -491,10 +491,34 @@ object WarsCoreAPI {
    */
   def createWorldHash(game: Game): String = {
     val id = game.id + getWorldHash()
-    if(game.worldId == id)
+    if (game.worldId == id)
       createWorldHash(game)
     else
       id
+  }
+
+  def getItemStackName(itemStack: ItemStack): String = {
+    if (itemStack.hasItemMeta && itemStack.getItemMeta.hasDisplayName) {
+      itemStack.getItemMeta.getDisplayName
+    } else {
+      itemStack.getType.toString.replaceAll("_", " ")
+    }
+  }
+
+  def sendActiveMySetInfo(player: Player): Unit = {
+    database.getActiveMySet(player.getUniqueId.toString, new Callback[Array[Array[Byte]]] {
+      override def success(value: Array[Array[Byte]]): Unit = {
+        val m = value.map(f => ItemStack.deserializeBytes(f)).map(getItemStackName)
+        player.sendMessage(
+            ChatColor.GREEN + "設定している武器\n" +
+            ChatColor.GREEN + "メイン武器: " + m(0) + "\n" +
+            ChatColor.GREEN + "サブ武器: " + m(1) + "\n" +
+            ChatColor.GREEN + "近接武器: " + m(2) + "\n" +
+            ChatColor.GREEN + "その他: " + m(3)
+        )
+      }
+      override def failure(error: Exception): Unit = return
+    })
   }
 
   /**
@@ -523,4 +547,5 @@ object WarsCoreAPI {
       i
     }
   }
+
 }

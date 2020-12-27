@@ -187,6 +187,12 @@ trait Database {
   def getPagedWeaponStorage(uuid: String, baseSlot: Int, callback: Callback[mutable.Buffer[(Int, Array[Byte], Int)]])
 
   /**
+   * すべてのアイテムを読み込む！！非同期メソッドで利用
+   * @param uuid UUID
+   */
+  def getWeaponStorage(uuid: String): Vector[ItemStack]
+
+  /**
    * アイテムを保存する。
    *
    * @since v1.2
@@ -239,6 +245,18 @@ trait Database {
    * @param uuid 対象のUUID
    */
   def setDisconnect(uuid: String, disconnect: Boolean)
+
+  /**
+   * アクティブなマイセットを獲得する
+   * @param uuid 対象のUUID
+   * @param callback コールバック
+   */
+  def getActiveMySet(uuid: String, callback: Callback[Array[Array[Byte]]])
+
+  /**
+   *
+   */
+  def checkMySet(uuid: String, slot: Int): Boolean
 
   /**
    * マイセットを読み込む
