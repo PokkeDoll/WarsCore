@@ -13,11 +13,6 @@ class Test(val message: String) {
 
   private val start = System.currentTimeMillis()
 
-  @Deprecated
-  def log(message: String = ""): Unit = {
-    Test.logger.info(message + s"took ${System.currentTimeMillis() - start} ms!")
-  }
-
   def log(ms: Long): Unit = {
     val time = System.currentTimeMillis() - start
     if (time > ms) {

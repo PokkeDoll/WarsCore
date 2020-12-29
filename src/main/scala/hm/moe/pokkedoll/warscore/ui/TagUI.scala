@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.utils.TagUtil
-import hm.moe.pokkedoll.warscore.utils.TagUtil.cache
+import hm.moe.pokkedoll.warscore.utils.TagUtil.{UserTagInfo, cache}
 import hm.moe.pokkedoll.warscore.{Callback, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.entity.Player
@@ -39,87 +39,70 @@ object TagUI {
 
   val UI_TITLE: String = ChatColor.of("#63C7BE") + "TAG Inventory"
 
+  /**
+   * タグインベントリを開く
+   * @param player 対象のプレイヤー
+   * @param page ページ番号
+   * @param holding 所持しているタグだけを表示するか
+   */
   def openUI(player: Player, page: Int = 1, holding: Boolean = false): Unit = {
     val inv = Bukkit.createInventory(null, 54, UI_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, WarsCoreAPI.UI.PANEL))
     val p = WarsCoreAPI.UI.PAGE_ICON(page)
     val baseSlot = (page - 1) * 45
     player.openInventory(inv)
-    WarsCore.instance.database.getTags(player.getUniqueId.toString, new Callback[mutable.Buffer[(String, Boolean)]] {
-      override def success(value: mutable.Buffer[(String, Boolean)]): Unit = {
+    WarsCore.instance.database.getTags(player.getUniqueId.toString, new Callback[Vector[UserTagInfo]] {
+      override def success(value: Vector[UserTagInfo]): Unit = {
         inv.setItem(4, p)
-        val current = value.find(_._2).getOrElse(("", true))
+        // 現在設定しているタグを取得する
+        val current = value.find(_.use).map(_.tagId)
         val currentItem = {
           val i = new ItemStack(Material.NAME_TAG)
           val m = i.getItemMeta
-          m.setDisplayName(TagUtil.getTag(current._1).name)
-          m.setLore(java.util.Arrays.asList("あ"))
+          m.setDisplayName(
+            current match {
+              case Some(v) => ChatColor.GREEN + "現在のタグ: " + TagUtil.getTag(v).name
+              case None => ChatColor.RED + "設定されていません"
+            }
+          )
           i.setItemMeta(m)
           i
         }
         inv.setItem(5, currentItem)
-        // 自身が所持しているタグのみ表示
-        if (holding) {
-          inv.setItem(3, HOLDING_ONLY)
-          val holdTags = TagUtil.cache
-            .filter(f => value.map(f => f._1).contains(f._1))
-            .slice(baseSlot, baseSlot + 45)
-            .toIndexedSeq
-          holdTags.indices.foreach(f => {
-            val item = {
-              val i = new ItemStack(Material.NAME_TAG)
-              val m = i.getItemMeta
-              m.setDisplayName(holdTags(f)._2.name)
-              m.setLore(java.util.Arrays.asList(
-                ChatColor.GREEN + "所持済み",
-                ChatColor.RED + "左クリック: " + ChatColor.GRAY + "タグを切り替える"
-              ))
-              val c = m.getPersistentDataContainer
-              c.set(tagKey, PersistentDataType.STRING, holdTags(f)._1)
-              c.set(tagValue, PersistentDataType.STRING, holdTags(f)._2.name)
-              i.setItemMeta(m)
-              i
-            }
-            inv.setItem(9 + f, item)
+
+        val tags = ((map => if(holding) map.filter(_._2) else map): Map[TagUtil.TagInfo, Boolean] => Map[TagUtil.TagInfo, Boolean])(TagUtil.cache.map(f => (f._2, value.map(_.tagId).contains(f._1)))).slice(baseSlot, baseSlot + 45).toIndexedSeq
+        inv.setItem(3, if(holding) HOLDING_ONLY else ALL)
+
+        tags.indices.foreach(f => {
+          val tag = tags(f)
+          inv.setItem(f + 9, if(tag._2) {
+            val i = new ItemStack(Material.NAME_TAG)
+            val m = i.getItemMeta
+            m.setDisplayName(ChatColor.GRAY + ChatColor.stripColor(tag._1.name))
+            m.setLore(java.util.Arrays.asList(
+              ChatColor.GREEN + "所持済み",
+              ChatColor.RED + "左クリック: " + ChatColor.GRAY + "タグを切り替える"
+            ))
+            val c = m.getPersistentDataContainer
+            c.set(tagKey, PersistentDataType.STRING, tag._1.id)
+            c.set(tagValue, PersistentDataType.STRING, tag._1.name)
+            i.setItemMeta(m)
+            i
+          } else {
+            val i = new ItemStack(Material.PAPER)
+            val m = i.getItemMeta
+            m.setLore(java.util.Arrays.asList(
+              ChatColor.YELLOW + "" + ChatColor.UNDERLINE + s"${tag._1.price} コインが必要です！",
+              "\n",
+              ChatColor.RED + "左クリック + シフト: " + ChatColor.GRAY + "タグを購入する"
+            ))
+            val c = m.getPersistentDataContainer
+            c.set(tagKey, PersistentDataType.STRING, tag._1.id)
+            c.set(tagValue, PersistentDataType.STRING, tag._1.name)
+            i.setItemMeta(m)
+            i
           })
-        } else {
-          inv.setItem(3, ALL)
-          val sliceTags = cache.slice(baseSlot, baseSlot + 45).toIndexedSeq
-          sliceTags.indices.foreach(f => {
-            val tag = sliceTags(f)
-            val item = value.find(p => p._1 == tag._1) match {
-              case Some(_) =>
-                val i = new ItemStack(Material.NAME_TAG)
-                val m = i.getItemMeta
-                m.setDisplayName(ChatColor.GRAY + ChatColor.stripColor(tag._2.name))
-                m.setLore(java.util.Arrays.asList(
-                  ChatColor.GREEN + "所持済み",
-                  ChatColor.RED + "左クリック: " + ChatColor.GRAY + "タグを切り替える"
-                ))
-                val c = m.getPersistentDataContainer
-                c.set(tagKey, PersistentDataType.STRING, tag._1)
-                c.set(tagValue, PersistentDataType.STRING, tag._2.name)
-                i.setItemMeta(m)
-                i
-              case None if !TagUtil.isLimited(tag._2) =>
-                val i = new ItemStack(Material.PAPER)
-                val m = i.getItemMeta
-                m.setLore(java.util.Arrays.asList(
-                  ChatColor.YELLOW + "" + ChatColor.UNDERLINE + s"${tag._2.price} コインが必要です！",
-                  "\n",
-                  ChatColor.RED + "左クリック + シフト: " + ChatColor.GRAY + "タグを購入する"
-                ))
-                val c = m.getPersistentDataContainer
-                c.set(tagKey, PersistentDataType.STRING, tag._1)
-                c.set(tagValue, PersistentDataType.STRING, tag._2.name)
-                i.setItemMeta(m)
-                i
-              case None =>
-                WarsCoreAPI.UI.PANEL
-            }
-            inv.setItem(9 + f, item)
-          })
-        }
+        })
       }
 
       override def failure(error: Exception): Unit = {

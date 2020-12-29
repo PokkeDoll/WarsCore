@@ -7,6 +7,7 @@ import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryCloseEvent, InventoryType}
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, Material, NamespacedKey}
 
 import scala.collection.mutable
@@ -365,7 +366,7 @@ object WeaponUI {
     }
   }
 
-  class MySet(val slot: Int, val title: String, val main: Option[Array[Byte]], val sub: Option[Array[Byte]], val melee: Option[Array[Byte]], val item: Option[Array[Byte]])
+  class MySet(val slot: Int, val title: String, val main: ItemStack, val sub: ItemStack, val melee: ItemStack, val item: ItemStack)
 
   val MY_SET_TITLE = "MySet Settings"
 
@@ -375,65 +376,58 @@ object WeaponUI {
    * @param player
    */
   def openMySetUI(player: HumanEntity): Unit = {
+    val test = new Test("openMySetUI")
     val inv = Bukkit.createInventory(null, 18, MY_SET_TITLE)
     inv.setItem(1, BACK_MAIN_UI)
-    db.getMySet(player.getUniqueId.toString, new Callback[mutable.Buffer[MySet]] {
-      override def success(value: mutable.Buffer[MySet]): Unit = {
-        value.foreach(f => {
-
-          val icon = new ItemStack(Material.LIME_DYE, f.slot + 1)
-
-          val m = icon.getItemMeta
-
-          val main = f.main match {
-            case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
-            case _ => new ItemStack(Material.AIR)
+    player.openInventory(inv)
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val storage = db.getWeaponStorage(player.getUniqueId.toString)
+        val myset = db.getMySet(player.getUniqueId.toString)
+        myset.foreach(f => {
+          val icon = new ItemStack(Material.LIME_DYE)
+          val meta = icon.getItemMeta
+          meta.setDisplayName(ChatColor.GREEN + s"マイセット ${f.slot + 1}")
+          val conv = (item: ItemStack) => {
+            if(item.getType == Material.AIR) {
+              ChatColor.WHITE + "なし"
+            } else {
+              val name = WarsCoreAPI.getItemStackName(item)
+              if(!storage.contains(item)) {
+                icon.setType(Material.RED_DYE)
+                meta.setDisplayName(ChatColor.DARK_RED + "" + ChatColor.BOLD + s"マイセット ${f.slot + 1}")
+                ChatColor.RED + "⚠ " + ChatColor.stripColor(name)
+              } else {
+                name
+              }
+            }
           }
-          val sub = f.sub match {
-            case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
-            case _ => new ItemStack(Material.AIR)
-          }
-          val melee = f.melee match {
-            case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
-            case _ => new ItemStack(Material.AIR)
-          }
-          val item = f.item match {
-            case Some(bytes) if bytes != null => ItemStack.deserializeBytes(bytes)
-            case _ => new ItemStack(Material.AIR)
-          }
-
-          m.setDisplayName(f.title)
-          m.setLore(java.util.Arrays.asList(
-            ChatColor.RED + "右クリックで現在の装備をマイセットに登録",
-            ChatColor.RED + "左クリックでマイセットを装備",
-            s"メイン: ${if (main.hasItemMeta && main.getItemMeta.hasDisplayName) main.getItemMeta.getDisplayName else "なし"}",
-            s"サブ: ${if (sub.hasItemMeta && sub.getItemMeta.hasDisplayName) sub.getItemMeta.getDisplayName else "なし"}",
-            s"近接: ${if (melee.hasItemMeta && melee.getItemMeta.hasDisplayName) melee.getItemMeta.getDisplayName else "なし"}",
-            s"アイテム: ${if (item.hasItemMeta && item.getItemMeta.hasDisplayName) item.getItemMeta.getDisplayName else "なし"}"
+          meta.setLore(java.util.Arrays.asList(
+            ChatColor.GRAY + "[" + ChatColor.DARK_AQUA + "左クリック" + ChatColor.GRAY + "]" + ChatColor.RED + "マイセットを装備する",
+            ChatColor.GRAY + "[" + ChatColor.DARK_AQUA + "右クリック" + ChatColor.GRAY + "]" + ChatColor.RED + "装備をマイセットに登録",
+            s"メイン: ${conv(f.main)}",
+            s"サブ: ${conv(f.sub)}",
+            s"近接: ${conv(f.melee)}",
+            s"アイテム: ${conv(f.item)}"
           ))
-
-          icon.setItemMeta(m)
+          icon.setItemMeta(meta)
           inv.setItem(9 + f.slot, icon)
         })
-        (0 to 8).filterNot(pred => value.map(_.slot).contains(pred)).foreach(f => {
+        (0 to 8).filterNot(pred => myset.map(_.slot).contains(pred)).foreach(f => {
           inv.setItem(9 + f, {
             val i = new ItemStack(Material.GRAY_DYE)
             val m = i.getItemMeta
             m.setDisplayName("設定されていない！")
-            m.setLore(java.util.Arrays.asList(ChatColor.RED + "(動作しない)右クリックで現在の装備をこのマイセットに登録"))
+            m.setLore(java.util.Arrays.asList(
+              ChatColor.GRAY + "[" + ChatColor.DARK_AQUA + "右クリック" + ChatColor.GRAY + "]" + ChatColor.RED + "装備をマイセットに登録"
+            ))
             i.setItemMeta(m)
             i
           })
         })
       }
-
-      override def failure(error: Exception): Unit = {
-        error.printStackTrace()
-        player.sendMessage("エラー！")
-      }
-    })
-
-    player.openInventory(inv)
+    }.runTask(WarsCore.instance)
+    test.log(1)
   }
 
   private def checkedSerialize(i: ItemStack): Array[Byte] = if (i.getType == Material.BARRIER) null else i.serializeAsBytes()

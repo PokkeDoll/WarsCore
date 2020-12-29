@@ -88,4 +88,6 @@ object TagUtil {
       s"TagInfo{id: $id,name: $name,price: $price,rank: $rank"
     }
   }
+
+  class UserTagInfo(val tagId: String, val use: Boolean)
 }

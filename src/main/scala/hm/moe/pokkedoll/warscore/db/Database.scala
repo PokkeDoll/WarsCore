@@ -4,6 +4,7 @@ import java.util.UUID
 
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
+import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -116,7 +117,7 @@ trait Database {
    * @version 2
    * @since v1.3
    */
-  def getTags(uuid: String, callback: Callback[mutable.Buffer[(String, Boolean)]])
+  def getTags(uuid: String, callback: Callback[Vector[UserTagInfo]])
 
 
   /**
@@ -259,13 +260,13 @@ trait Database {
   def checkMySet(uuid: String, slot: Int): Boolean
 
   /**
-   * マイセットを読み込む
+   * マイセットを読み込む。非同期メソッドで使う！！
    *
    * @since v1.4.3
    * @param uuid     対象のUUID
-   * @param callback 順にslot, title, main, sub, melee, itemのタプル
+   * @return
    */
-  def getMySet(uuid: String, callback: Callback[mutable.Buffer[WeaponUI.MySet]])
+  def getMySet(uuid: String): Vector[WeaponUI.MySet]
 
   /**
    * マイセットを設定する

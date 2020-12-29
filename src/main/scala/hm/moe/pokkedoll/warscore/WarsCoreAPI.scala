@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
-import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch}
+import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch, TeamDeathMatch4}
 import hm.moe.pokkedoll.warscore.ui.WeaponUI.EMPTY
 import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, TagUtil, UpgradeUtil, WorldLoader}
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent, TextComponent}
@@ -179,6 +179,9 @@ object WarsCoreAPI {
 
     games.put("tactics-1", new Tactics("tactics-1"))
     if (Bukkit.getWorld("tactics-1") != null) WorldLoader.syncUnloadWorld("tactics-1")
+
+    games.put("tdm4-1", new TeamDeathMatch4("tdm4-1"))
+    if (Bukkit.getWorld("tdm4-1") != null) WorldLoader.syncUnloadWorld("tdm4-1")
   }
 
   /**

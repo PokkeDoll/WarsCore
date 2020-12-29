@@ -68,13 +68,6 @@ object GameUI {
       })
       slot += 9
     })
-    inv.setItem(27, {
-      val i = new ItemStack(Material.SNOWBALL)
-      val m = i.getItemMeta
-      m.setDisplayName(ChatColor.GRAY + "snowball-war")
-      i.setItemMeta(m)
-      i
-    })
     player.openInventory(inv)
   }
 

@@ -7,6 +7,7 @@ import java.util.UUID
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
+import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.apache.commons.lang.SerializationUtils
 import org.bukkit.Material
@@ -216,7 +217,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @version 2
    * @since v1.3
    */
-  override def getTags(uuid: String, callback: Callback[mutable.Buffer[(String, Boolean)]]): Unit = {
+  override def getTags(uuid: String, callback: Callback[Vector[UserTagInfo]]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
 
@@ -227,11 +228,11 @@ class SQLite(private val plugin: WarsCore) extends Database {
         try {
           ps.setString(1, uuid)
           val rs = ps.executeQuery()
-          var buffer = mutable.Buffer.empty[(String, Boolean)]
+          var vec = Vector.empty[UserTagInfo]
           while (rs.next()) {
-            buffer.+=((rs.getString("tagId"), rs.getBoolean("use")))
+            vec :+= new UserTagInfo(rs.getString("tagId"), rs.getBoolean("use"))
           }
-          callback.success(buffer)
+          callback.success(vec)
         } catch {
           case e: SQLException =>
             callback.failure(e)
@@ -528,6 +529,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
 
   /**
    * すべてのアイテムを読み込む！！
+   *
    * @param uuid UUID
    */
   override def getWeaponStorage(uuid: String): Vector[ItemStack] = {
@@ -792,7 +794,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
       "ELSE 0 FROM myset"
     try {
       val rs = s.executeQuery(sql)
-      if(rs.next()) {
+      if (rs.next()) {
         rs.getBoolean(0)
       } else {
         false
@@ -808,66 +810,40 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
-   * マイセットを読み込む
+   * マイセットを読み込む。非同期メソッドで使う！！
    *
    * @since v1.4.3
-   * @param uuid     対象のUUID
-   * @param callback 順にslot, title, main, sub, melee, itemのタプル
+   * @param uuid 対象のUUID
+   * @return
    */
-  override def getMySet(uuid: String, callback: Callback[mutable.Buffer[WeaponUI.MySet]]): Unit = {
-    new BukkitRunnable {
-      override def run(): Unit = {
-        val c = hikari.getConnection
-        val s = c.createStatement()
-        val sql = "SELECT myset.slot, myset.title, " +
-          s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.main) as main, " +
-          s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.sub) as sub, " +
-          s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.melee) as melee, " +
-          s"(SELECT data FROM weapon WHERE uuid='$uuid' and data=myset.item) as item " +
-          s"FROM myset WHERE uuid='$uuid'"
-
-        try {
-          val rs = s.executeQuery(sql)
-          val buffer = mutable.Buffer.empty[WeaponUI.MySet]
-          while (rs.next()) {
-            val slot = rs.getInt("slot")
-            val title = rs.getString("title")
-            val main = rs.getBytes("main")
-            val sub = rs.getBytes("sub")
-            val melee = rs.getBytes("melee")
-            val item = rs.getBytes("item")
-
-            // println(s"${slot} + $title")
-            buffer.+=(
-              new WeaponUI.MySet(
-                slot,
-                title,
-                Option(main),
-                Option(sub),
-                Option(melee),
-                Option(item)
-              )
-            )
-          }
-          new BukkitRunnable {
-            override def run(): Unit = {
-              callback.success(buffer)
-            }
-          }.runTask(plugin)
-        } catch {
-          case e: SQLException =>
-            new BukkitRunnable {
-              override def run(): Unit = {
-                callback.failure(e)
-              }
-            }.runTask(plugin)
-        } finally {
-          s.close()
-          c.close()
-        }
+  override def getMySet(uuid: String): Vector[WeaponUI.MySet] = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    val sql = s"SELECT * FROM myset WHERE uuid='$uuid'"
+    var vec = Vector.empty[WeaponUI.MySet]
+    try {
+      val rs = s.executeQuery(sql)
+      while (rs.next()) {
+        vec :+= new WeaponUI.MySet(
+          rs.getInt("slot"),
+          rs.getString("title"),
+          if(rs.getBytes("main") != null) ItemStack.deserializeBytes(rs.getBytes("main")) else new ItemStack(Material.AIR),
+          if(rs.getBytes("sub") != null) ItemStack.deserializeBytes(rs.getBytes("sub")) else new ItemStack(Material.AIR),
+          if(rs.getBytes("melee") != null)ItemStack.deserializeBytes(rs.getBytes("melee")) else new ItemStack(Material.AIR),
+          if(rs.getBytes("item") != null)ItemStack.deserializeBytes(rs.getBytes("item")) else new ItemStack(Material.AIR)
+        )
       }
+      vec
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        vec
+    } finally {
+      s.close()
+      c.close()
     }
-  }.runTaskAsynchronously(plugin)
+  }
+
 
   /**
    * マイセットを設定する
