@@ -1,15 +1,12 @@
 package hm.moe.pokkedoll.warscore.db
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-import java.sql.SQLException
-import java.util.UUID
+import java.sql.{ResultSet, SQLException}
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
-import org.apache.commons.lang.SerializationUtils
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
@@ -827,10 +824,10 @@ class SQLite(private val plugin: WarsCore) extends Database {
         vec :+= new WeaponUI.MySet(
           rs.getInt("slot"),
           rs.getString("title"),
-          if(rs.getBytes("main") != null) ItemStack.deserializeBytes(rs.getBytes("main")) else new ItemStack(Material.AIR),
-          if(rs.getBytes("sub") != null) ItemStack.deserializeBytes(rs.getBytes("sub")) else new ItemStack(Material.AIR),
-          if(rs.getBytes("melee") != null)ItemStack.deserializeBytes(rs.getBytes("melee")) else new ItemStack(Material.AIR),
-          if(rs.getBytes("item") != null)ItemStack.deserializeBytes(rs.getBytes("item")) else new ItemStack(Material.AIR)
+          if (rs.getBytes("main") != null) ItemStack.deserializeBytes(rs.getBytes("main")) else new ItemStack(Material.AIR),
+          if (rs.getBytes("sub") != null) ItemStack.deserializeBytes(rs.getBytes("sub")) else new ItemStack(Material.AIR),
+          if (rs.getBytes("melee") != null) ItemStack.deserializeBytes(rs.getBytes("melee")) else new ItemStack(Material.AIR),
+          if (rs.getBytes("item") != null) ItemStack.deserializeBytes(rs.getBytes("item")) else new ItemStack(Material.AIR)
         )
       }
       vec
@@ -1001,4 +998,161 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   override def deleteMySet(uuid: String, slot: Int): Unit = ???
+
+  /**
+   * すべてのコインを取得する
+   *
+   * @param uuid 対象のUUID
+   * @param t    行のタイプ
+   */
+  override def getCoin(uuid: String, t: Array[String]): Map[String, Int] = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    var map = Map.empty[String, Int]
+    try {
+      val column = if (t.isEmpty) CoinDB.PC else t.mkString(", ")
+      val rs = s.executeQuery(s"SELECT $column FROM coin WHERE uuid='$uuid'")
+      if (rs.next()) {
+        (if (t.isEmpty) Array(CoinDB.PC) else t).foreach(f => {
+          map += f -> rs.getInt(f)
+        })
+      }
+      rs.close()
+      map
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        map
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
+   * 金だけを取得する
+   *
+   * @param uuid 対象のUUID
+   */
+  override def getMoney(uuid: String): Int = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    try {
+      val rs = s.executeQuery(s"SELECT ${CoinDB.PC} FROM coin WHERE uuid='$uuid'")
+      if (rs.next()) {
+        rs.getInt(1)
+      } else {
+        0
+      }
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        0
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
+   * 武器を取得する
+   *
+   * @param uuid 対象のUUID
+   * @param t    武器のタイプ
+   * @return 武器たち
+   */
+  override def getWeapons(uuid: String, t: String): Seq[String] = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    var seq = IndexedSeq.empty[String]
+    try {
+      val rs = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and type='$t'")
+      while (rs.next()) {
+        seq :+= rs.getString(1)
+      }
+      rs.close()
+      seq
+    } catch {
+      case _: SQLException =>
+        seq
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
+   * 現在設定されている武器のリストを取得する
+   *
+   * @param uuid 対象のUUID
+   * @return 武器のタプル(メイン, サブ, 近接, アイテム)
+   */
+  override def getActiveWeapon(uuid: String): (String, String, String, String) = {
+    val c = hikari.getConnection
+    val ps = c.prepareStatement("SELECT data FROM weapon WHERE use=? and uuid=? and type=?")
+    try {
+      ps.setInt(1, 1)
+      ps.setString(2, uuid)
+      val gr = ((rs: ResultSet) => if (rs.next()) rs.getString(1) else "")
+      ps.setString(3, WeaponDB.PRIMARY)
+      val primary = gr(ps.executeQuery())
+      ps.setString(3, WeaponDB.SECONDARY)
+      val secondary = gr(ps.executeQuery())
+      ps.setString(3, WeaponDB.MELEE)
+      val melee = gr(ps.executeQuery())
+      ps.setString(3, WeaponDB.ITEM)
+      val item = gr(ps.executeQuery())
+      (primary, secondary, melee, item)
+    } catch {
+      case _: SQLException =>
+        ("", "", "", "")
+    } finally {
+      ps.close()
+      c.close()
+    }
+  }
+
+  /**
+   * 武器をセットする
+   *
+   * @param uuid 対象のUUID
+   * @param t    武器のタイプ
+   * @param data 武器のデータ
+   */
+  override def setWeapon(uuid: String, t: String, data: String): Unit = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    try {
+      s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and type='$t'")
+      s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and type='$t' and data='$data'")
+      s.executeBatch()
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
+   * 武器を追加する
+   *
+   * @param uuid 対象のUUID
+   * @param t    武器のタイプ
+   * @param data 武器のデータ
+   */
+  override def addWeapon(uuid: String, t: String, data: String): Unit = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    try {
+      s.executeUpdate(s"INSERT INTO weapon(uuid, type, data) VALUES('$uuid', '$t', '$data')")
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
 }

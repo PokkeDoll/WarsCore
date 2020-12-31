@@ -7,6 +7,7 @@ import org.bukkit.Bukkit
 import org.bukkit.command.{Command, CommandExecutor, CommandSender, TabExecutor}
 import org.bukkit.entity.Player
 
+@Deprecated
 class PresentCommand extends CommandExecutor with TabExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {

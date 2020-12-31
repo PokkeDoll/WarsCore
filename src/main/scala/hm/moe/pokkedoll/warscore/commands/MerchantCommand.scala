@@ -7,7 +7,7 @@ import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
 
 import scala.util.{Failure, Success, Try}
-
+@Deprecated
 class MerchantCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {

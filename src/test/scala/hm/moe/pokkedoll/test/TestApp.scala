@@ -10,7 +10,7 @@ object TestApp extends App {
 
   ss.indices.foreach(f => println(f + 9))
    */
-
+/*
   var dummy2 = Vector.empty[Int]
   var i = 0
   while (i <= 100) {
@@ -18,4 +18,9 @@ object TestApp extends App {
     dummy2 :+= i
   }
   print(dummy2)
+ */
+  var a = Seq.empty[Int]
+  a :+= 5
+  a :+= 99
+  println(a)
 }

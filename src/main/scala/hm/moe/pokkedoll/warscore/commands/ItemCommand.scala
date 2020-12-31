@@ -12,8 +12,18 @@ class ItemCommand extends CommandExecutor {
         player.sendMessage(ChatColor.GRAY + "Wars互換モード: false [since v0.26.1]")
         val v0 = if (args.length == 0) "" else args(0)
         if (v0.equalsIgnoreCase("list")) {
-          val s = new StringBuilder("アイテム一覧\n")
-          ItemUtil.config.getKeys(false).forEach(key => s.append(s"$key\n"))
+          val param = if(args.length > 1) args(1) else ""
+          val s = new StringBuilder(s"アイテム一覧 (パラメーター: $param\n")
+          if(param == "-w") {
+            ItemUtil.cache
+              .filter(pred => pred._2.getType == Material.IRON_HOE ||
+                pred._2.getType == Material.DIAMOND_SWORD ||
+                pred._2.getType == Material.STONE_HOE)
+              .keys
+              .foreach(key => s.append(s"$key\n"))
+          } else {
+            ItemUtil.config.getKeys(false).forEach(key => s.append(s"$key\n"))
+          }
           sender.sendMessage(s.toString())
         } else if (args.length > 1 && v0.equalsIgnoreCase("set")) {
           val item = player.getInventory.getItemInMainHand

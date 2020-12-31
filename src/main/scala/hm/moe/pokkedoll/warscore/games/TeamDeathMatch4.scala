@@ -50,7 +50,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
   /**
    * 受け入れる最大人数
    */
-  override val maxMember: Int = 4
+  override val maxMember: Int = 8
 
   /**
    * ワールド。でも使うかわからん...
@@ -331,8 +331,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
         s"マップ名: &a${mapInfo.mapName}\n" +
           s"製作者: &a${mapInfo.authors}\n" +
           s"退出する場合は&a/game quit&7もしくは&a/game leave\n" +
-          "&a/invite <player>&fで他プレイヤーを招待することができます!"
-      )
+          "&a/invite <player>&fで他プレイヤーを招待することができます!")
       wp.game = Some(this)
       // インベントリを変更
       WarsCoreAPI.changeWeaponInventory(wp)

@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
 import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch, TeamDeathMatch4}
 import hm.moe.pokkedoll.warscore.ui.WeaponUI.EMPTY
-import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, TagUtil, UpgradeUtil, WorldLoader}
+import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MapInfo, RankManager, TagUtil, UpgradeUtil, WorldLoader}
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent, TextComponent}
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
@@ -303,6 +303,7 @@ object WarsCoreAPI {
 
   import net.md_5.bungee.api.ChatColor
 
+  @Deprecated
   val NEWS: Array[BaseComponent] =
     new ComponentBuilder("= = = = = = = = = = =").color(ChatColor.GREEN).underlined(true)
       .append("お知らせ").underlined(false)
@@ -311,6 +312,33 @@ object WarsCoreAPI {
       // .append("* ").reset().append("不具合情報/開発状況はマイルストーンにまとめています！\n").event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll/-/milestones/1"))
       .append("* ").reset().append("βテスト開催中！  /game よりゲームに参加！")
       .create()
+
+  def sendNews4User(player: Player): Unit = {
+    player.sendMessage(
+      new ComponentBuilder().append(createHeader("お知らせ"))
+        .append("* ").reset().append("大規模更新中。裏のシステム以外は変わらない\n")
+        .append("* ").reset().append("武器の性能を纏めました(12/25、自動生成)。閲覧するにはクリック！").event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://docs.google.com/spreadsheets/d/1rcf_mYWRa-plweVOn-xSYNETjLKy7B_njrDc01g5ZIc/edit#gid=2015109485"))
+        .create(): _*
+    )
+  }
+
+  def sendNews4Staff(player: Player): Unit = {
+
+  }
+
+  /**
+   * ヘッダーを作成する。改行もしてくれる
+   *
+   * @param string ヘッダーのタイトル
+   * @param color  色
+   * @return
+   */
+  def createHeader(string: String, color: ChatColor = ChatColor.GREEN): Array[BaseComponent] = {
+    new ComponentBuilder("= = = = = = = = = =").color(color).underlined(true)
+      .append(" " + string + " ").underlined(false)
+      .append("= = = = = = = = = =").underlined(true)
+      .append("\n").reset().create()
+  }
 
 
   /**
@@ -382,6 +410,7 @@ object WarsCoreAPI {
    * @param wp     対象のプレイヤー
    * @param cached WPlayerに保存されているキャッシュを利用する
    */
+  @Deprecated
   def loadWeaponInventory(wp: WPlayer, cached: Boolean = true): Unit = {
     val player = wp.player
     wp.weapons match {
@@ -429,7 +458,20 @@ object WarsCoreAPI {
     val player = wp.player
     database.setVInv(player.getUniqueId.toString, player.getInventory.getStorageContents, new Callback[Unit] {
       override def success(value: Unit): Unit = {
-        loadWeaponInventory(wp)
+        val weapons = database.getActiveWeapon(player.getUniqueId.toString)
+        val get = (key: String) => ItemUtil.getItem(key).getOrElse(new ItemStack(Material.AIR))
+        player.getInventory.setContents(
+          Array(
+            get(weapons._1),
+            get(weapons._2),
+            get(weapons._3),
+            get(weapons._4),
+            new ItemStack(Material.AIR),
+            new ItemStack(Material.AIR),
+            new ItemStack(Material.AIR),
+            new ItemStack(Material.AIR),
+            new ItemStack(Material.CLOCK)
+          ))
       }
 
       override def failure(error: Exception): Unit = {
@@ -513,15 +555,45 @@ object WarsCoreAPI {
       override def success(value: Array[Array[Byte]]): Unit = {
         val m = value.map(f => ItemStack.deserializeBytes(f)).map(getItemStackName)
         player.sendMessage(
-            ChatColor.GREEN + "設定している武器\n" +
+          ChatColor.GREEN + "設定している武器\n" +
             ChatColor.GREEN + "メイン武器: " + m(0) + "\n" +
             ChatColor.GREEN + "サブ武器: " + m(1) + "\n" +
             ChatColor.GREEN + "近接武器: " + m(2) + "\n" +
             ChatColor.GREEN + "その他: " + m(3)
         )
       }
+
       override def failure(error: Exception): Unit = return
     })
+  }
+
+  def debug(player: Player, msg: String): Unit = {
+    player.sendMessage(ChatColor.RED + "【デバッグ】 " + msg)
+  }
+
+  def info(player: Player, msg: String): Unit = {
+    player.sendMessage(ChatColor.BLUE + "【情報】 " + msg)
+  }
+
+  def error(player: Player, msg: String): Unit = {
+    player.sendMessage(ChatColor.RED + "【エラー】 " + msg)
+  }
+
+  val weaponUnlockNameKey = new NamespacedKey(WarsCore.instance, "weapon-unlock-name")
+  val weaponUnlockTypeKey = new NamespacedKey(WarsCore.instance, "weapon-unlock-type")
+
+  def unlockWeapon(player: Player, t: String, weapon: String): Unit = {
+    database.addWeapon(player.getUniqueId.toString, t, weapon)
+
+  }
+
+  def parseInt(string: String): Int = {
+    try {
+      string.toInt
+    } catch {
+      case _: NumberFormatException =>
+        -1
+    }
   }
 
   /**

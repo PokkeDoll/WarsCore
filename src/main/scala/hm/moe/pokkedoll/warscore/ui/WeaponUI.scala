@@ -1,5 +1,7 @@
 package hm.moe.pokkedoll.warscore.ui
 
+import hm.moe.pokkedoll.warscore.db.WeaponDB
+import hm.moe.pokkedoll.warscore.utils.ItemUtil
 import hm.moe.pokkedoll.warscore.{Callback, Test, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
@@ -76,7 +78,6 @@ object WeaponUI {
   }
 
 
-
   val MAIN: String = ChatColor.translateAlternateColorCodes('&', "&e&lMain")
   val SUB: String = ChatColor.translateAlternateColorCodes('&', "&e&lSub")
   val MELEE: String = ChatColor.translateAlternateColorCodes('&', "&e&lMelee")
@@ -87,74 +88,33 @@ object WeaponUI {
   val MAIN_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
 
   def openMainUI(player: HumanEntity): Unit = {
-    val inv = Bukkit.createInventory(null, 54, MAIN_UI_TITLE)
-    inv.setContents(Array.fill(54)(PANEL))
-    inv.setItem(10, {
-      val i = new ItemStack(Material.IRON_SWORD)
-      val m = i.getItemMeta
-      m.setDisplayName(ChatColor.RED + "" + ChatColor.UNDERLINE + "メイン武器を設定する")
-      i.setItemMeta(m)
-      i
-    })
-    inv.setItem(19, {
-      val i = new ItemStack(Material.SHIELD)
-      val m = i.getItemMeta
-      m.setDisplayName(ChatColor.BLUE + "" + ChatColor.UNDERLINE + "サブ武器を設定する")
-      i.setItemMeta(m)
-      i
-    })
-    inv.setItem(28, {
-      val i = new ItemStack(Material.CROSSBOW)
-      val m = i.getItemMeta
-      m.setDisplayName(ChatColor.GREEN + "" + ChatColor.UNDERLINE + "近接武器を設定する")
-      i.setItemMeta(m)
-      i
-    })
-    inv.setItem(37, {
-      val i = new ItemStack(Material.HONEY_BOTTLE)
-      val m = i.getItemMeta
-      m.setDisplayName(ChatColor.YELLOW + "" + ChatColor.UNDERLINE + "その他を設定する")
-      i.setItemMeta(m)
-      i
-    })
+    val inv = Bukkit.createInventory(null, 27, MAIN_UI_TITLE)
+    inv.setContents(Array.fill(27)(PANEL))
 
-    inv.setItem(13, OPEN_CHEST_ICON)
-    inv.setItem(14, OPEN_MY_SET_ICON)
-    inv.setItem(16, CLOSE_INVENTORY_ICON)
+    inv.setItem(15, OPEN_CHEST_ICON)
+    inv.setItem(16, OPEN_MY_SET_ICON)
+    inv.setItem(17, CLOSE_INVENTORY_ICON)
 
     player.openInventory(inv)
-    db.getWeapon(player.getUniqueId.toString, new Callback[mutable.Buffer[(Array[Byte], Int)]] {
-      override def success(value: mutable.Buffer[(Array[Byte], Int)]): Unit = {
-        val main = value.find(p => p._2 == 1) match {
-          case Some(f) => ItemStack.deserializeBytes(f._1)
-          case None => EMPTY
-        }
-        val sub = value.find(p => p._2 == 2) match {
-          case Some(f) => ItemStack.deserializeBytes(f._1)
-          case None => EMPTY
-        }
-        val melee = value.find(p => p._2 == 3) match {
-          case Some(f) => ItemStack.deserializeBytes(f._1)
-          case None => EMPTY
-        }
-        val item = value.find(p => p._2 == 4) match {
-          case Some(f) => ItemStack.deserializeBytes(f._1)
-          case None => EMPTY
-        }
 
-        inv.setItem(11, main)
-        inv.setItem(20, sub)
-        inv.setItem(29, melee)
-        inv.setItem(38, item)
-
-        WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).weapons = Some(Array(main, sub, melee, item))
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val weapons = db.getActiveWeapon(player.getUniqueId.toString)
+        val weaponIcon = (item: ItemStack) => {
+          val i = item.clone()
+          val m = i.getItemMeta
+          m.setLore(java.util.Arrays.asList(
+            ChatColor.RED + "" + ChatColor.UNDERLINE + "変更するにはクリックしてください"
+          ))
+          i.setItemMeta(m)
+          i
+        }
+        inv.setItem(10, weaponIcon(ItemUtil.getItem(weapons._1).getOrElse(EMPTY)))
+        inv.setItem(11, weaponIcon(ItemUtil.getItem(weapons._2).getOrElse(EMPTY)))
+        inv.setItem(12, weaponIcon(ItemUtil.getItem(weapons._3).getOrElse(EMPTY)))
+        inv.setItem(13, weaponIcon(ItemUtil.getItem(weapons._4).getOrElse(EMPTY)))
       }
-
-      override def failure(error: Exception): Unit = {
-        error.printStackTrace()
-        player.sendMessage("エラー！")
-      }
-    })
+    }.runTask(WarsCore.instance)
   }
 
   /**
@@ -165,16 +125,16 @@ object WeaponUI {
   def onClickMainUI(e: InventoryClickEvent): Unit = {
     e.setCancelled(true)
     val player = e.getWhoClicked
-    if(WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
+    if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     e.getSlot match {
-      case 10 => openSettingUI(player)
-      case 19 => openSettingUI(player, weaponType = 1)
-      case 28 => openSettingUI(player, weaponType = 2)
-      case 37 => openSettingUI(player, weaponType = 3)
+      case 10 => openSettingUI(player, weaponType = WeaponDB.PRIMARY)
+      case 11 => openSettingUI(player, weaponType = WeaponDB.SECONDARY)
+      case 12 => openSettingUI(player, weaponType = WeaponDB.MELEE)
+      case 13 => openSettingUI(player, weaponType = WeaponDB.ITEM)
 
-      case 13 => openWeaponStorageUI(player)
-      case 14 => openMySetUI(player)
-      case 16 => player.closeInventory()
+      //case 15 => openWeaponStorageUI(player)
+      //case 16 => openMySetUI(player)
+      case 17 => player.closeInventory()
       case _ =>
     }
   }
@@ -194,7 +154,7 @@ object WeaponUI {
   val WEAPON_CHEST_UI_TITLE = "Weapon Chest"
 
   def openWeaponStorageUI(player: HumanEntity, page: Int = 1): Unit = {
-    if(WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
+    if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     val inv = Bukkit.createInventory(null, 54, WEAPON_CHEST_UI_TITLE)
     (0 to 8).filterNot(f => f == 4 || f == 0).foreach(inv.setItem(_, PANEL))
 
@@ -227,11 +187,15 @@ object WeaponUI {
   val SETTING_TITLE = "Weapon Settings"
 
   val weaponTypeKey = new NamespacedKey(WarsCore.instance, "weapon-type")
+  @Deprecated
   val weaponUsingKey = new NamespacedKey(WarsCore.instance, "weapon-using")
 
+  @Deprecated
   private val usedSlotKey = new NamespacedKey(WarsCore.instance, "weapon-used-slot")
-
+  @Deprecated
   private val usedTypeKey = new NamespacedKey(WarsCore.instance, "weapon-used-type")
+
+  private val weaponKey = new NamespacedKey(WarsCore.instance, "weapon-key")
 
   /**
    * 武器設定UIを開く
@@ -239,53 +203,65 @@ object WeaponUI {
    * @param player 対象のプレイヤー
    * @param page   ページ番号
    */
-  def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: Int = 0): Unit = {
-    if(WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
+  def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: String): Unit = {
+    if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
 
-    val p = {
-      val ico = pageIcon(page)
-      val m = ico.getItemMeta
-      m.getPersistentDataContainer.set(weaponTypeKey, PersistentDataType.INTEGER, java.lang.Integer.valueOf(weaponType))
-      ico.setItemMeta(m)
-      ico
-    }
+    val p = pageIcon(page)
+
     val baseSlot = (page - 1) * 45
-    db.getPagedWeaponStorage(player.getUniqueId.toString, baseSlot, new Callback[mutable.Buffer[(Int, Array[Byte], Int)]] {
-      // Slot, Item(Byte), Use の順！
-      override def success(value: mutable.Buffer[(Int, Array[Byte], Int)]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val weapons = db.getWeapons(player.getUniqueId.toString, weaponType).slice(baseSlot, baseSlot + 45)
         inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
         val barrier = new ItemStack(Material.BARRIER)
-        val mm = barrier.getItemMeta
-        mm.getPersistentDataContainer.set(usedTypeKey, PersistentDataType.INTEGER, java.lang.Integer.valueOf(weaponType + 1))
-        value.foreach(f => {
-          val i = if (f._2 == null) PANEL else ItemStack.deserializeBytes(f._2)
-          if (i.getType != Material.AIR && i.hasItemMeta) {
-            val m = i.getItemMeta
-            if (m.hasLore && m.getLore.stream().anyMatch(pred => pred.contains(WEAPON_TYPES(weaponType)))) {
-              if (f._3 != 0) {
-                i.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 10)
-                mm.getPersistentDataContainer.set(usedSlotKey, PersistentDataType.INTEGER, java.lang.Integer.valueOf(f._1))
-              }
-              inv.setItem(9 + f._1 - baseSlot, i)
-            } else {
-              inv.setItem(9 + f._1 - baseSlot, PANEL)
-            }
-          } else {
-            inv.setItem(9 + f._1 - baseSlot, PANEL)
-          }
+        weapons.indices.foreach(f => {
+          val key = weapons(f)
+          val i = ItemUtil.getItem(key).getOrElse(EMPTY).clone()
+          val m = i.getItemMeta
+          m.getPersistentDataContainer.set(weaponKey, PersistentDataType.STRING, key)
+          m.getPersistentDataContainer.set(weaponTypeKey, PersistentDataType.STRING, weaponType)
+          i.setItemMeta(m)
+          inv.setItem(9 + f, i)
         })
-        barrier.setItemMeta(mm)
         inv.setItem(0, barrier)
       }
-
-      override def failure(error: Exception): Unit = {
-        (9 until 54).foreach(inv.setItem(_, ERROR_PANEL))
-      }
-    })
+    }.runTask(WarsCore.instance)
     player.openInventory(inv)
+  }
+
+  /**
+   * openSettingUIに対して呼ばれる
+   *
+   * @param e InventoryClickEvent
+   */
+  def onClickSettingUI(e: InventoryClickEvent): Unit = {
+    e.setCancelled(true)
+    val player = e.getWhoClicked
+    val inv = e.getClickedInventory
+    inv.getType match {
+      case InventoryType.CHEST =>
+        val i = e.getCurrentItem
+        val pageItem = inv.getItem(4)
+        val usedSlotItem = inv.getItem(0)
+        // バリアブロック。インベントリを閉じる
+        if (e.getSlot == 0) {
+          player.closeInventory()
+          // 額縁。メインメニューに戻る
+        } else if (e.getSlot == 1) {
+          openMainUI(player)
+        } else if(i != null && i.getType != Material.AIR && i.getType != PANEL.getType) {
+          val meta = i.getItemMeta
+          val per = meta.getPersistentDataContainer
+          if(per.has(weaponKey, PersistentDataType.STRING)) {
+            db.setWeapon(player.getUniqueId.toString, t = per.get(weaponTypeKey, PersistentDataType.STRING), data = per.get(weaponKey, PersistentDataType.STRING))
+            openMainUI(player)
+          }
+        }
+      case _ =>
+    }
   }
 
   def onClickWeaponStorageUI(e: InventoryClickEvent): Unit = {
@@ -316,40 +292,7 @@ object WeaponUI {
     }
   }
 
-  def onClickSettingUI(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    val player = e.getWhoClicked
-    val inv = e.getClickedInventory
-    inv.getType match {
-      case InventoryType.CHEST =>
-        val i = e.getCurrentItem
-        val pageItem = inv.getItem(4)
-        val usedSlotItem = inv.getItem(0)
-        if (e.getSlot == 0) {
-          player.closeInventory()
-        } else if (e.getSlot == 1) {
-          openMainUI(player)
-        } else if (pageItem != null && usedSlotItem != null && i != null && i.getType != Material.AIR && i.getType != PANEL.getType && e.getSlot > 8 && !i.containsEnchantment(Enchantment.BINDING_CURSE)) {
-          val page = pageItem.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
-          val usedSlot = usedSlotItem.getItemMeta.getPersistentDataContainer.get(usedSlotKey, PersistentDataType.INTEGER)
-          val usedType = usedSlotItem.getItemMeta.getPersistentDataContainer.get(usedTypeKey, PersistentDataType.INTEGER)
 
-          val baseSlot = (page - 1) * 45
-          // println(s"page = $page, usedSlot = $usedSlot, usedType = $usedType")
-          db.setPagedWeapon(player.getUniqueId.toString, baseSlot + (e.getSlot - 9), baseSlot + usedSlot, usedType, new Callback[Unit] {
-            override def success(value: Unit): Unit = {
-              openMainUI(player)
-            }
-
-            override def failure(error: Exception): Unit = {
-              error.printStackTrace()
-              player.sendMessage("エラー！")
-            }
-          })
-        }
-      case _ =>
-    }
-  }
 
   // 1 ~ 8までは使用済みなのを忘れずに！
   def onCloseWeaponStorageUI(e: InventoryCloseEvent): Unit = {
@@ -389,11 +332,11 @@ object WeaponUI {
           val meta = icon.getItemMeta
           meta.setDisplayName(ChatColor.GREEN + s"マイセット ${f.slot + 1}")
           val conv = (item: ItemStack) => {
-            if(item.getType == Material.AIR) {
+            if (item.getType == Material.AIR) {
               ChatColor.WHITE + "なし"
             } else {
               val name = WarsCoreAPI.getItemStackName(item)
-              if(!storage.contains(item)) {
+              if (!storage.contains(item)) {
                 icon.setType(Material.RED_DYE)
                 meta.setDisplayName(ChatColor.DARK_RED + "" + ChatColor.BOLD + s"マイセット ${f.slot + 1}")
                 ChatColor.RED + "⚠ " + ChatColor.stripColor(name)

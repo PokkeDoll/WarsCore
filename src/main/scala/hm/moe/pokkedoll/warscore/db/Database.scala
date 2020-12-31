@@ -21,7 +21,7 @@ import scala.collection.mutable
  * @author Emorard
  * @version 3.0
  */
-trait Database {
+trait Database extends CoinDB with WeaponDB {
   /**
    * @see hasUUID(uuid: String): Boolean
    */
@@ -62,6 +62,7 @@ trait Database {
    *
    * @return
    */
+  @Deprecated
   def getInt(table: String, column: String, uuid: String): Option[Int]
 
   /**
@@ -211,6 +212,7 @@ trait Database {
    * @param slot     新しく設定するスロット
    * @param usedSlot 以前設定していた純粋なスロット(ベースページとかインベントリ上段の処理を考える必要がない)
    */
+  @Deprecated
   def setPagedWeapon(uuid: String, slot: Int, usedSlot: Int, usedType: Int, callback: Callback[Unit])
 
   /**
@@ -219,6 +221,7 @@ trait Database {
    * @param uuid
    * @param callback (アイテムのバイトデータ, 使用タイプ)
    */
+  @Deprecated
   def getWeapon(uuid: String, callback: Callback[mutable.Buffer[(Array[Byte], Int)]])
 
   /**
@@ -252,11 +255,13 @@ trait Database {
    * @param uuid 対象のUUID
    * @param callback コールバック
    */
+  @Deprecated
   def getActiveMySet(uuid: String, callback: Callback[Array[Array[Byte]]])
 
   /**
    *
    */
+  @Deprecated
   def checkMySet(uuid: String, slot: Int): Boolean
 
   /**
@@ -266,6 +271,7 @@ trait Database {
    * @param uuid     対象のUUID
    * @return
    */
+  @Deprecated
   def getMySet(uuid: String): Vector[WeaponUI.MySet]
 
   /**
@@ -276,14 +282,17 @@ trait Database {
    * @param slot
    * @param callback
    */
+  @Deprecated
   def setMySet(uuid: String, slot: Int, callback: Callback[Unit])
 
   /**
    * マイセットを適用する
    * @since v1.4.18
    */
+  @Deprecated
   def applyMySet(uuid: String, slot: Int, callback: Callback[Unit])
 
+  @Deprecated
   def deleteMySet(uuid: String, slot: Int)
 
   /**

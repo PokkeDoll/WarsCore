@@ -21,6 +21,7 @@ import scala.util.{Failure, Success, Try}
  * @since 0.24.0
  * @version 2
  */
+@Deprecated
 object MerchantUtil {
 
   private lazy val plugin = WarsCore.instance

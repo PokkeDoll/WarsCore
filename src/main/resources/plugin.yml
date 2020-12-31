@@ -1,5 +1,5 @@
 name: 'WarsCore'
-version: '1.6.7'
+version: '1.7.11'
 api-version: '1.16'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
@@ -40,6 +40,8 @@ commands:
     permission: pokkedoll.command.spawn
   wp:
     permission: pokkedoll.command.weapon
+  shop:
+    permission: pokkedoll.command.shop
 permissions:
   pokkedoll.command.game:
     default: true
@@ -58,6 +60,8 @@ permissions:
   pokkedoll.command.upgrade:
     default: op
   pokkedoll.command.merchant:
+    default: op
+  pokkedoll.command.shop:
     default: op
   pokkedoll.command.weapon:
     default: true
