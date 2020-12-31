@@ -7,7 +7,7 @@ import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands._
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
-import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil, UpgradeUtil}
+import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, ShopUtil, TagUtil, UpgradeUtil}
 import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
@@ -69,6 +69,7 @@ class WarsCore extends JavaPlugin {
 
     ItemUtil.reloadItem()
     MerchantUtil.reload()
+    ShopUtil.reload()
     UpgradeUtil.reloadConfig()
     TagUtil.reloadConfig()
 

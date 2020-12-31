@@ -69,7 +69,9 @@ class ShopCommand extends CommandExecutor {
           }
         } else if (args(0) == "open") {
           if(args.length > 1) {
-            ShopUI.openShopUI(player, args(1))
+            if(ShopUtil.hasName(args(1))) {
+              ShopUI.openShopUI(player, args(1))
+            }
           }
         }
     }
