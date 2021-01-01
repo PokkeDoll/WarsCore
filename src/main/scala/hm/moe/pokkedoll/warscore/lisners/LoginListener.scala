@@ -36,7 +36,6 @@ class LoginListener(plugin: WarsCore) extends Listener {
         player.sendPluginMessage(WarsCore.instance, WarsCore.MODERN_TORUS_CHANNEL, out.toByteArray)
 
         WarsCoreAPI.sendNews4User(player)
-        WarsCoreAPI.sendActiveMySetInfo(player)
       }
     }.runTaskLater(plugin, 5L)
   }

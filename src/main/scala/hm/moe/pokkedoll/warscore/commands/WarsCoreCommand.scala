@@ -78,12 +78,6 @@ class WarsCoreCommand extends CommandExecutor {
             case "test" | "t" =>
               if(args.length > 1) {
                 args(1) match {
-                  case "w" =>
-                    if(args(2) == "main") {
-                      WeaponUI.openMainUI(player)
-                    } else {
-                      WeaponUI.openWeaponStorageUI(player)
-                    }
                   case "s" =>
                     val i = player.getInventory.getItemInMainHand
                     player.sendMessage(s"ITEM => $i\nBytes => ${i.serializeAsBytes().mkString("Array(", ", ", ")")}")
@@ -96,8 +90,6 @@ class WarsCoreCommand extends CommandExecutor {
                     val comp = new ComponentBuilder()
                     TagUtil.cache.foreach(f => comp.append(s"${f._1}: ${f._2}\n"))
                     player.sendMessage(comp.create():_*)
-                  case "myset" =>
-                    WeaponUI.openMySetUI(player)
                   case "addWeapon" =>
                     WarsCore.instance.database.addWeapon(player.getUniqueId.toString, args(2), args(3), args(4).toInt)
                   case "delWeapon" =>

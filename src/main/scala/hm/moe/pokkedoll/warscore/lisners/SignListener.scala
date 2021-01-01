@@ -2,7 +2,6 @@ package hm.moe.pokkedoll.warscore.lisners
 
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
-import hm.moe.pokkedoll.warscore.utils.EnderChestManager
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.ChatColor
 import org.bukkit.block.{EnderChest, Sign}
@@ -49,9 +48,13 @@ class SignListener(plugin: WarsCore) extends Listener {
             case e: NullPointerException =>
               e.printStackTrace()
           }
+          // TODO 何かしらは追加
+          /*
         case _: EnderChest if e.getAction == Action.RIGHT_CLICK_BLOCK =>
           e.setCancelled(true)
           WeaponUI.openWeaponStorageUI(e.getPlayer)
+
+           */
         case _ =>
       }
     }

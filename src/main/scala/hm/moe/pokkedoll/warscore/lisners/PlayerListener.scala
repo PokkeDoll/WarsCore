@@ -104,12 +104,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       }
     } else if (title == WeaponUI.MAIN_UI_TITLE && e.getClickedInventory.getType == InventoryType.CHEST) {
       WeaponUI.onClickMainUI(e)
-    } else if (title == WeaponUI.WEAPON_CHEST_UI_TITLE) {
-      WeaponUI.onClickWeaponStorageUI(e)
     } else if (title == WeaponUI.SETTING_TITLE) {
       WeaponUI.onClickSettingUI(e)
-    } else if (title == WeaponUI.MY_SET_TITLE) {
-      WeaponUI.onClickMySetUI(e)
     } else if (title.startsWith("Shop: ")) {
       ShopUI.onClick(e)
     }
@@ -118,20 +114,6 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       if (wp.game.isDefined) {
         e.setCancelled(true)
         p.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
-      }
-    }
-  }
-
-  @EventHandler
-  def onInventoryClose(e: InventoryCloseEvent): Unit = {
-    val inv = e.getInventory
-    val player = e.getPlayer
-    if (inv != null && player != null) {
-      if (e.getView.getTitle.contains(ChatColor.DARK_PURPLE + player.getName + "'s Chest")) {
-        val id = e.getView.getTitle.replaceAll(ChatColor.DARK_PURPLE + player.getName + "'s Chest ", "").toInt
-        EnderChestManager.closeEnderChest(player, id, inv.getContents)
-      } else if (e.getView.getTitle == WeaponUI.WEAPON_CHEST_UI_TITLE) {
-        WeaponUI.onCloseWeaponStorageUI(e)
       }
     }
   }
@@ -147,21 +129,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     if (e.getAction == Action.RIGHT_CLICK_AIR && e.getHand == EquipmentSlot.HAND) {
       if (item != null) {
         val player = e.getPlayer
-        if (EconomyUtil.COIN.isSimilar(item)) {
-          WarsCoreAPI.debug(player, "v1.7.5より非推奨")
-          if (player.isSneaking) {
-            EconomyUtil.coin2ingot(player, item, item.getAmount / 9)
-          } else {
-            EconomyUtil.coin2ingot(player, item)
-          }
-        } else if (EconomyUtil.INGOT.isSimilar(item)) {
-          WarsCoreAPI.debug(player, "v1.7.5より非推奨")
-          if (player.isSneaking) {
-            EconomyUtil.ingot2coin(player, item, if (item.getAmount >= 7) 7 else item.getAmount)
-          } else {
-            EconomyUtil.ingot2coin(player, item)
-          }
-        } else if (item.getType == Material.IRON_HOE && item.hasItemMeta) {
+        if (item.getType == Material.IRON_HOE && item.hasItemMeta) {
           val per = item.getItemMeta.getPersistentDataContainer
           if (per.has(WarsCoreAPI.weaponUnlockNameKey, PersistentDataType.STRING) &&
               per.has(WarsCoreAPI.weaponUnlockTypeKey, PersistentDataType.STRING)) {
@@ -174,11 +142,13 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
             player.playSound(player.getLocation, Sound.BLOCK_CHEST_LOCKED, 1f, 2f)
           }
         } else {
+          /*
           WarsCoreAPI.getWPlayer(player).game match {
             case Some(game) if item.getType == Material.CLOCK =>
               WeaponUI.openMySetUI(e.getPlayer)
             case _ =>
           }
+           */
         }
       }
     }

@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.games
 
 import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
-import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, RankManager, WorldLoader}
+import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder, HoverEvent}
@@ -276,7 +276,7 @@ class TeamDeathMatch(override val id: String) extends Game {
         case Some(d) =>
           if (winner == d.team) {
             //d.money += 500
-            EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
+            // EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
             d.win = true
           }
           wp.sendMessage(createResult(d, winner): _*)

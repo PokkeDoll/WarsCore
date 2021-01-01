@@ -1,12 +1,8 @@
 package hm.moe.pokkedoll.warscore.db
 
-import java.util.UUID
-
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
-import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 
@@ -22,18 +18,6 @@ import scala.collection.mutable
  * @version 3.0
  */
 trait Database extends CoinDB with WeaponDB {
-  /**
-   * @see hasUUID(uuid: String): Boolean
-   */
-  @Deprecated
-  def hasUUID(uuid: UUID): Boolean = hasUUID(uuid.toString)
-
-  /**
-   * @see hasUUID(uuid: String): Boolean
-   */
-  @Deprecated
-  def hasUUID(player: Player): Boolean = hasUUID(player.getUniqueId.toString)
-
   /**
    * データベースに自分のデータがあるか確認するメソッド
    *
@@ -52,39 +36,12 @@ trait Database extends CoinDB with WeaponDB {
   def insert(uuid: String): Boolean
 
   /**
-   * @see insert(uuid: UUID): Boolean
-   */
-  @Deprecated
-  def insert(player: Player): Boolean = insert(player.getUniqueId.toString)
-
-  /**
    * データベースから一つのInt型のデータを取得する
    *
    * @return
    */
   @Deprecated
   def getInt(table: String, column: String, uuid: String): Option[Int]
-
-  /**
-   * ストレージを取得する<br>
-   *
-   * @note データベースが返すのはItemStack型ではない。Array[Byte]->String->YamlConfiguration->Array[ItemStack]の手順が必要
-   * @param id   エンダーチェストのID
-   * @param uuid UUID
-   * @return
-   */
-  @Deprecated
-  def getStorage(id: Int, uuid: String): Option[String]
-
-  /**
-   * ストレージを保存する
-   *
-   * @param id   エンダーチェストのID
-   * @param uuid UUID
-   * @param item アイテムの文字列
-   */
-  @Deprecated
-  def setStorage(id: Int, uuid: String, item: String): Unit
 
   /**
    * rankテーブルに保存されているデータを取得する
@@ -120,7 +77,6 @@ trait Database extends CoinDB with WeaponDB {
    */
   def getTags(uuid: String, callback: Callback[Vector[UserTagInfo]])
 
-
   /**
    * 設定しているタグを返す
    *
@@ -152,7 +108,7 @@ trait Database extends CoinDB with WeaponDB {
   /**
    * 仮想インベントリを読み込む
    *
-   * @param wp
+   * @param wp WPlayer
    * @param col normalまたはgame
    */
   def getVInventory(wp: WPlayer, col: String = "normal")
@@ -160,7 +116,7 @@ trait Database extends CoinDB with WeaponDB {
   /**
    * 仮想インベントリをセーブする
    *
-   * @param wp
+   * @param wp WPlayer
    * @param col normalまたはgame
    */
   def setVInventory(wp: WPlayer, col: String = "normal")
@@ -176,59 +132,10 @@ trait Database extends CoinDB with WeaponDB {
   def loadWPlayer(wp: WPlayer, callback: Callback[WPlayer])
 
   /**
-   * アイテムを読み込む
-   *
-   * @since v1.2
-   * @param uuid     対象のUUID
-   * @param baseSlot ベースページ (page - 1) * 45 で求まる
-   * @param callback | String Type
-   *                 | Array[Byte] アイテムのRAWデータ
-   *                 | Int slot
-   *                 | Int use!?
-   */
-  def getPagedWeaponStorage(uuid: String, baseSlot: Int, callback: Callback[mutable.Buffer[(Int, Array[Byte], Int)]])
-
-  /**
-   * すべてのアイテムを読み込む！！非同期メソッドで利用
-   * @param uuid UUID
-   */
-  def getWeaponStorage(uuid: String): Vector[ItemStack]
-
-  /**
-   * アイテムを保存する。
-   *
-   * @since v1.2
-   * @param uuid     対象のUUID
-   * @param baseSlot ベースページ (page - 1) * 45 で求まる
-   * @param contents 保存するデータ
-   */
-  def setPagedWeaponStorage(uuid: String, baseSlot: Int, contents: Map[Boolean, Seq[(Int, ItemStack)]])
-
-  /**
-   * 武器を設定する
-   *
-   * @since v1.3.4
-   * @param uuid     対象のUUID
-   * @param slot     新しく設定するスロット
-   * @param usedSlot 以前設定していた純粋なスロット(ベースページとかインベントリ上段の処理を考える必要がない)
-   */
-  @Deprecated
-  def setPagedWeapon(uuid: String, slot: Int, usedSlot: Int, usedType: Int, callback: Callback[Unit])
-
-  /**
-   * 現在使用している(use>0)の武器を読み込む
-   *
-   * @param uuid
-   * @param callback (アイテムのバイトデータ, 使用タイプ)
-   */
-  @Deprecated
-  def getWeapon(uuid: String, callback: Callback[mutable.Buffer[(Array[Byte], Int)]])
-
-  /**
    * 仮のインベントリ(ロビーのインベントリを取得する
    *
    * @version v1.3.15
-   * @param uuid
+   * @param uuid 対象のUUID
    * @param callback (スロット番号, シリアライズされたアイテムスタック)のタプル
    */
   def getVInv(uuid: String, callback: Callback[mutable.Buffer[(Int, Array[Byte])]])
@@ -237,8 +144,8 @@ trait Database extends CoinDB with WeaponDB {
    * ロビーのインベントリを退避する
    *
    * @version v1.3.15
-   * @param uuid
-   * @param contents
+   * @param uuid 対象のUUID
+   * @param contents Inventory.getContent()
    */
   def setVInv(uuid: String, contents: Array[ItemStack], callback: Callback[Unit])
 
@@ -249,58 +156,6 @@ trait Database extends CoinDB with WeaponDB {
    * @param uuid 対象のUUID
    */
   def setDisconnect(uuid: String, disconnect: Boolean)
-
-  /**
-   * アクティブなマイセットを獲得する
-   * @param uuid 対象のUUID
-   * @param callback コールバック
-   */
-  @Deprecated
-  def getActiveMySet(uuid: String, callback: Callback[Array[Array[Byte]]])
-
-  /**
-   *
-   */
-  @Deprecated
-  def checkMySet(uuid: String, slot: Int): Boolean
-
-  /**
-   * マイセットを読み込む。非同期メソッドで使う！！
-   *
-   * @since v1.4.3
-   * @param uuid     対象のUUID
-   * @return
-   */
-  @Deprecated
-  def getMySet(uuid: String): Vector[WeaponUI.MySet]
-
-  /**
-   * マイセットを設定する
-   *
-   * @since v1.4.3
-   * @param uuid
-   * @param slot
-   * @param callback
-   */
-  @Deprecated
-  def setMySet(uuid: String, slot: Int, callback: Callback[Unit])
-
-  /**
-   * マイセットを適用する
-   * @since v1.4.18
-   */
-  @Deprecated
-  def applyMySet(uuid: String, slot: Int, callback: Callback[Unit])
-
-  @Deprecated
-  def deleteMySet(uuid: String, slot: Int)
-
-  /**
-   * アイテムを自動でストレージに保存する
-   * @param uuid
-   * @param array
-   */
-  def addItem(uuid: String, array: Array[Byte]*)
 
   def close(): Unit
 }

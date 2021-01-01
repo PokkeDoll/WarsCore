@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.db
 
+@Deprecated
 trait CoinDB {
   /**
    * すべてのコインを取得する

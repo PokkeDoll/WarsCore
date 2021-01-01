@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.games
 
 import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
-import hm.moe.pokkedoll.warscore.utils.{EconomyUtil, MapInfo, RankManager, WorldLoader}
+import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, WorldLoader}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
 import org.bukkit.{Bukkit, Color, FireworkEffect, GameMode, Location, Material, Sound, World, scheduler}
@@ -336,7 +336,7 @@ class Domination(override val id: String) extends Game {
         case Some(d) =>
           if (winner == d.team) {
             //d.money += 500
-            EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
+            // EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
             d.win = true
           }
           wp.sendMessage(createResult(d, winner): _*)
@@ -473,7 +473,7 @@ class Domination(override val id: String) extends Game {
           aData.kill += 1
           // 同じIPアドレスなら報酬をスキップする
           if (attacker.isOp || victim.getAddress != attacker.getAddress) {
-            EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
+            // EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
           }
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)

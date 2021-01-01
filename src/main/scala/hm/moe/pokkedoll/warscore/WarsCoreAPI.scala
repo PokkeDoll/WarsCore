@@ -1,10 +1,9 @@
 package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
-import hm.moe.pokkedoll.warscore.games.{Domination, Game, Tactics, TeamDeathMatch, TeamDeathMatch4}
-import hm.moe.pokkedoll.warscore.ui.WeaponUI.EMPTY
-import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MapInfo, RankManager, TagUtil, UpgradeUtil, WorldLoader}
-import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent, TextComponent}
+import hm.moe.pokkedoll.warscore.games._
+import hm.moe.pokkedoll.warscore.utils._
+import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent}
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{EntityType, Firework, Player}
@@ -13,6 +12,7 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Random
 
@@ -303,16 +303,6 @@ object WarsCoreAPI {
 
   import net.md_5.bungee.api.ChatColor
 
-  @Deprecated
-  val NEWS: Array[BaseComponent] =
-    new ComponentBuilder("= = = = = = = = = = =").color(ChatColor.GREEN).underlined(true)
-      .append("お知らせ").underlined(false)
-      .append("= = = = = = = = = = =\n\n").underlined(true)
-      .append("* ").reset().append("Discordに参加しよう！ こちらのメッセージをクリックしてください！\n").color(ChatColor.AQUA).event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://discordapp.com/invite/TJ3bkkY"))
-      // .append("* ").reset().append("不具合情報/開発状況はマイルストーンにまとめています！\n").event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gitlab.com/PokkeDoll/pokkedoll/-/milestones/1"))
-      .append("* ").reset().append("βテスト開催中！  /game よりゲームに参加！")
-      .create()
-
   def sendNews4User(player: Player): Unit = {
     player.sendMessage(
       new ComponentBuilder().append(createHeader("お知らせ"))
@@ -403,52 +393,6 @@ object WarsCoreAPI {
     database.gameLog(gameid, level, message)
   }
 
-
-  /**
-   * データベースで指定されているアイテムを取得する
-   *
-   * @param wp     対象のプレイヤー
-   * @param cached WPlayerに保存されているキャッシュを利用する
-   */
-  @Deprecated
-  def loadWeaponInventory(wp: WPlayer, cached: Boolean = true): Unit = {
-    val player = wp.player
-    wp.weapons match {
-      case Some(weapon) if cached =>
-        player.getInventory.setContents(weapon)
-      case _ =>
-        database.getWeapon(wp.player.getUniqueId.toString, new Callback[mutable.Buffer[(Array[Byte], Int)]] {
-          override def success(value: mutable.Buffer[(Array[Byte], Int)]): Unit = {
-
-            val main = value.find(p => p._2 == 1) match {
-              case Some(f) => ItemStack.deserializeBytes(f._1)
-              case None => EMPTY
-            }
-            val sub = value.find(p => p._2 == 2) match {
-              case Some(f) => ItemStack.deserializeBytes(f._1)
-              case None => EMPTY
-            }
-            val melee = value.find(p => p._2 == 3) match {
-              case Some(f) => ItemStack.deserializeBytes(f._1)
-              case None => EMPTY
-            }
-            val item = value.find(p => p._2 == 4) match {
-              case Some(f) => ItemStack.deserializeBytes(f._1)
-              case None => EMPTY
-            }
-            val array = Array(main, sub, melee, item, EMPTY, EMPTY, EMPTY, EMPTY, new ItemStack(Material.CLOCK))
-
-            player.getInventory.setContents(array)
-            wp.weapons = Some(array)
-          }
-
-          override def failure(error: Exception): Unit = {
-            player.sendMessage("エラー！")
-          }
-        })
-    }
-  }
-
   /**
    * ロビーのインベントリを退避する
    *
@@ -483,7 +427,7 @@ object WarsCoreAPI {
   /**
    *
    * @version v1.3.16
-   * @param player
+   * @param player 対象のプレイヤー
    */
   def restoreLobbyInventory(player: Player): Unit = {
     database.getVInv(player.getUniqueId.toString, new Callback[mutable.Buffer[(Int, Array[Byte])]] {
@@ -501,41 +445,22 @@ object WarsCoreAPI {
     })
   }
 
-  def addResult(player: Player, result: ItemStack, amount: Int): Unit = {
-    var output = (0, amount)
-    while (output._2 > 64) {
-      output = (output._1 + 1, output._2 - 64)
-    }
-    database.addItem(player.getUniqueId.toString, (1 to output._1)
-      .map(_ => {
-        val i = result.clone()
-        i.setAmount(64)
-        i
-      })
-      .map(i => i.serializeAsBytes()).:+(
-      {
-        val i = result.clone()
-        i.setAmount(output._2)
-        i.serializeAsBytes()
-      }
-    ): _*)
-  }
-
   /**
    * ワールドの識別子を設定する
    *
    * @since v1.6.1
    * @return 0から999までの**文字列**を返す
    */
-  def getWorldHash(): String = random.nextInt(1000).toString
+  def getWorldHash: String = random.nextInt(1000).toString
 
   /**
    * @since v1.6.1
-   * @param game
+   * @param game 対象のゲーム
    * @return
    */
+  @tailrec
   def createWorldHash(game: Game): String = {
-    val id = game.id + getWorldHash()
+    val id = game.id + getWorldHash
     if (game.worldId == id)
       createWorldHash(game)
     else
@@ -548,23 +473,6 @@ object WarsCoreAPI {
     } else {
       itemStack.getType.toString.replaceAll("_", " ")
     }
-  }
-
-  def sendActiveMySetInfo(player: Player): Unit = {
-    database.getActiveMySet(player.getUniqueId.toString, new Callback[Array[Array[Byte]]] {
-      override def success(value: Array[Array[Byte]]): Unit = {
-        val m = value.map(f => ItemStack.deserializeBytes(f)).map(getItemStackName)
-        player.sendMessage(
-          ChatColor.GREEN + "設定している武器\n" +
-            ChatColor.GREEN + "メイン武器: " + m(0) + "\n" +
-            ChatColor.GREEN + "サブ武器: " + m(1) + "\n" +
-            ChatColor.GREEN + "近接武器: " + m(2) + "\n" +
-            ChatColor.GREEN + "その他: " + m(3)
-        )
-      }
-
-      override def failure(error: Exception): Unit = return
-    })
   }
 
   def debug(player: Player, msg: String): Unit = {
@@ -621,5 +529,4 @@ object WarsCoreAPI {
       i
     }
   }
-
 }
