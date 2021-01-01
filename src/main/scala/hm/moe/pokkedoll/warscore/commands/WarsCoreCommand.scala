@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore.commands
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
-import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil}
+import hm.moe.pokkedoll.warscore.utils.{ItemUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.ChatColor
@@ -36,8 +36,6 @@ class WarsCoreCommand extends CommandExecutor {
                 args(1) match {
                   case "item" =>
                     ItemUtil.reloadItem()
-                  case "merchant" =>
-                    MerchantUtil.reload()
                   case "tag" =>
                     TagUtil.reloadConfig()
                   case "cspp" =>
@@ -68,6 +66,7 @@ class WarsCoreCommand extends CommandExecutor {
                     meta.getPersistentDataContainer.set(WarsCoreAPI.weaponUnlockTypeKey, PersistentDataType.STRING, args(2))
                     result.setItemMeta(meta)
                     player.getInventory.addItem(result)
+                  case _ =>
                 }
               } else {
                 player.sendMessage(

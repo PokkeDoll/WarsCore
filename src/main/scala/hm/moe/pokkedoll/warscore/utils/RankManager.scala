@@ -78,7 +78,7 @@ object RankManager {
     val test = new Test("RankManager.updateSidebar(Player, Scoreboard, (Int, Int))")
     if (sb.getObjective(DisplaySlot.SIDEBAR) != null) sb.getObjective(DisplaySlot.SIDEBAR).unregister()
     val obj = sb.registerNewObjective("sidebar", "dummy")
-    obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWelcome to &dWars &eBuild 1.7.x"))
+    obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWelcome to &dWars &eBuild 1.8.x"))
     obj.setDisplaySlot(DisplaySlot.SIDEBAR)
 
     val scores = List(

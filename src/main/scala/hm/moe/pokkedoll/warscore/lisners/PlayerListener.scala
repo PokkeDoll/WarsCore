@@ -158,8 +158,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
   def onInteractAtEntity(e: PlayerInteractAtEntityEvent): Unit = {
     if (e.getHand == EquipmentSlot.HAND && e.getRightClicked != null) {
       val name = e.getRightClicked.getCustomName
-      if (name != null && MerchantUtil.hasName(name)) {
-        MerchantUtil.openMerchantInventory(e.getPlayer, name)
+      if(name != null && ShopUtil.hasName(name)) {
+        ShopUI.openShopUI(e.getPlayer, name)
       }
     }
   }
