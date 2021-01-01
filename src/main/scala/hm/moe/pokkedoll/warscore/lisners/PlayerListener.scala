@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore.lisners
 import java.util
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.info
-import hm.moe.pokkedoll.warscore.ui.{GameUI, TagUI, WeaponUI}
+import hm.moe.pokkedoll.warscore.ui.{GameUI, ShopUI, TagUI, WeaponUI}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
@@ -110,6 +110,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       WeaponUI.onClickSettingUI(e)
     } else if (title == WeaponUI.MY_SET_TITLE) {
       WeaponUI.onClickMySetUI(e)
+    } else if (title.startsWith("Shop: ")) {
+      ShopUI.onClick(e)
     }
     else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])

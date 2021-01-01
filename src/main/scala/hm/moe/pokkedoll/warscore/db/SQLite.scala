@@ -1204,43 +1204,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
-   * 武器を購入する
-   *
-   * @param uuid 対象のUUID
-   * @param shop 購入しようとするショップの商品
-   * @return エラーがあるならSomeが返される！！！！！！！！１１
-   */
-  override def buyWeapon(uuid: String, shop: Shop): Option[String] = {
-
-  }
-
-  override def isBuyable(uuid: String, shop: Shop): Seq[String] = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
-    var seq = Seq.empty[Item]
-    try {
-      val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and name IN(${shop.price.map(item => s"'${item.name}'").mkString(",")})")
-      while (rs.next()) {
-        seq :+= new Item(rs.getString("name"), rs.getInt("amount"))
-      }
-      rs.close()
-    } catch {
-      case _: SQLException =>
-    } finally {
-      s.close()
-      c.close()
-    }
-    var result = Seq.empty[String]
-    shop.price.foreach(priceItem => {
-      seq.find(p => p.name == priceItem.name) match {
-        case Some(storageItem) if storageItem.amount >= priceItem.amount =>
-        case _ => result :+=
-      }
-    })
-    null
-  }
-
-  /**
    * 実際にプレイやーが所持しているアイテムを付け加えて返す。非同期で使う
    * @param uuid UUID
    * @param item Shop.priceで獲得できる
@@ -1251,7 +1214,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
     val s = c.createStatement()
     var map = Map.empty[String, Int]
     try {
-      val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and name in (${item.map(_.name).mkString(", ")})")
+      val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and name in (${item.map(f => s"'${f.name}'").mkString(", ")})")
       while(rs.next()) {
         map += rs.getString("name") -> rs.getInt("amount")
       }

@@ -2,10 +2,8 @@ package hm.moe.pokkedoll.warscore.utils
 
 import java.io.File
 
-import hm.moe.pokkedoll.warscore.{Callback, WarsCore, WarsCoreAPI}
-import org.apache.commons.lang.StringUtils
+import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
-import org.bukkit.entity.Player
 
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}

@@ -48,22 +48,6 @@ trait WeaponDB {
   def delWeapon(uuid: String, price: Array[Item])
 
   /**
-   * 武器を購入する
-   * @param uuid 対象のUUID
-   * @param shop 購入しようとするショップの商品
-   * @return エラーがあるならSomeが返される！！！！！！！！１１
-   */
-  def buyWeapon(uuid: String, shop: Shop): Option[String]
-
-  /**
-   * 武器を購入できるか確かめる
-   * @param uuid
-   * @param shop
-   * @return
-   */
-  def isBuyable(uuid: String, shop: Shop): Seq[String]
-
-  /**
    * 実際にプレイやーが所持しているアイテムを付け加えて返す。非同期で使う
    * @param uuid UUID
    * @param item Shop.priceで獲得できる

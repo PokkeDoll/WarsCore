@@ -25,20 +25,42 @@ object ShopUI {
     val inv = Bukkit.createInventory(null, 54, TITLE(name))
     shops.indices.foreach(i => {
       val shop = shops(i)
+
+      // ストレージ(weapon)内でのアイテム
+      val storage = WarsCore.instance.database.getRequireItemsAmount(player.getUniqueId.toString, shop.price)
+      // 性善説
+      var buyable = true
+
       val product = ItemUtil.getItem(shop.product.name).getOrElse(EMPTY).clone()
       val productMeta = product.getItemMeta
       productMeta.setDisplayName(productMeta.getDisplayName + " × " + shop.product.amount)
       productMeta.setLore(
         (List(
-          "§f-=-=-=-=-=-=-=-=-",
+          "§f-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-",
           "§aクリックして購入する！",
-          "§f-=-=-=-=-=-=-=-=-",
-          "§7&l| §7要求アイテム §7§l| §7必要数 &8/ &7所持数") ++
+          "§f-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-",
+          "§7§l| §7要求アイテム §7§l: §7必要数 §8/ §7所持数") ++
           shop.price.map(f => {
-            WarsCoreAPI.getItemStackName(ItemUtil.getItem(f.name).getOrElse(EMPTY)) + " × " + f.amount
-          }).toList).asJava)
-      productMeta.getPersistentDataContainer.set(shopIdKey, PersistentDataType.STRING, name)
-      productMeta.getPersistentDataContainer.set(shopIndexKey, PersistentDataType.INTEGER, Integer.valueOf(i))
+            WarsCoreAPI.getItemStackName(ItemUtil.getItem(f.name).getOrElse(EMPTY)) + "§f: " +
+              {
+                val rAmount = storage.getOrElse(f.name, 0)
+                if(rAmount >= f.amount) {
+                  f.amount + " / " + rAmount
+                } else {
+                  if(buyable) buyable = false
+                  ChatColor.RED + "" + f.amount + " / " + rAmount
+                }
+              }
+          }).toList ++
+          List(
+            "§7§l| §7達成条件 §7§l: §7必要値 §8/ §7現在値",
+            "§fテスト条件: §c0 / 1"
+          )
+          ).asJava)
+      if(buyable) {
+        productMeta.getPersistentDataContainer.set(shopIdKey, PersistentDataType.STRING, name)
+        productMeta.getPersistentDataContainer.set(shopIndexKey, PersistentDataType.INTEGER, Integer.valueOf(i))
+      }
       product.setItemMeta(productMeta)
       inv.setItem(9 + i, product)
     })
@@ -51,14 +73,17 @@ object ShopUI {
       case InventoryType.CHEST =>
         val slot = e.getSlot
         val item = e.getCurrentItem
-        val player = e.getWhoClicked
+        val player = e.getWhoClicked.asInstanceOf[Player]
         if(item != null && item.getType != Material.AIR && item.hasItemMeta) {
           val data = item.getItemMeta.getPersistentDataContainer
           if(data.has(shopIdKey, PersistentDataType.STRING) && data.has(shopIndexKey, PersistentDataType.INTEGER)) {
             val shop = ShopUtil.getShops(data.get(shopIdKey, PersistentDataType.STRING))(data.get(shopIndexKey, PersistentDataType.INTEGER))
-
+            WarsCoreAPI.debug(player, "購入処理！")
+          } else {
+            WarsCoreAPI.debug(player, "何も起きず！")
           }
         }
+      case _ =>
     }
   }
 }
