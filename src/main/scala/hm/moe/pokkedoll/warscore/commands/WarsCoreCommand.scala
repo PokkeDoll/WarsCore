@@ -1,19 +1,18 @@
 package hm.moe.pokkedoll.warscore.commands
 
 import com.google.common.io.ByteStreams
-import hm.moe.pokkedoll.warscore.db.{SQLite, WeaponDB}
+import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.chat.ComponentBuilder
-import org.bukkit.{ChatColor, Material}
+import org.bukkit.ChatColor
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.{EntityType, Player}
 import org.bukkit.inventory.{Inventory, ItemStack}
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.persistence.PersistentDataType
-
-import scala.collection.mutable
+import hm.moe.pokkedoll.warscore.utils.Item
 
 class WarsCoreCommand extends CommandExecutor {
 
@@ -99,6 +98,10 @@ class WarsCoreCommand extends CommandExecutor {
                     player.sendMessage(comp.create():_*)
                   case "myset" =>
                     WeaponUI.openMySetUI(player)
+                  case "addWeapon" =>
+                    WarsCore.instance.database.addWeapon(player.getUniqueId.toString, args(2), args(3), args(4).toInt)
+                  case "delWeapon" =>
+                    WarsCore.instance.database.delWeapon(player.getUniqueId.toString, Array(new Item("coin", 10), new Item("ak-47", 1)))
                   case _ =>
                 }
               } else {

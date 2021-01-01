@@ -583,8 +583,7 @@ object WarsCoreAPI {
   val weaponUnlockTypeKey = new NamespacedKey(WarsCore.instance, "weapon-unlock-type")
 
   def unlockWeapon(player: Player, t: String, weapon: String): Unit = {
-    database.addWeapon(player.getUniqueId.toString, t, weapon)
-
+    database.addWeapon(player.getUniqueId.toString, t, weapon, 1)
   }
 
   def parseInt(string: String): Int = {

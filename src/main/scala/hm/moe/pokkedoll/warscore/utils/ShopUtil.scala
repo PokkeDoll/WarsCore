@@ -2,9 +2,10 @@ package hm.moe.pokkedoll.warscore.utils
 
 import java.io.File
 
-import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{Callback, WarsCore, WarsCoreAPI}
 import org.apache.commons.lang.StringUtils
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
+import org.bukkit.entity.Player
 
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
@@ -61,12 +62,15 @@ object ShopUtil {
       val shop = config.getStringList(name)
         .asScala
         .flatMap(text => {
-          val item = text.split(",")
-          if (item.length < 1) None else {
-            val product = createShopItem(item.head)
-            val price = item.tail.flatMap(createShopItem)
-            if (product.isEmpty || price.isEmpty) None else {
-              Some(new Shop(product.get, price))
+          val typeAndProduct = text.split(":")
+          if(typeAndProduct.length < 1) None else {
+            val item = typeAndProduct(1).split(",")
+            if (item.length < 1) None else {
+              val product = createShopItem(item.head)
+              val price = item.tail.flatMap(createShopItem)
+              if (product.isEmpty || price.isEmpty) None else {
+                Some(new Shop(typeAndProduct(0), product.get, price))
+              }
             }
           }
         })
@@ -94,10 +98,10 @@ object ShopUtil {
     reload()
   }
 
-  def createShopItem(string: String): Option[ShopItem] = {
+  def createShopItem(string: String): Option[Item] = {
     val split = string.split("@")
     if (split.length == 2)
-      Some(new ShopItem(split(0), WarsCoreAPI.parseInt(split(1))))
+      Some(new Item(split(0), WarsCoreAPI.parseInt(split(1))))
     else
       None
   }
@@ -108,14 +112,5 @@ object ShopUtil {
    * @param product 製品
    * @param price   購入するために必要なアイテム
    */
-  class Shop(val product: ShopItem, val price: Array[ShopItem])
-
-  /**
-   * データ化されたアイテムの名前と数
-   *
-   * @param name   名前
-   * @param amount 数
-   */
-  class ShopItem(val name: String, val amount: Int)
-
+  class Shop(val `type`: String, val product: Item, val price: Array[Item])
 }

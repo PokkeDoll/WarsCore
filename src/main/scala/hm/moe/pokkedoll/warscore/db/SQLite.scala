@@ -5,6 +5,8 @@ import java.sql.{ResultSet, SQLException}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
 import hm.moe.pokkedoll.warscore.ui.WeaponUI
+import hm.moe.pokkedoll.warscore.utils.ShopUtil.Shop
+import hm.moe.pokkedoll.warscore.utils.{Item, ShopUtil}
 import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.bukkit.Material
@@ -1066,7 +1068,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
     val s = c.createStatement()
     var seq = IndexedSeq.empty[String]
     try {
-      val rs = s.executeQuery(s"SELECT data FROM weapon WHERE uuid='$uuid' and type='$t'")
+      val rs = s.executeQuery(s"SELECT name FROM weapon WHERE uuid='$uuid' and type='$t'")
       while (rs.next()) {
         seq :+= rs.getString(1)
       }
@@ -1089,7 +1091,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
    */
   override def getActiveWeapon(uuid: String): (String, String, String, String) = {
     val c = hikari.getConnection
-    val ps = c.prepareStatement("SELECT data FROM weapon WHERE use=? and uuid=? and type=?")
+    val ps = c.prepareStatement("SELECT name FROM weapon WHERE use=? and uuid=? and type=?")
     try {
       ps.setInt(1, 1)
       ps.setString(2, uuid)
@@ -1117,14 +1119,14 @@ class SQLite(private val plugin: WarsCore) extends Database {
    *
    * @param uuid 対象のUUID
    * @param t    武器のタイプ
-   * @param data 武器のデータ
+   * @param name 武器のデータ
    */
-  override def setWeapon(uuid: String, t: String, data: String): Unit = {
+  override def setWeapon(uuid: String, t: String, name: String): Unit = {
     val c = hikari.getConnection
     val s = c.createStatement()
     try {
       s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and type='$t'")
-      s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and type='$t' and data='$data'")
+      s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and type='$t' and name='$name'")
       s.executeBatch()
     } catch {
       case e: SQLException =>
@@ -1140,13 +1142,15 @@ class SQLite(private val plugin: WarsCore) extends Database {
    *
    * @param uuid 対象のUUID
    * @param t    武器のタイプ
-   * @param data 武器のデータ
+   * @param name 武器のデータ
    */
-  override def addWeapon(uuid: String, t: String, data: String): Unit = {
+  override def addWeapon(uuid: String, t: String, name: String, amount: Int = 1): Unit = {
     val c = hikari.getConnection
     val s = c.createStatement()
     try {
-      s.executeUpdate(s"INSERT INTO weapon(uuid, type, data) VALUES('$uuid', '$t', '$data')")
+      s.executeUpdate(
+        s"INSERT INTO weapon (uuid, type, name, amount) VALUES('$uuid', '$t', '$name', $amount) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+$amount"
+      )
     } catch {
       case e: SQLException =>
         e.printStackTrace()
@@ -1154,5 +1158,111 @@ class SQLite(private val plugin: WarsCore) extends Database {
       s.close()
       c.close()
     }
+  }
+
+  def buylWeapon(uuid: String, t: String, shop: ShopUtil.Shop, callback: Callback[String]): Unit = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    try {
+      val text = shop.price.map(shopItem => s"(name='${shopItem.name}' AND amount>=${shopItem.amount})").mkString(" OR ")
+      val rs = s.executeQuery(s"SELECT CASE WHEN $text THEN 1 ELSE 0 FROM weapon WHERE uuid='$uuid'")
+      if(rs.next() && rs.getBoolean(1)) {
+        addWeapon(uuid, shop.`type`, shop.product.name, shop.product.amount)
+        delWeapon(uuid, shop.price)
+      }
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
+   * 武器を削除する
+   *
+   * @param uuid
+   * @param price
+   */
+  override def delWeapon(uuid: String, price: Array[Item]): Unit = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    try {
+      price.foreach(f => {
+        s.addBatch(s"UPDATE weapon SET amount=amount-${f.amount} WHERE uuid='$uuid' and name='${f.name}'")
+      })
+      s.addBatch(s"DELETE FROM weapon WHERE uuid='$uuid' and 0>=amount")
+      s.executeBatch()
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
+   * 武器を購入する
+   *
+   * @param uuid 対象のUUID
+   * @param shop 購入しようとするショップの商品
+   * @return エラーがあるならSomeが返される！！！！！！！！１１
+   */
+  override def buyWeapon(uuid: String, shop: Shop): Option[String] = {
+
+  }
+
+  override def isBuyable(uuid: String, shop: Shop): Seq[String] = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    var seq = Seq.empty[Item]
+    try {
+      val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and name IN(${shop.price.map(item => s"'${item.name}'").mkString(",")})")
+      while (rs.next()) {
+        seq :+= new Item(rs.getString("name"), rs.getInt("amount"))
+      }
+      rs.close()
+    } catch {
+      case _: SQLException =>
+    } finally {
+      s.close()
+      c.close()
+    }
+    var result = Seq.empty[String]
+    shop.price.foreach(priceItem => {
+      seq.find(p => p.name == priceItem.name) match {
+        case Some(storageItem) if storageItem.amount >= priceItem.amount =>
+        case _ => result :+=
+      }
+    })
+    null
+  }
+
+  /**
+   * 実際にプレイやーが所持しているアイテムを付け加えて返す。非同期で使う
+   * @param uuid UUID
+   * @param item Shop.priceで獲得できる
+   * @return Itemと実際に所持しているアイテムの組
+   */
+  override def getRequireItemsAmount(uuid: String, item: Array[Item]): Map[String, Int] = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    var map = Map.empty[String, Int]
+    try {
+      val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and name in (${item.map(_.name).mkString(", ")})")
+      while(rs.next()) {
+        map += rs.getString("name") -> rs.getInt("amount")
+      }
+      rs.close()
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+    } finally {
+      s.close()
+      c.close()
+    }
+    map
   }
 }

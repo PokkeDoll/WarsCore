@@ -256,7 +256,7 @@ object WeaponUI {
           val meta = i.getItemMeta
           val per = meta.getPersistentDataContainer
           if(per.has(weaponKey, PersistentDataType.STRING)) {
-            db.setWeapon(player.getUniqueId.toString, t = per.get(weaponTypeKey, PersistentDataType.STRING), data = per.get(weaponKey, PersistentDataType.STRING))
+            db.setWeapon(player.getUniqueId.toString, t = per.get(weaponTypeKey, PersistentDataType.STRING), name = per.get(weaponKey, PersistentDataType.STRING))
             openMainUI(player)
           }
         }
