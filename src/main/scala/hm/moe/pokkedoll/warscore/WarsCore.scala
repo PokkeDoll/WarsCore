@@ -11,7 +11,7 @@ import hm.moe.pokkedoll.warscore.utils.{ItemUtil, MerchantUtil, ShopUtil, TagUti
 import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
-
+import scala.jdk.CollectionConverters._
 /**
  * WarsCoreのメインクラス
  *
@@ -74,6 +74,8 @@ class WarsCore extends JavaPlugin {
     TagUtil.reloadConfig()
 
     setupCSPP()
+
+    new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 600L)
 
     cs = new CSUtility
 
