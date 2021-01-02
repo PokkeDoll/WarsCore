@@ -42,7 +42,7 @@ class WarsCoreCommand extends CommandExecutor {
                     WarsCore.instance.setupCSPP()
                   case "default" =>
                     WarsCore.instance.reloadConfig()
-                    WarsCoreAPI.reloadMapInfo(WarsCore.instance.getConfig.getConfigurationSection("mapinfo"))
+                    // WarsCoreAPI.reloadMapInfo(WarsCore.instance.getConfig.getConfigurationSection("mapinfo"))
                 }
               } else {
                 sender.sendMessage(

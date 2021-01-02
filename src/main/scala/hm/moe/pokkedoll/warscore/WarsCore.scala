@@ -7,10 +7,11 @@ import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands._
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
-import hm.moe.pokkedoll.warscore.utils.{ItemUtil, ShopUtil, TagUtil, UpgradeUtil}
+import hm.moe.pokkedoll.warscore.utils.{GameConfig, ItemUtil, ShopUtil, TagUtil, UpgradeUtil}
 import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
+
 import scala.jdk.CollectionConverters._
 /**
  * WarsCoreのメインクラス
@@ -62,20 +63,22 @@ class WarsCore extends JavaPlugin {
     getCommand("wp").setExecutor(new WeaponCommand)
     getCommand("shop").setExecutor(new ShopCommand)
     saveDefaultConfig()
-    WarsCoreAPI.DEFAULT_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.default", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
-    WarsCoreAPI.FIRST_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.first", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
-    WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))
-    WarsCoreAPI.reloadGame(null)
 
     ItemUtil.reloadItem()
     // MerchantUtil.reload()
     ShopUtil.reload()
     UpgradeUtil.reloadConfig()
     TagUtil.reloadConfig()
+    GameConfig.reload()
+
+    WarsCoreAPI.DEFAULT_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.default", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
+    WarsCoreAPI.FIRST_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.first", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
+    // WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))
+    WarsCoreAPI.reloadGame(null)
 
     setupCSPP()
 
-    new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 600L)
+    new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 1200L)
 
     cs = new CSUtility
 

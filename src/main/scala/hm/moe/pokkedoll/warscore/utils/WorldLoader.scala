@@ -151,6 +151,7 @@ object WorldLoader {
    *   }
    * }}}
    */
+  @Deprecated
   def syncLoadWorld(path: String, world: String): Option[World] = {
     // すでにワールドが読み込まれている場合
     Option(Bukkit.getWorld(world)) match {
@@ -207,6 +208,7 @@ object WorldLoader {
    *
    * @param name ワールド名
    */
+  @Deprecated
   def syncUnloadWorld(name: String): Unit = if (Bukkit.getWorld(name) != null) {
     if (unload(name)) delete(new File(s"./$name"))
   }

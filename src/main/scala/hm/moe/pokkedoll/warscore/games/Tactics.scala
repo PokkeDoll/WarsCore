@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.utils.{MapInfo, WorldLoader}
+import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WeakLocation, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
@@ -23,7 +23,12 @@ class Tactics(override val id: String) extends Game {
   /**
    * 読み込むワールドのID.  最初は必ず0
    */
-  var worldId: String = s"${id}-0"
+  var worldId: String = s"$id-0"
+
+  /**
+   * ゲームの構成
+   */
+  override val config: GameConfig = GameConfig.getConfig("tactics")
 
   /**
    * ゲームのタイトル
@@ -51,7 +56,7 @@ class Tactics(override val id: String) extends Game {
    */
   override val time: Int = -1
 
-  var first: Int = 0;
+  var first: Int = 0
   var second: Int = 0
 
   var locationData: (Location, Location, Location) = _
@@ -61,15 +66,18 @@ class Tactics(override val id: String) extends Game {
   var stop = false
 
   private def setLocationData(): Unit = {
-    val spawn = mapInfo.locations.getOrElse("spawn", (0d, 0d, 0d, 0f, 0f))
-    val red = mapInfo.locations.getOrElse("red", (0d, 0d, 0d, 0f, 0f))
-    val blue = mapInfo.locations.getOrElse("blue", (0d, 0d, 0d, 0f, 0f))
-    locationData = (new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5), new Location(world, red._1, red._2, red._3, red._4, red._5), new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5))
+    val spawn = mapInfo.locations.getOrElse("spawn", WeakLocation.empty)
+    val red = mapInfo.locations.getOrElse("red", WeakLocation.empty)
+    val blue = mapInfo.locations.getOrElse("blue", WeakLocation.empty)
+    locationData = (
+      spawn.getLocation(world),
+      red.getLocation(world),
+      blue.getLocation(world))
   }
 
   override def load(players: Player*): Unit = {
     state = GameState.INIT
-    val worlds = WarsCoreAPI.mapinfo.filter(_.gameId == "tdm")
+    val worlds = config.maps
     val info = scala.util.Random.shuffle(worlds).head
     WorldLoader.asyncLoadWorld(s"worlds/${info.mapId}", worldId, new Callback[World] {
       override def success(value: World): Unit = {
@@ -82,7 +90,7 @@ class Tactics(override val id: String) extends Game {
       }
 
       override def failure(error: Exception): Unit = {
-        WarsCore.log(s"Failed to load world! id=${id}, worldId=${worldId}, MapInfo.mapId=${info.mapId}")
+        WarsCore.log(s"Failed to load world! id=$id, worldId=$worldId, MapInfo.mapId=${info.mapId}")
         players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
         state = GameState.ERROR
       }
@@ -188,15 +196,13 @@ class Tactics(override val id: String) extends Game {
     val beforeId = worldId
     val beforeMembers = members.map(_.player)
     worldId = WarsCoreAPI.createWorldHash(this)
-    load(beforeMembers:_*)
+    load(beforeMembers: _*)
     new BukkitRunnable {
       override def run(): Unit = {
         WorldLoader.asyncUnloadWorld(beforeId)
       }
     }.runTaskLater(WarsCore.instance, 100L)
   }
-
-  override def delete(): Unit = return
 
   override def join(wp: WPlayer): Boolean = {
     if (wp.game.isDefined) {
@@ -225,7 +231,7 @@ class Tactics(override val id: String) extends Game {
       wp.player.setScoreboard(WarsCoreAPI.scoreboard)
       bossbar.addPlayer(wp.player)
       members = members :+ wp
-      sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a${maxMember}§f)")
+      sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a$maxMember§f)")
       state match {
         case GameState.WAIT =>
           wp.player.teleport(locationData._1)
@@ -275,7 +281,7 @@ class Tactics(override val id: String) extends Game {
           e.setDeathSoundVolume(2f)
           WarsCoreAPI.getAttackerWeaponName(attacker) match {
             case Some(name) =>
-              sendMessage(s"§f0X §c${attacker.getName} §f[${name}§f] §7-> §0Killed §7-> §9${victim.getName}")
+              sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
             case None =>
               sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
           }
@@ -347,21 +353,21 @@ class Tactics(override val id: String) extends Game {
   /**
    * ブロックを破壊するときに呼び出されるイベント
    *
-   * @param e
+   * @param e BlockBreakEvent
    */
-  override def break(e: BlockBreakEvent): Unit = return
+  override def break(e: BlockBreakEvent): Unit = {}
 
   /**
    * ブロックを設置するときに呼び出されるイベント
    *
-   * @param e
+   * @param e BlockPlaceEvent
    */
-  override def place(e: BlockPlaceEvent): Unit = return
+  override def place(e: BlockPlaceEvent): Unit = {}
 
   /**
    * プレイヤーがダメージを受けた時のイベント
    *
-   * @param e イベント
+   * @param e EntityDamageByEntityEvent
    */
-  override def damage(e: EntityDamageByEntityEvent): Unit = return
+  override def damage(e: EntityDamageByEntityEvent): Unit = {}
 }

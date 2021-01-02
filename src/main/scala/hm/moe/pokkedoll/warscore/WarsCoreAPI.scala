@@ -43,9 +43,6 @@ object WarsCoreAPI {
   /** プレイヤーのキャッシュ */
   val wplayers = new mutable.HashMap[Player, WPlayer](50, 1.0)
 
-  /** マップ情報 */
-  var mapinfo = Seq.empty[MapInfo]
-
   /**
    * スコアボードたち
    */
@@ -122,41 +119,6 @@ object WarsCoreAPI {
     player.setFlying(false)
     player.setWalkSpeed(event.walkSpeed)
     player.setFlySpeed(event.flySpeed)
-  }
-
-  /**
-   * 説明しよう！(図で)<br>
-   * mapinfo:             <- ↑ cs ↑<br>
-   * tdm:             <- gameType<br>
-   * mapA:        <- id<br>
-   * author:<br>
-   * spawn:<br>
-   * ...<br>
-   *
-   * @param cs mapinfo
-   */
-  def reloadMapInfo(cs: ConfigurationSection): Unit = {
-    mapinfo = Seq.empty[MapInfo]
-    cs.getKeys(false).forEach(gameType => {
-      cs.getConfigurationSection(gameType).getKeys(false).forEach(id => {
-        val i = new MapInfo(gameType, id)
-        i.mapName = cs.getString(s"$gameType.$id.mapName")
-        i.authors = cs.getString(s"$gameType.$id.authors")
-        cs.getConfigurationSection(s"$gameType.$id.location").getKeys(false).forEach(location => {
-          val str = cs.getString(s"$gameType.$id.location.$location")
-          val data = str.split(",")
-          try {
-            i.locations.put(location, (data(0).toDouble, data(1).toDouble, data(2).toDouble, data(3).toFloat, data(4).toFloat))
-          } catch {
-            case e: ArrayIndexOutOfBoundsException =>
-              e.printStackTrace()
-            case e: NumberFormatException =>
-              e.printStackTrace()
-          }
-        })
-        mapinfo = mapinfo :+ i
-      })
-    })
   }
 
   /**

@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.games
 
 import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
-import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, WorldLoader}
+import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, RankManager, WeakLocation, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder, HoverEvent}
@@ -29,7 +29,12 @@ class TeamDeathMatch(override val id: String) extends Game {
   /**
    * 読み込むワールドのID.  最初は必ず0
    */
-  override var worldId: String = s"${id}-0"
+  override var worldId: String = s"$id-0"
+
+  /**
+   * ゲームの構成
+   */
+  override val config: GameConfig = GameConfig.getConfig("tdm")
 
   /**
    * ゲームのタイトル
@@ -90,14 +95,14 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   private val TIME = 600
 
-  val log = WarsCoreAPI.gameLog(id, _, _)
+  val log: (String, String) => Unit = WarsCoreAPI.gameLog(id, _, _)
 
   /**
    * ゲームを読み込む
    */
   override def load(players: Player*): Unit = {
     state = GameState.INIT
-    val worlds = WarsCoreAPI.mapinfo.filter(_.gameId == "tdm")
+    val worlds = config.maps
     val info = scala.util.Random.shuffle(worlds).head
     WorldLoader.asyncLoadWorld(s"worlds/${info.mapId}", id, new Callback[World] {
       override def success(value: World): Unit = {
@@ -110,7 +115,7 @@ class TeamDeathMatch(override val id: String) extends Game {
       }
 
       override def failure(error: Exception): Unit = {
-        WarsCore.log(s"Failed to load world! id=${id}, worldId=${worldId}, MapInfo.mapId=${info.mapId}")
+        WarsCore.log(s"Failed to load world! id=$id, worldId=$worldId, MapInfo.mapId=${info.mapId}")
         players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
         state = GameState.ERROR
       }
@@ -294,21 +299,14 @@ class TeamDeathMatch(override val id: String) extends Game {
     sendMessage(ChatColor.BLUE + "10秒後にマップが切り替わります")
     bossbar.removeAll()
     val beforeId = worldId
-    val beforeMenbers = members.map(_.player)
-    load(beforeMenbers:_*)
+    val beforeMembers = members.map(_.player)
+    load(beforeMembers:_*)
     new BukkitRunnable {
       override def run(): Unit = {
         WorldLoader.asyncUnloadWorld(beforeId)
       }
     }.runTaskLater(WarsCore.instance, 200L)
   }
-
-
-  /**
-   * ゲームを削除する
-   */
-  override def delete(): Unit = return
-
 
   /**
    * プレイヤーがゲームに参加するときのメソッド
@@ -561,15 +559,15 @@ class TeamDeathMatch(override val id: String) extends Game {
 
 
   private def setLocationData(): Unit = {
-    val spawn = mapInfo.locations.getOrElse("spawn", (0d, 0d, 0d, 0f, 0f))
-    val red = mapInfo.locations.getOrElse("red", (0d, 0d, 0d, 0f, 0f))
-    val blue = mapInfo.locations.getOrElse("blue", (0d, 0d, 0d, 0f, 0f))
-    val center = mapInfo.locations.getOrElse("center", (0d, 0d, 0d, 0f, 0f))
+    val spawn = mapInfo.locations.getOrElse("spawn", WeakLocation.empty)
+    val red = mapInfo.locations.getOrElse("red", WeakLocation.empty)
+    val blue = mapInfo.locations.getOrElse("blue", WeakLocation.empty)
+    val center = mapInfo.locations.getOrElse("center", WeakLocation.empty)
     locationData = (
-      new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5), // Spawn
-      new Location(world, red._1, red._2, red._3, red._4, red._5), // Red
-      new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5), // Blue
-      new Location(world, center._1, center._2, center._3, center._4, center._5) // Center
+      spawn.getLocation(world),
+      red.getLocation(world),
+      blue.getLocation(world),
+      center.getLocation(world)
     )
   }
 

@@ -1,8 +1,8 @@
 package hm.moe.pokkedoll.warscore.games
 
 import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
-import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
-import hm.moe.pokkedoll.warscore.utils.{MapInfo, RankManager, WorldLoader}
+import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, RankManager, WeakLocation, WorldLoader}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
 import org.bukkit.{Bukkit, Color, FireworkEffect, GameMode, Location, Material, Sound, World, scheduler}
@@ -24,6 +24,12 @@ import scala.collection.mutable
  * @version 1.0
  */
 class Domination(override val id: String) extends Game {
+
+  /**
+   * ゲームの構成
+   */
+  override val config: GameConfig = GameConfig.getConfig("dom")
+
   /**
    * ゲームのタイトル
    */
@@ -87,25 +93,24 @@ class Domination(override val id: String) extends Game {
    */
   override def load(players: Player*): Unit = {
     state = GameState.INIT
-    //WarsCoreAPI.mapinfo.foreach(f => println(s"LKIST! + ${f.gameId} ${f.mapId}"))
-    val worlds = WarsCoreAPI.mapinfo.filter(_.gameId == "dom")
+    val worlds = config.maps
     val info = scala.util.Random.shuffle(worlds).head
-    WorldLoader.syncLoadWorld(s"doms/${info.mapId}", id) match {
-      case Some(world) =>
+    WorldLoader.asyncLoadWorld(s"worlds/${info.mapId}", id, new Callback[World] {
+      override def success(value: World): Unit = {
         mapInfo = info
-        // 一応代入したが別のインスタンス(load, init)中にworldを参照するのは危険！読み込みエラーとなってコンソールを汚しまくる
-        this.world = world
-        //
-        if (!loaded) loaded = true
-        // 無効化を解除
-        if (disable) disable = false
-        // 読み込みに成功したので次のステージへ
+        world = value
+        loaded = true
+        disable = false
         init()
-      case None =>
-        WarsCore.instance.getLogger.severe(s"World loading failed at ${info.mapId} on $id!")
-        // 通常失敗することはないので不具合を拡大させないために無効化する
-        state = GameState.DISABLE
-    }
+        players.foreach(join)
+      }
+
+      override def failure(error: Exception): Unit = {
+        WarsCore.log(s"Failed to load world! id=$id, worldId=$worldId, MapInfo.mapId=${info.mapId}")
+        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
+        state = GameState.ERROR
+      }
+    })
   }
 
   /**
@@ -349,23 +354,14 @@ class Domination(override val id: String) extends Game {
       }
     })
     //WarsCore.instance.database.updateTDMAsync(this)
-    sendMessage("&95秒後にロビーに戻ります...")
+    sendMessage(ChatColor.BLUE + "10秒後にマップが切り替わります")
     bossbar.removeAll()
+    val beforeId = worldId
+    val beforeMembers = members.map(_.player)
+    load(beforeMembers:_*)
     new BukkitRunnable {
       override def run(): Unit = {
-        delete()
-      }
-    }.runTaskLater(WarsCore.instance, 100L)
-  }
-
-  /**
-   * ゲームを削除する
-   */
-  override def delete(): Unit = {
-    WorldLoader.syncUnloadWorld(id)
-    new BukkitRunnable {
-      override def run(): Unit = {
-        load()
+        WorldLoader.asyncUnloadWorld(beforeId)
       }
     }.runTaskLater(WarsCore.instance, 200L)
   }
@@ -395,6 +391,8 @@ class Domination(override val id: String) extends Game {
           "&a/invite <player>&fで他プレイヤーを招待することができます!"
       )
       wp.game = Some(this)
+      // インベントリを変更
+      WarsCoreAPI.changeWeaponInventory(wp)
       wp.player.setScoreboard(scoreboard)
       data.put(wp.player, new DOMData)
       bossbar.addPlayer(wp.player)
@@ -451,6 +449,8 @@ class Domination(override val id: String) extends Game {
       // スコアボード情報をリセット
       wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
       wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
+      // インベントリをリストア
+      WarsCoreAPI.restoreLobbyInventory(wp.player)
     }
   }
 
@@ -610,20 +610,20 @@ class Domination(override val id: String) extends Game {
   }
 
   private def setCapturePoint(): Unit = {
-    val spawn = mapInfo.locations.getOrElse("spawn", (0d, 0d, 0d, 0f, 0f))
-    val red = mapInfo.locations.getOrElse("red", (0d, 0d, 0d, 0f, 0f))
-    val blue = mapInfo.locations.getOrElse("blue", (0d, 0d, 0d, 0f, 0f))
-    val a = mapInfo.locations.getOrElse("a", (0d, 0d, 0d, 0f, 0f))
-    val b = mapInfo.locations.getOrElse("b", (0d, 0d, 0d, 0f, 0f))
-    val c = mapInfo.locations.getOrElse("c", (0d, 0d, 0d, 0f, 0f))
-    spawnPoint = new Location(world, spawn._1, spawn._2, spawn._3, spawn._4, spawn._5)
-    redPoint = new Location(world, red._1, red._2, red._3, red._4, red._5)
-    bluePoint = new Location(world, blue._1, blue._2, blue._3, blue._4, blue._5)
+    val spawn = mapInfo.locations.getOrElse("spawn", WeakLocation.empty)
+    val red = mapInfo.locations.getOrElse("red", WeakLocation.empty)
+    val blue = mapInfo.locations.getOrElse("blue", WeakLocation.empty)
+    val a = mapInfo.locations.getOrElse("a", WeakLocation.empty)
+    val b = mapInfo.locations.getOrElse("b", WeakLocation.empty)
+    val c = mapInfo.locations.getOrElse("c", WeakLocation.empty)
+    spawnPoint = spawn.getLocation(world)
+    redPoint = red.getLocation(world)
+    bluePoint = blue.getLocation(world)
     captureData = Vector(
       // -100 = 青, 100 = 赤, -99 ~ 99 = なし
-      new CapturePoint(ChatColor.GRAY + "拠点 A", "neutral", 0, new Location(world, a._1, a._2, a._3, a._4, a._5)),
-      new CapturePoint(ChatColor.GRAY + "拠点 B", "neutral", 0, new Location(world, b._1, b._2, b._3, b._4, b._5)),
-      new CapturePoint(ChatColor.GRAY + "拠点 C", "neutral", 0, new Location(world, c._1, c._2, c._3, c._4, c._5))
+      new CapturePoint(ChatColor.GRAY + "拠点 A", "neutral", 0, a.getLocation(world)),
+      new CapturePoint(ChatColor.GRAY + "拠点 B", "neutral", 0, b.getLocation(world)),
+      new CapturePoint(ChatColor.GRAY + "拠点 C", "neutral", 0, c.getLocation(world))
     )
   }
 

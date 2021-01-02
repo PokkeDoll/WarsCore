@@ -1,16 +1,13 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.utils.MapInfo
-import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo}
+import hm.moe.pokkedoll.warscore.{WPlayer, WarsCoreAPI}
 import net.md_5.bungee.api.chat.BaseComponent
-import org.bukkit.{ChatColor, World}
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
-import org.bukkit.event.player.PlayerRespawnEvent
-
-import scala.collection.mutable
+import org.bukkit.{ChatColor, World}
 
 /**
  * ゲームのコア部分のトレイト
@@ -23,6 +20,11 @@ trait Game {
    * ゲームの識別ID
    */
   val id: String
+
+  /**
+   * ゲームの構成
+   */
+  val config: GameConfig
 
   /**
    * 読み込むワールドのID.  最初は必ず0
@@ -108,12 +110,6 @@ trait Game {
    * ゲームを終了する
    */
   def end(): Unit
-
-  /**
-   * ゲームを削除する
-   */
-  @Deprecated
-  def delete(): Unit
 
   /**
    * プレイヤーがゲームに参加するときのメソッド
