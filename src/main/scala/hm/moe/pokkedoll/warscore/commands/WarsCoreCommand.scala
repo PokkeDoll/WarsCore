@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.commands
 
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.db.WeaponDB
-import hm.moe.pokkedoll.warscore.ui.WeaponUI
+import hm.moe.pokkedoll.warscore.ui.{SndCheckerUI, WeaponUI}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.chat.ComponentBuilder
@@ -123,6 +123,8 @@ class WarsCoreCommand extends CommandExecutor {
                   t.setCustomName(ChatColor.translateAlternateColorCodes('&', args.tail.mkString(" ")))
                 })
               }
+            case "sndChecker" | "sc" =>
+              SndCheckerUI.openUI(player)
             case _ =>
           }
         }

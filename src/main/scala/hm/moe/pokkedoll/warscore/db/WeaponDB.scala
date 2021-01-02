@@ -12,7 +12,7 @@ trait WeaponDB {
    * @param t    武器のタイプ
    * @return 武器たち
    */
-  def getWeapons(uuid: String, t: String): Seq[String]
+  def getWeapons(uuid: String, t: String): Seq[Item]
 
   /**
    * 現在設定されている武器のリストを取得する

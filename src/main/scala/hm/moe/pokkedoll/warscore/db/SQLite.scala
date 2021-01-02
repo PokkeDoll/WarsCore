@@ -498,75 +498,20 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
-   * すべてのコインを取得する
-   *
-   * @param uuid 対象のUUID
-   * @param t    行のタイプ
-   */
-  override def getCoin(uuid: String, t: Array[String]): Map[String, Int] = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
-    var map = Map.empty[String, Int]
-    try {
-      val column = if (t.isEmpty) CoinDB.PC else t.mkString(", ")
-      val rs = s.executeQuery(s"SELECT $column FROM coin WHERE uuid='$uuid'")
-      if (rs.next()) {
-        (if (t.isEmpty) Array(CoinDB.PC) else t).foreach(f => {
-          map += f -> rs.getInt(f)
-        })
-      }
-      rs.close()
-      map
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        map
-    } finally {
-      s.close()
-      c.close()
-    }
-  }
-
-  /**
-   * 金だけを取得する
-   *
-   * @param uuid 対象のUUID
-   */
-  override def getMoney(uuid: String): Int = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
-    try {
-      val rs = s.executeQuery(s"SELECT ${CoinDB.PC} FROM coin WHERE uuid='$uuid'")
-      if (rs.next()) {
-        rs.getInt(1)
-      } else {
-        0
-      }
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        0
-    } finally {
-      s.close()
-      c.close()
-    }
-  }
-
-  /**
    * 武器を取得する
    *
    * @param uuid 対象のUUID
    * @param t    武器のタイプ
    * @return 武器たち
    */
-  override def getWeapons(uuid: String, t: String): Seq[String] = {
+  override def getWeapons(uuid: String, t: String): Seq[Item] = {
     val c = hikari.getConnection
     val s = c.createStatement()
-    var seq = IndexedSeq.empty[String]
+    var seq = IndexedSeq.empty[Item]
     try {
-      val rs = s.executeQuery(s"SELECT name FROM weapon WHERE uuid='$uuid' and type='$t'")
+      val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and type='$t'")
       while (rs.next()) {
-        seq :+= rs.getString(1)
+        seq :+= new Item(rs.getString(1), rs.getInt("amount"))
       }
       rs.close()
       seq

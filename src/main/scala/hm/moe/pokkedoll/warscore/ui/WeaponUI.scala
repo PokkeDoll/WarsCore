@@ -80,6 +80,7 @@ object WeaponUI {
   val MELEE: String = ChatColor.translateAlternateColorCodes('&', "&e&lMelee")
   val ITEM: String = ChatColor.translateAlternateColorCodes('&', "&e&lItem")
 
+  @Deprecated
   val WEAPON_TYPES: Array[String] = Array(MAIN, SUB, MELEE, ITEM)
 
   val MAIN_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
@@ -177,10 +178,11 @@ object WeaponUI {
         inv.setItem(4, p)
         val barrier = new ItemStack(Material.BARRIER)
         weapons.indices.foreach(f => {
-          val key = weapons(f)
-          val i = ItemUtil.getItem(key).getOrElse(EMPTY).clone()
+          val item = weapons(f)
+          val i = ItemUtil.getItem(item.name).getOrElse(EMPTY).clone()
           val m = i.getItemMeta
-          m.getPersistentDataContainer.set(weaponKey, PersistentDataType.STRING, key)
+          m.setDisplayName(m.getDisplayName + " × " + item.amount)
+          m.getPersistentDataContainer.set(weaponKey, PersistentDataType.STRING, item.name)
           m.getPersistentDataContainer.set(weaponTypeKey, PersistentDataType.STRING, weaponType)
           i.setItemMeta(m)
           inv.setItem(9 + f, i)

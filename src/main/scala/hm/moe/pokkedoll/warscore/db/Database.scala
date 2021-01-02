@@ -17,7 +17,7 @@ import scala.collection.mutable
  * @author Emorard
  * @version 3.0
  */
-trait Database extends CoinDB with WeaponDB {
+trait Database extends WeaponDB {
   /**
    * データベースに自分のデータがあるか確認するメソッド
    *
