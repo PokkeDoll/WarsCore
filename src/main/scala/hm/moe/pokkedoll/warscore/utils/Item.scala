@@ -15,3 +15,18 @@ class Item(val name: String, val amount: Int) {
     }
   }
 }
+
+object Item {
+  def of(string: String): Option[Item] = {
+    val split = string.split("@")
+    if (split.length == 2) {
+      Some(new Item(split(0), try {
+        split(1).toInt
+      } catch {
+        case _: NumberFormatException => 0
+      }))
+    } else {
+      None
+    }
+  }
+}

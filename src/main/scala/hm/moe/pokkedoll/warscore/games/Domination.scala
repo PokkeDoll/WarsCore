@@ -475,6 +475,10 @@ class Domination(override val id: String) extends Game {
           if (attacker.isOp || victim.getAddress != attacker.getAddress) {
             // EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
           }
+          WarsCore.instance.database.addItem(
+            attacker.getUniqueId.toString,
+            config.onKillItem:_*
+          )
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
           e.setDeathSoundVolume(2f)

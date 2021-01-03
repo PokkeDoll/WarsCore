@@ -3,7 +3,6 @@ package hm.moe.pokkedoll.warscore.utils
 import java.io.File
 
 import hm.moe.pokkedoll.warscore.WarsCore
-import hm.moe.pokkedoll.warscore.utils.TagUtil.plugin
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 
@@ -31,7 +30,12 @@ class GameConfig(cs: ConfigurationSection) {
       )
     })
     .toList
-  // TODO キル時の報酬など
+
+  val onKillItem: Array[Item] = cs.getStringList("event.kill.item").asScala.flatMap(Item.of).toArray
+  val onKillExp: Int = cs.getInt("event.kill.exp", 0)
+
+  val onWinItem: Array[Item] = cs.getStringList("event.win.item").asScala.flatMap(Item.of).toArray
+  val onWinExp: Int = cs.getInt("event.win.exp", 0)
 }
 
 object GameConfig {

@@ -1,12 +1,15 @@
 package hm.moe.pokkedoll.warscore.ui
 
+import java.util
+
 import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.utils.ItemUtil
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
-import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, Material, NamespacedKey}
@@ -157,6 +160,75 @@ object WeaponUI {
 
   private val weaponKey = new NamespacedKey(WarsCore.instance, "weapon-key")
 
+  val STORAGE_TITLE = "Storage"
+
+  /**
+   * ストレージUIを開く
+   *
+   * @param player 対象のPlayer
+   * @param page   ページ。デフォルトは1
+   */
+  def openStorageUI(player: HumanEntity, page: Int = 1): Unit = {
+    val inv = Bukkit.createInventory(null, 54, STORAGE_TITLE)
+    val header = Array.fill(9)(PANEL)
+    header.update(0, new ItemStack(Material.BARRIER))
+    header.update(1, BACK_MAIN_UI)
+    header.update(4, pageIcon(page))
+    val offset = (page - 1) * 45
+    new BukkitRunnable {
+      override def run(): Unit = {
+        inv.setContents(
+          header ++
+            db.getOriginalItem(player.getUniqueId.toString, offset)
+              .map(data => {
+                val item = ItemUtil.getItem(data._2).getOrElse(EMPTY).clone()
+                val meta = item.getItemMeta
+                val lore = new util.ArrayList[String](java.util.Arrays.asList(
+                  ChatColor.WHITE + "【情報】",
+                  ChatColor.GRAY + "" + ChatColor.BOLD + "タイプ: " + ChatColor.GREEN + data._1,
+                  ChatColor.GRAY + "" + ChatColor.BOLD + "所持数: " + ChatColor.GREEN + data._3,
+                  " ",
+                  ChatColor.WHITE + "【説明】"
+                ))
+                if (meta.hasLore) lore.addAll(meta.getLore)
+                meta.setLore(lore)
+                item.setItemMeta(meta)
+                if (data._4) {
+                  item.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 0)
+                  item.addItemFlags(ItemFlag.HIDE_ENCHANTS)
+                }
+                item
+              })
+              .toArray
+        )
+        player.openInventory(inv)
+      }
+    }.runTask(WarsCore.instance)
+  }
+
+  /**
+   * ストレージUIをクリックしたときに呼ばれる
+   *
+   * @param e InventoryClickEvent
+   */
+  def onClickStorageUI(e: InventoryClickEvent): Unit = {
+    e.setCancelled(true)
+    val player = e.getWhoClicked
+    e.getSlot match {
+      case 0 => player.closeInventory()
+      case 1 => openMainUI(player)
+      case 4 =>
+        val i = e.getCurrentItem
+        val page = i.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
+        if (e.isLeftClick) {
+          if (page != 1) openStorageUI(player, page - 1)
+        } else if (e.isRightClick) {
+          openStorageUI(player, page + 1)
+        }
+      case _ =>
+    }
+  }
+
   /**
    * 武器設定UIを開く
    *
@@ -213,10 +285,10 @@ object WeaponUI {
           // 額縁。メインメニューに戻る
         } else if (e.getSlot == 1) {
           openMainUI(player)
-        } else if(i != null && i.getType != Material.AIR && i.getType != PANEL.getType) {
+        } else if (i != null && i.getType != Material.AIR && i.getType != PANEL.getType) {
           val meta = i.getItemMeta
           val per = meta.getPersistentDataContainer
-          if(per.has(weaponKey, PersistentDataType.STRING)) {
+          if (per.has(weaponKey, PersistentDataType.STRING)) {
             db.setWeapon(player.getUniqueId.toString, t = per.get(weaponTypeKey, PersistentDataType.STRING), name = per.get(weaponKey, PersistentDataType.STRING))
             openMainUI(player)
           }
@@ -224,4 +296,6 @@ object WeaponUI {
       case _ =>
     }
   }
+
+
 }

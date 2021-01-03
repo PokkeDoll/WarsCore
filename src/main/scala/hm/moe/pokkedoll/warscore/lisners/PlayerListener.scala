@@ -71,6 +71,31 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
   }
 
   @EventHandler
+  def onPickup(e: PlayerAttemptPickupItemEvent): Unit = {
+    val player = e.getPlayer
+    if(player.getGameMode == GameMode.SURVIVAL) {
+      WarsCoreAPI.getWPlayer(player).game match {
+        case Some(_) =>
+          e.setCancelled(true)
+          if(player.isSneaking) {
+            val item = player.getInventory.getItemInMainHand
+            if(item != null && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+              player.getInventory.setItemInMainHand(e.getItem.getItemStack)
+              e.getItem.remove()
+              player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
+              WarsCoreAPI.info(player, "武器を切り替えた！")
+            } else {
+              player.sendActionBar(ChatColor.BLUE + "手に武器を持っていません！")
+            }
+          } else {
+            player.sendActionBar(ChatColor.BLUE + "スニークをすることで武器を切り替えることができます")
+          }
+        case _ =>
+      }
+    }
+  }
+
+  @EventHandler
   def onInventoryClick(e: InventoryClickEvent): Unit = {
     val inv = e.getClickedInventory
     val p = e.getWhoClicked
@@ -110,6 +135,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       ShopUI.onClick(e)
     } else if (title == SndCheckerUI.TITLE) {
       SndCheckerUI.onClick(e)
+    } else if (title == WeaponUI.STORAGE_TITLE) {
+      WeaponUI.onClickStorageUI(e)
     }
     else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
@@ -152,6 +179,11 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
           }
            */
         }
+      }
+    } else if(e.getClickedBlock != null) {
+      if(e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
+        e.setCancelled(true)
+        WeaponUI.openStorageUI(e.getPlayer)
       }
     }
   }
@@ -213,4 +245,6 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       .forEach(_.sendMessage(
         ChatColor.translateAlternateColorCodes('&', s"&7[&3CMDESP&7]&3 ${e.getPlayer.getName}: ${e.getMessage}")))
   }
+
+
 }

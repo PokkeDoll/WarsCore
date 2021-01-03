@@ -125,6 +125,8 @@ class WarsCoreCommand extends CommandExecutor {
               }
             case "sndChecker" | "sc" =>
               SndCheckerUI.openUI(player)
+            case "storage" =>
+              WeaponUI.openStorageUI(player)
             case _ =>
           }
         }

@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore.ui
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, ShopUtil}
 import net.md_5.bungee.api.ChatColor
-import org.bukkit.{Bukkit, Material, NamespacedKey}
+import org.bukkit.{Bukkit, Material, NamespacedKey, Sound}
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
 import org.bukkit.inventory.ItemStack
@@ -13,7 +13,7 @@ import scala.jdk.CollectionConverters._
 
 object ShopUI {
 
-  val TITLE = (name: String) => s"Shop: $name"
+  val TITLE: String => String = (name: String) => s"Shop: $name"
 
   val EMPTY = new ItemStack(Material.BARRIER)
 
@@ -53,8 +53,9 @@ object ShopUI {
               }
           }).toList ++
           List(
+            "§7§l|",
             "§7§l| §7達成条件 §7§l: §7必要値 §8/ §7現在値",
-            "§fテスト条件: §c0 / 1"
+            // "§fテスト条件: §c0 / 1"
           )
           ).asJava)
       if(buyable) {
@@ -79,6 +80,10 @@ object ShopUI {
           if(data.has(shopIdKey, PersistentDataType.STRING) && data.has(shopIndexKey, PersistentDataType.INTEGER)) {
             val shop = ShopUtil.getShops(data.get(shopIdKey, PersistentDataType.STRING))(data.get(shopIndexKey, PersistentDataType.INTEGER))
             WarsCoreAPI.debug(player, "購入処理！")
+            WarsCore.instance.database.addWeapon(player.getUniqueId.toString, shop.`type`, shop.product.name, shop.product.amount)
+            WarsCore.instance.database.delWeapon(player.getUniqueId.toString, shop.price)
+            player.playSound(player.getLocation, Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1.5f)
+            openShopUI(player, e.getView.getTitle.replaceAll("Shop: ", ""))
           } else {
             WarsCoreAPI.debug(player, "何も起きず！")
           }

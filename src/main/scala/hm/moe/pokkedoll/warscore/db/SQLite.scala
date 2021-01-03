@@ -64,7 +64,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
     val c = hikari.getConnection()
     val s = c.createStatement()
     try {
-      s.addBatch(s"INSERT INTO player(uuid) VALUES('$uuid')'")
+      s.addBatch(s"INSERT INTO player(uuid) VALUES('$uuid')")
       s.addBatch(s"INSERT INTO rank(uuid) VALUES('$uuid')")
       s.addBatch(s"INSERT INTO tag(uuid, use) VALUES('$uuid', 1)")
       s.addBatch(s"INSERT INTO tdm(uuid) VALUES('$uuid')")
@@ -498,6 +498,34 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
+   * データベースから未加工のデータを取得する
+   *
+   * @param uuid   UUID
+   * @param offset 取得を始める番号
+   * @return (type, name, amount, use)の組
+   */
+  override def getOriginalItem(uuid: String, offset: Int): List[(String, String, Int, Boolean)] = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    var list = List.empty[(String, String, Int, Boolean)]
+    try {
+      val rs = s.executeQuery(s"SELECT type, name, amount, use FROM weapon WHERE uuid='$uuid' LIMIT 45 OFFSET $offset")
+      while (rs.next()) {
+        list :+= (rs.getString("type"), rs.getString("name"), rs.getInt("amount"), rs.getBoolean("use"))
+      }
+      rs.close()
+      list
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        list
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
    * 武器を取得する
    *
    * @param uuid 対象のUUID
@@ -599,6 +627,37 @@ class SQLite(private val plugin: WarsCore) extends Database {
       s.close()
       c.close()
     }
+  }
+
+  /**
+   * アイテムを追加する。タイプはitemに固定される。さらに非同期！
+   * @param uuid 対象のUUID
+   * @param item アイテム
+   */
+  override def addItem(uuid: String, item: Item*): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = {
+        val c = hikari.getConnection
+        val s = c.prepareStatement("INSERT INTO weapon (uuid, type, name, amount) VALUES(?, ?, ?, ?) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+?")
+        try {
+          s.setString(1, uuid)
+          s.setString(2, WeaponDB.ITEM)
+          item.foreach(i => {
+            s.setString(3, i.name)
+            s.setInt(4, i.amount)
+            s.setInt(5, i.amount)
+            s.addBatch()
+          })
+          s.executeBatch()
+        } catch {
+          case e: SQLException =>
+            e.printStackTrace()
+        } finally {
+          s.close()
+          c.close()
+        }
+      }
+    }.runTaskAsynchronously(plugin)
   }
 
   def buylWeapon(uuid: String, t: String, shop: ShopUtil.Shop, callback: Callback[String]): Unit = {

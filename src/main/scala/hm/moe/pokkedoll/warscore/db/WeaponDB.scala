@@ -2,9 +2,17 @@ package hm.moe.pokkedoll.warscore.db
 
 import hm.moe.pokkedoll.warscore.Callback
 import hm.moe.pokkedoll.warscore.utils.Item
-import hm.moe.pokkedoll.warscore.utils.ShopUtil.Shop
 
 trait WeaponDB {
+  /**
+   * データベースから未加工のデータを取得する
+   *
+   * @param uuid   UUID
+   * @param offset 取得を始める番号
+   * @return (type, name, amount, use)の組
+   */
+  def getOriginalItem(uuid: String, offset: Int): List[(String, String, Int, Boolean)]
+
   /**
    * 武器を取得する
    *
@@ -41,7 +49,16 @@ trait WeaponDB {
   def addWeapon(uuid: String, t: String, name: String, amount: Int)
 
   /**
+   * アイテムを追加する。タイプはitemに固定される。さらに非同期！
+   *
+   * @param uuid 対象のUUID
+   * @param item アイテム
+   */
+  def addItem(uuid: String, item: Item*)
+
+  /**
    * 武器を削除する
+   *
    * @param uuid
    * @param price
    */
@@ -49,6 +66,7 @@ trait WeaponDB {
 
   /**
    * 実際にプレイやーが所持しているアイテムを付け加えて返す。非同期で使う
+   *
    * @param uuid UUID
    * @param item Shop.priceで獲得できる
    * @return Map

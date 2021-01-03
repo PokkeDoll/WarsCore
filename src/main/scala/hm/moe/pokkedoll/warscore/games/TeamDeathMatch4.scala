@@ -1,6 +1,8 @@
 package hm.moe.pokkedoll.warscore.games
 
+import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
+import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, RankManager, WeakLocation, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -10,6 +12,7 @@ import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{Arrow, Player}
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
@@ -297,12 +300,16 @@ class TeamDeathMatch4(override val id: String) extends Game {
     //WarsCore.instance.database.updateTDMAsync(this)
     sendMessage(ChatColor.BLUE + "10秒後にマップが切り替わります")
     bossbar.removeAll()
-    val beforeId = worldId
-    val beforeMembers = members.map(_.player)
-    load(beforeMembers:_*)
     new BukkitRunnable {
       override def run(): Unit = {
-        WorldLoader.asyncUnloadWorld(beforeId)
+        val beforeId = worldId
+        val beforeMembers = members.map(_.player)
+        load(beforeMembers:_*)
+        new BukkitRunnable {
+          override def run(): Unit = {
+            WorldLoader.asyncUnloadWorld(beforeId)
+          }
+        }.runTaskLater(WarsCore.instance, 200L)
       }
     }.runTaskLater(WarsCore.instance, 200L)
   }
@@ -420,6 +427,11 @@ class TeamDeathMatch4(override val id: String) extends Game {
             EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
           }
            */
+          WarsCore.instance.database.addItem(
+            attacker.getUniqueId.toString,
+            config.onKillItem:_*
+          )
+          WarsCoreAPI.debug(attacker, "アイテムを獲得 > '/wc storage' or エンダーチェストで確認")
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
           e.setDeathSoundVolume(2f)
@@ -448,6 +460,13 @@ class TeamDeathMatch4(override val id: String) extends Game {
         case None =>
           sendMessage(s"§f0X ${victim.getName} dead")
           Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
+      }
+      // テスト処理
+      if(true) {
+        val item = victim.getInventory.getItemInMainHand
+        if(item != null && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+          world.dropItem(victim.getLocation(), item)
+        }
       }
       // とにかく死んだのでリスポン処理
       spawn(victim, coolTime = true)

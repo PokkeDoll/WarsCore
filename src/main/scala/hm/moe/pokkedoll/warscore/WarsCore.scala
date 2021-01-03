@@ -79,7 +79,7 @@ class WarsCore extends JavaPlugin {
 
     setupCSPP()
 
-    new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 1200L)
+    new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 20 * 60 * 10L)
 
     cs = new CSUtility
 
@@ -105,6 +105,8 @@ class WarsCore extends JavaPlugin {
     getServer.getMessenger.unregisterOutgoingPluginChannel(this, MODERN_TORUS_CHANNEL)
     database.close()
   }
+
+  def getCSUtility: CSUtility = cs
 
   def setupCSPP(): Unit = {
     cspp match {

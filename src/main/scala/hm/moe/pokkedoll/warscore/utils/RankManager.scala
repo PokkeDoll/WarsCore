@@ -1,9 +1,10 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import hm.moe.pokkedoll.warscore.{Test, WPlayer, WarsCore}
+import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore}
+import net.md_5.bungee.api.ChatColor
+import org.bukkit.Sound
 import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
-import org.bukkit.scoreboard.{DisplaySlot, Scoreboard}
-import org.bukkit.{ChatColor, Sound}
+import org.bukkit.scoreboard.DisplaySlot
 
 /**
  * ランクを大雑把に管理するオブジェクト
@@ -58,7 +59,7 @@ object RankManager {
           new BukkitRunnable {
             override def run(): Unit = {
               plugin.database.setRankData(uuid, ndata)
-              updateSidebar(sb, ndata)
+              //updateSidebar(sb, ndata)
             }
           }.runTaskLater(plugin, 40L)
         case None =>
@@ -66,36 +67,4 @@ object RankManager {
       }
     }
   }.runTaskLater(plugin, 1L)
-
-
-  /**
-   * データを直接渡すため高速
-   *
-   * @param sb   プレイヤーのスコアボード
-   * @param data ランク, 経験値の組
-   */
-  def updateSidebar(sb: Scoreboard, data: (Int, Int)): Unit = {
-    val test = new Test("RankManager.updateSidebar(Player, Scoreboard, (Int, Int))")
-    if (sb.getObjective(DisplaySlot.SIDEBAR) != null) sb.getObjective(DisplaySlot.SIDEBAR).unregister()
-    val obj = sb.registerNewObjective("sidebar", "dummy")
-    obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWelcome to &dWars &eBuild 1.8.x"))
-    obj.setDisplaySlot(DisplaySlot.SIDEBAR)
-
-    val scores = List(
-      obj.getScore(chatColor(s"&9Rank: &b${data._1}")),
-      obj.getScore(chatColor(s"&9EXP: &a${data._2} &7/ &a${getNextExp(data._1)}")),
-      obj.getScore(" "),
-      obj.getScore(chatColor("&6/game&f: 試合に参加")),
-      obj.getScore(chatColor("&6/spawn&f: スポーン地点に戻る")),
-      obj.getScore(chatColor("&6/sf&f: ステータスを設定")),
-      obj.getScore(chatColor("&6/pp&f: コマンド一覧を表示")),
-      obj.getScore(chatColor("&6&m/vote&f: 投票ページを開く"))
-    )
-    var sc = scores.length
-    scores.foreach(s => {
-      s.setScore(sc)
-      sc -= 1
-    })
-    test.log()
-  }
 }

@@ -179,7 +179,7 @@ object WarsCoreAPI {
         val tagData = TagUtil.cache.getOrElse(wp.tag, "-")
 
         wp.rank = rankData._1
-        RankManager.updateSidebar(scoreboard, data = rankData)
+        // RankManager.updateSidebar(scoreboard, data = rankData)
 
         // タグ
         val tag = Option(scoreboard.getObjective("tag")) match {
