@@ -131,19 +131,19 @@ object WarsCoreAPI {
 
     (1 to 4) foreach (id => {
       games.put(s"tdm-$id", new TeamDeathMatch(s"tdm-$id"))
-      if (Bukkit.getWorld(s"tdm-$id") != null) WorldLoader.syncUnloadWorld(s"tdm-$id")
+      if (Bukkit.getWorld(s"tdm-$id") != null) WorldLoader.asyncUnloadWorld(s"tdm-$id")
     })
 
     (1 to 2) foreach (id => {
       games.put(s"dom-$id", new Domination(s"dom-$id"))
-      if (Bukkit.getWorld(s"dom-$id") != null) WorldLoader.syncUnloadWorld(s"dom-$id")
+      if (Bukkit.getWorld(s"dom-$id") != null) WorldLoader.asyncUnloadWorld(s"dom-$id")
     })
 
     games.put("tactics-1", new Tactics("tactics-1"))
-    if (Bukkit.getWorld("tactics-1") != null) WorldLoader.syncUnloadWorld("tactics-1")
+    if (Bukkit.getWorld("tactics-1") != null) WorldLoader.asyncUnloadWorld("tactics-1")
 
     games.put("tdm4-1", new TeamDeathMatch4("tdm4-1"))
-    if (Bukkit.getWorld("tdm4-1") != null) WorldLoader.syncUnloadWorld("tdm4-1")
+    if (Bukkit.getWorld("tdm4-1") != null) WorldLoader.asyncUnloadWorld("tdm4-1")
   }
 
   /**

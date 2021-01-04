@@ -24,6 +24,11 @@ import scala.collection.mutable
  * @version 1.0
  */
 class Domination(override val id: String) extends Game {
+  /**
+   * 読み込むワールドのID.  最初は必ず0
+   */
+  override var worldId: String = s"$id-0"
+
 
   /**
    * ゲームの構成
@@ -358,6 +363,7 @@ class Domination(override val id: String) extends Game {
     bossbar.removeAll()
     val beforeId = worldId
     val beforeMembers = members.map(_.player)
+    worldId = WarsCoreAPI.createWorldHash(this)
     load(beforeMembers:_*)
     new BukkitRunnable {
       override def run(): Unit = {
@@ -755,10 +761,4 @@ class Domination(override val id: String) extends Game {
       kill * 5 + death + assist + (if (win) 100 else 0)
     }
   }
-
-  /**
-   * 読み込むワールドのID.  最初は必ず0
-   *
-   */
-  override var worldId: String = _
 }

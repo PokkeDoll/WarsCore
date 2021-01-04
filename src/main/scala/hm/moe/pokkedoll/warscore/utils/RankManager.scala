@@ -50,8 +50,8 @@ object RankManager {
           } else {
             // サイドバーに表記
             // 現在は8 - 1...
-            sb.resetScores(chatColor(s"&9EXP: &a${data._2} &7/ &a${getNextExp(data._1)}"))
-            obj.getScore(chatColor(s"&9EXP: &b&l$amount + ${data._2} &7/ &a${getNextExp(data._1)}")).setScore(7)
+            // sb.resetScores(chatColor(s"&9EXP: &a${data._2} &7/ &a${getNextExp(data._1)}"))
+            // obj.getScore(chatColor(s"&9EXP: &b&l$amount + ${data._2} &7/ &a${getNextExp(data._1)}")).setScore(7)
             player.playSound(player.getLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
             wp.sendMessage(s"&b$amount exp獲得しました")
             (data._1, nexp)

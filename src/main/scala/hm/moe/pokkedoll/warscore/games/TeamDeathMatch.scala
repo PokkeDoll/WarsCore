@@ -300,6 +300,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     bossbar.removeAll()
     val beforeId = worldId
     val beforeMembers = members.map(_.player)
+    worldId = WarsCoreAPI.createWorldHash(this)
     load(beforeMembers:_*)
     new BukkitRunnable {
       override def run(): Unit = {

@@ -300,10 +300,11 @@ class TeamDeathMatch4(override val id: String) extends Game {
     //WarsCore.instance.database.updateTDMAsync(this)
     sendMessage(ChatColor.BLUE + "10秒後にマップが切り替わります")
     bossbar.removeAll()
+    val beforeId = worldId
+    val beforeMembers = members.map(_.player)
+    worldId = WarsCoreAPI.createWorldHash(this)
     new BukkitRunnable {
       override def run(): Unit = {
-        val beforeId = worldId
-        val beforeMembers = members.map(_.player)
         load(beforeMembers:_*)
         new BukkitRunnable {
           override def run(): Unit = {

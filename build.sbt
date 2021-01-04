@@ -1,10 +1,14 @@
 name := "WarsCore"
 
-version := "1.9"
+version := "1.9.3"
 
 scalaVersion := "2.13.3"
 
 javacOptions ++= Seq("-source", "11", "-target", "11")
+
+organization := "hm.moe.pokkedoll"
+
+crossPaths := false
 
 resolvers += "papermc" at "https://papermc.io/repo/repository/maven-public/"
 resolvers += "jitpack.io" at "https://jitpack.io"
@@ -27,4 +31,9 @@ val libs = Seq(
 packageOptions in (Compile, packageBin) +=
   Package.ManifestAttributes("Class-Path" -> libs.mkString(" "))
 
-artifactName :={(sv: ScalaVersion,module: ModuleID, artifact: Artifact) => "WarsCore-" + module.revision + "." + artifact.extension}
+// artifactName :={(sv: ScalaVersion,module: ModuleID, artifact: Artifact) => "WarsCore-" + module.revision + "." + artifact.extension}
+
+// publish
+githubOwner := "PokkeDoll"
+githubRepository := "WarsCore"
+githubTokenSource := TokenSource.GitConfig("github.token")

@@ -3,7 +3,6 @@ package hm.moe.pokkedoll.warscore.commands
 import java.util.UUID
 
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
-import io.chazza.advancementapi.{AdvancementAPI, FrameType}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{ClickEvent, ComponentBuilder}
 import org.bukkit.{Bukkit, NamespacedKey, Sound}
@@ -38,16 +37,6 @@ class InviteCommand extends CommandExecutor {
                       .create(): _*
                   )
                   player.sendMessage(ChatColor.GREEN + target.getName + ChatColor.WHITE + "に招待を送りました")
-                  val advancement = AdvancementAPI.builder(new NamespacedKey(WarsCore.instance, "story/" + UUID.randomUUID().toString))
-                    .frame(FrameType.TASK)
-                    .icon("minecraft:bow")
-                    .title(s"§a${player.getName}§fからゲームに招待されました！チャット欄を確認してください！")
-                    .description("description")
-                    .background("minecraft:textures/blocks/bedrock.png")
-                    .announce(false)
-                    .toast(true)
-                    .build()
-                  advancement.show(WarsCore.instance, target)
                   target.playSound(target.getLocation, Sound.ENTITY_VILLAGER_YES, 1f, 1f)
                 case None =>
                   player.sendMessage(ChatColor.RED + "ゲームに参加していないため招待できませんでした")
