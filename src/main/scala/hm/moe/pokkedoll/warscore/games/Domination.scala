@@ -95,7 +95,7 @@ class Domination(override val id: String) extends Game {
     state = GameState.INIT
     val worlds = config.maps
     val info = scala.util.Random.shuffle(worlds).head
-    WorldLoader.asyncLoadWorld(s"worlds/${info.mapId}", id, new Callback[World] {
+    WorldLoader.asyncLoadWorld(world = info.mapId, worldId = worldId, new Callback[World] {
       override def success(value: World): Unit = {
         mapInfo = info
         world = value

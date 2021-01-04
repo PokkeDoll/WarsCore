@@ -1,5 +1,11 @@
 package hm.moe.pokkedoll.test
 
+import java.io.File
+import java.nio.file.Paths
+
+import hm.moe.pokkedoll.warscore.utils.WorldLoader
+
+
 object TestApp extends App {
   /*
   val s = Seq((1, 0), (2, 0), (3, 0), (4, 1), (5, 0), (6, 1)).groupBy(f => f._2 == 0)
@@ -19,8 +25,12 @@ object TestApp extends App {
   }
   print(dummy2)
  */
+  /*
   var a = Seq.empty[Int]
   a :+= 5
   a :+= 99
   println(a)
+   */
+  val file = new File("./tdms/mono.zip")
+  WorldLoader.unzip2(file.toPath, new File("./tdm").toPath)
 }
