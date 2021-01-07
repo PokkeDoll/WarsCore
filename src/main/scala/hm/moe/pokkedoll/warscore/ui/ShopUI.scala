@@ -20,6 +20,22 @@ object ShopUI {
   val shopIdKey = new NamespacedKey(WarsCore.instance, "shop-id")
   val shopIndexKey = new NamespacedKey(WarsCore.instance, "shop-index")
 
+  val getSize: Int => Int = (length: Int) => {
+    if(length >= 45) {
+      54
+    } else if (length >= 36) {
+      45
+    } else if (length >= 27) {
+      36
+    } else if (length >= 18) {
+      27
+    } else if (length >= 9) {
+      18
+    } else {
+      9
+    }
+  }
+
   def openShopUI(player: Player, name: String): Unit = {
     val shops = ShopUtil.getShops(name)
     val inv = Bukkit.createInventory(null, 54, TITLE(name))

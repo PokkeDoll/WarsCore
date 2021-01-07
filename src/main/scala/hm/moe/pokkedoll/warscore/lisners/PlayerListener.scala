@@ -73,13 +73,13 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
   @EventHandler
   def onPickup(e: PlayerAttemptPickupItemEvent): Unit = {
     val player = e.getPlayer
-    if(player.getGameMode == GameMode.SURVIVAL) {
+    if (player.getGameMode == GameMode.SURVIVAL) {
       WarsCoreAPI.getWPlayer(player).game match {
         case Some(_) =>
           e.setCancelled(true)
-          if(player.isSneaking) {
+          if (player.isSneaking) {
             val item = player.getInventory.getItemInMainHand
-            if(item != null && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+            if (item != null && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
               player.getInventory.setItemInMainHand(e.getItem.getItemStack)
               e.getItem.remove()
               player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
@@ -140,7 +140,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     }
     else {
       val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
-      if (wp.game.isDefined) {
+      if (wp.game.isDefined && p.getGameMode != GameMode.CREATIVE) {
         e.setCancelled(true)
         p.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
       }
@@ -158,18 +158,15 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     if (e.getAction == Action.RIGHT_CLICK_AIR && e.getHand == EquipmentSlot.HAND) {
       if (item != null) {
         val player = e.getPlayer
-        if (item.getType == Material.IRON_HOE && item.hasItemMeta) {
+        if (item.hasItemMeta && item.getItemMeta.getPersistentDataContainer.has(WarsCoreAPI.weaponUnlockNameKey, PersistentDataType.STRING)) {
           val per = item.getItemMeta.getPersistentDataContainer
-          if (per.has(WarsCoreAPI.weaponUnlockNameKey, PersistentDataType.STRING) &&
-              per.has(WarsCoreAPI.weaponUnlockTypeKey, PersistentDataType.STRING)) {
-            WarsCoreAPI.unlockWeapon(
-              player = e.getPlayer,
-              t = per.get(WarsCoreAPI.weaponUnlockTypeKey, PersistentDataType.STRING),
-              weapon = per.get(WarsCoreAPI.weaponUnlockNameKey, PersistentDataType.STRING)
-            )
-            info(player, s"${WarsCoreAPI.getItemStackName(item)} をアンロックしました！")
-            player.playSound(player.getLocation, Sound.BLOCK_CHEST_LOCKED, 1f, 2f)
-          }
+          WarsCoreAPI.unlockWeapon(
+            player = e.getPlayer,
+            t = per.get(WarsCoreAPI.weaponUnlockTypeKey, PersistentDataType.STRING),
+            weapon = per.get(WarsCoreAPI.weaponUnlockNameKey, PersistentDataType.STRING)
+          )
+          info(player, s"${WarsCoreAPI.getItemStackName(item)} をアンロックしました！")
+          player.playSound(player.getLocation, Sound.BLOCK_CHEST_LOCKED, 1f, 2f)
         } else {
           /*
           WarsCoreAPI.getWPlayer(player).game match {
@@ -180,8 +177,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
            */
         }
       }
-    } else if(e.getClickedBlock != null) {
-      if(e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
+    } else if (e.getClickedBlock != null) {
+      if (e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
         e.setCancelled(true)
         WeaponUI.openStorageUI(e.getPlayer)
       }
@@ -192,7 +189,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
   def onInteractAtEntity(e: PlayerInteractAtEntityEvent): Unit = {
     if (e.getHand == EquipmentSlot.HAND && e.getRightClicked != null) {
       val name = e.getRightClicked.getCustomName
-      if(name != null && ShopUtil.hasName(name)) {
+      if (name != null && ShopUtil.hasName(name)) {
         ShopUI.openShopUI(e.getPlayer, name)
       }
     }

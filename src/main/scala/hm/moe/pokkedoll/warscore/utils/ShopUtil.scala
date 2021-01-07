@@ -85,7 +85,7 @@ object ShopUtil {
   }
 
   def newShop(name: String): Unit = {
-    config.set(name, java.util.Arrays.asList("air@1,air@1"))
+    config.set(name, java.util.Arrays.asList("item:air@1,air@1"))
     saveConfig()
     reload()
   }

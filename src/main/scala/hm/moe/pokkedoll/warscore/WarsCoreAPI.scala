@@ -365,13 +365,13 @@ object WarsCoreAPI {
     database.setVInv(player.getUniqueId.toString, player.getInventory.getStorageContents, new Callback[Unit] {
       override def success(value: Unit): Unit = {
         val weapons = database.getActiveWeapon(player.getUniqueId.toString)
-        val get = (key: String) => ItemUtil.getItem(key).getOrElse(new ItemStack(Material.AIR))
+        val get = (key: String, default: String) => ItemUtil.getItem(key).getOrElse(ItemUtil.getItem(default).get)
         player.getInventory.setContents(
           Array(
-            get(weapons._1),
-            get(weapons._2),
-            get(weapons._3),
-            get(weapons._4),
+            get(weapons._1, "ak-47"),
+            get(weapons._2, "m92"),
+            get(weapons._3, "knife"),
+            get(weapons._4, "grenade"),
             new ItemStack(Material.AIR),
             new ItemStack(Material.AIR),
             new ItemStack(Material.AIR),
