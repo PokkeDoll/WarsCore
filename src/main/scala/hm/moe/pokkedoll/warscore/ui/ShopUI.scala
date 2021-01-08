@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.ui
 
-import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{Test, WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, ShopUtil}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.{Bukkit, Material, NamespacedKey, Sound}
@@ -20,28 +20,62 @@ object ShopUI {
   val shopIdKey = new NamespacedKey(WarsCore.instance, "shop-id")
   val shopIndexKey = new NamespacedKey(WarsCore.instance, "shop-index")
 
-  val getSize: Int => Int = (length: Int) => {
-    if(length >= 45) {
-      54
-    } else if (length >= 36) {
-      45
-    } else if (length >= 27) {
-      36
-    } else if (length >= 18) {
-      27
-    } else if (length >= 9) {
-      18
-    } else {
-      9
-    }
+  private val topAndBottomIcon = {
+    val i = new ItemStack(Material.LIME_STAINED_GLASS_PANE)
+    val m = i.getItemMeta
+    m.setDisplayName(" ")
+    i.setItemMeta(m)
+    i
   }
 
-  def openShopUI(player: Player, name: String): Unit = {
-    val shops = ShopUtil.getShops(name)
-    val inv = Bukkit.createInventory(null, 54, TITLE(name))
-    shops.indices.foreach(i => {
-      val shop = shops(i)
+  private val contentIcon = {
+    val i = new ItemStack(Material.BLUE_STAINED_GLASS_PANE)
+    val m = i.getItemMeta
+    m.setDisplayName(" ")
+    i
+  }
 
+  // TODO もっとエコにできるかもしれない。
+  def openShopUI(player: Player, name: String, offset: Int = 0): Unit = {
+    val test = new Test("openShopUI > v1.9.5")
+    val shops = ShopUtil.getShops(name)
+    val inv = Bukkit.createInventory(null, 45, TITLE(name))
+
+    val groundwork = Array.fill(9)(topAndBottomIcon) ++ Array.fill(27)(contentIcon) ++ Array.fill(9)(topAndBottomIcon)
+
+    groundwork.update(0, WarsCoreAPI.UI.CLOSE)
+    groundwork.update(18, {
+      val i = new ItemStack(Material.LADDER)
+      val m = i.getItemMeta
+      if(offset == 0) {
+        m.setDisplayName(ChatColor.RED + "-")
+      } else {
+        m.setDisplayName(ChatColor.WHITE + "←")
+        m.getPersistentDataContainer.set(shopIdKey, PersistentDataType.STRING, name)
+        m.getPersistentDataContainer.set(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER, Integer.valueOf(offset - 9))
+      }
+      i.setItemMeta(m)
+      i
+    })
+    groundwork.update(26, {
+      val i = new ItemStack(Material.LADDER)
+      val m = i.getItemMeta
+      if(offset > shops.length) {
+        m.setDisplayName(ChatColor.RED + "-")
+      } else {
+        m.setDisplayName(ChatColor.WHITE + "→")
+        m.getPersistentDataContainer.set(shopIdKey, PersistentDataType.STRING, name)
+        m.getPersistentDataContainer.set(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER, Integer.valueOf(offset + 9))
+      }
+      i.setItemMeta(m)
+      i
+    })
+
+    val slicedShop = shops.slice(offset, offset + 9)
+    var index = 10
+
+    slicedShop.indices.foreach(i => {
+      val shop = slicedShop(i)
       // ストレージ(weapon)内でのアイテム
       val storage = WarsCore.instance.database.getRequireItemsAmount(player.getUniqueId.toString, shop.price)
       // 性善説
@@ -76,14 +110,22 @@ object ShopUI {
           ).asJava)
       if(buyable) {
         productMeta.getPersistentDataContainer.set(shopIdKey, PersistentDataType.STRING, name)
-        productMeta.getPersistentDataContainer.set(shopIndexKey, PersistentDataType.INTEGER, Integer.valueOf(i))
+        productMeta.getPersistentDataContainer.set(shopIndexKey, PersistentDataType.INTEGER, Integer.valueOf(offset + i))
       }
       product.setItemMeta(productMeta)
-      inv.setItem(9 + i, product)
+      groundwork.update(index, product)
+
+      if(index == 16) index = 28 else index += 2
     })
+
+    inv.setContents(groundwork)
     player.openInventory(inv)
+    test.log(1L)
   }
 
+
+  // TODO どちらかというとoffsetKey
+  // TODO どのアイコンにおいてもoffset, nameは使用している。統一したほうが良いのでは？
   def onClick(e: InventoryClickEvent): Unit = {
     e.setCancelled(true)
     e.getClickedInventory.getType match {
@@ -93,7 +135,11 @@ object ShopUI {
         val player = e.getWhoClicked.asInstanceOf[Player]
         if(item != null && item.getType != Material.AIR && item.hasItemMeta) {
           val data = item.getItemMeta.getPersistentDataContainer
-          if(data.has(shopIdKey, PersistentDataType.STRING) && data.has(shopIndexKey, PersistentDataType.INTEGER)) {
+          if(slot == 18 && data.has(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER)) {
+            openShopUI(player, data.get(shopIdKey, PersistentDataType.STRING), data.get(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER))
+          } else if (slot == 26 && data.has(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER)) {
+            openShopUI(player, data.get(shopIdKey, PersistentDataType.STRING), data.get(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER))
+          } else if(data.has(shopIdKey, PersistentDataType.STRING) && data.has(shopIndexKey, PersistentDataType.INTEGER)) {
             val shop = ShopUtil.getShops(data.get(shopIdKey, PersistentDataType.STRING))(data.get(shopIndexKey, PersistentDataType.INTEGER))
             WarsCoreAPI.debug(player, "購入処理！")
             WarsCore.instance.database.addWeapon(player.getUniqueId.toString, shop.`type`, shop.product.name, shop.product.amount)

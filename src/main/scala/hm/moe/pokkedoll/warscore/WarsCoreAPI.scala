@@ -490,5 +490,13 @@ object WarsCoreAPI {
       i.setItemMeta(m)
       i
     }
+
+    val CLOSE: ItemStack = {
+      val i = new ItemStack(Material.BARRIER)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.RED + "インベントリを閉じる")
+      i.setItemMeta(m)
+      i
+    }
   }
 }
