@@ -32,10 +32,12 @@ object ShopUI {
     val i = new ItemStack(Material.BLUE_STAINED_GLASS_PANE)
     val m = i.getItemMeta
     m.setDisplayName(" ")
+    i.setItemMeta(m)
     i
   }
 
   // TODO もっとエコにできるかもしれない。
+  // TODO まずい。あまりにも汚い。
   def openShopUI(player: Player, name: String, offset: Int = 0): Unit = {
     val test = new Test("openShopUI > v1.9.5")
     val shops = ShopUtil.getShops(name)
@@ -47,7 +49,7 @@ object ShopUI {
     groundwork.update(18, {
       val i = new ItemStack(Material.LADDER)
       val m = i.getItemMeta
-      if(offset == 0) {
+      if (offset == 0) {
         m.setDisplayName(ChatColor.RED + "-")
       } else {
         m.setDisplayName(ChatColor.WHITE + "←")
@@ -60,7 +62,7 @@ object ShopUI {
     groundwork.update(26, {
       val i = new ItemStack(Material.LADDER)
       val m = i.getItemMeta
-      if(offset > shops.length) {
+      if (offset > shops.length) {
         m.setDisplayName(ChatColor.RED + "-")
       } else {
         m.setDisplayName(ChatColor.WHITE + "→")
@@ -91,31 +93,42 @@ object ShopUI {
           "§f-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-",
           "§7§l| §7要求アイテム §7§l: §7必要数 §8/ §7所持数") ++
           shop.price.map(f => {
-            WarsCoreAPI.getItemStackName(ItemUtil.getItem(f.name).getOrElse(EMPTY)) + "§f: " +
-              {
-                val rAmount = storage.getOrElse(f.name, 0)
-                if(rAmount >= f.amount) {
-                  f.amount + " / " + rAmount
-                } else {
-                  if(buyable) buyable = false
-                  ChatColor.RED + "" + f.amount + " / " + rAmount
-                }
+            WarsCoreAPI.getItemStackName(ItemUtil.getItem(f.name).getOrElse(EMPTY)) + "§f: " + {
+              val rAmount = storage.getOrElse(f.name, 0)
+              if (rAmount >= f.amount) {
+                f.amount + " / " + rAmount
+              } else {
+                if (buyable) buyable = false
+                ChatColor.RED + "" + f.amount + " / " + rAmount
               }
+            }
           }).toList ++
           List(
             "§7§l|",
             "§7§l| §7達成条件 §7§l: §7必要値 §8/ §7現在値",
             // "§fテスト条件: §c0 / 1"
-          )
+          ) ++
+          (if (shop.rank != -1) {
+            List({
+              val rank = WarsCoreAPI.getWPlayer(player).rank
+              "§fランク: " + (if (rank >= shop.rank) {
+                shop.rank + " / " + rank
+              } else {
+                if(buyable) buyable = false
+                ChatColor.RED + "" + shop.rank + " / " + rank
+              })})
+          } else {
+            List.empty[String]
+          })
           ).asJava)
-      if(buyable) {
+      if (buyable) {
         productMeta.getPersistentDataContainer.set(shopIdKey, PersistentDataType.STRING, name)
         productMeta.getPersistentDataContainer.set(shopIndexKey, PersistentDataType.INTEGER, Integer.valueOf(offset + i))
       }
       product.setItemMeta(productMeta)
       groundwork.update(index, product)
 
-      if(index == 16) index = 28 else index += 2
+      if (index == 16) index = 28 else index += 2
     })
 
     inv.setContents(groundwork)
@@ -133,21 +146,22 @@ object ShopUI {
         val slot = e.getSlot
         val item = e.getCurrentItem
         val player = e.getWhoClicked.asInstanceOf[Player]
-        if(item != null && item.getType != Material.AIR && item.hasItemMeta) {
+        if (item != null && item.getType != Material.AIR && item.hasItemMeta) {
           val data = item.getItemMeta.getPersistentDataContainer
-          if(slot == 18 && data.has(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER)) {
+          if (slot == 18 && data.has(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER)) {
             openShopUI(player, data.get(shopIdKey, PersistentDataType.STRING), data.get(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER))
           } else if (slot == 26 && data.has(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER)) {
             openShopUI(player, data.get(shopIdKey, PersistentDataType.STRING), data.get(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER))
-          } else if(data.has(shopIdKey, PersistentDataType.STRING) && data.has(shopIndexKey, PersistentDataType.INTEGER)) {
+          } else if (data.has(shopIdKey, PersistentDataType.STRING) && data.has(shopIndexKey, PersistentDataType.INTEGER)) {
             val shop = ShopUtil.getShops(data.get(shopIdKey, PersistentDataType.STRING))(data.get(shopIndexKey, PersistentDataType.INTEGER))
-            WarsCoreAPI.debug(player, "購入処理！")
+            // WarsCoreAPI.debug(player, "購入処理！")
             WarsCore.instance.database.addWeapon(player.getUniqueId.toString, shop.`type`, shop.product.name, shop.product.amount)
             WarsCore.instance.database.delWeapon(player.getUniqueId.toString, shop.price)
             player.playSound(player.getLocation, Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1.5f)
             openShopUI(player, e.getView.getTitle.replaceAll("Shop: ", ""))
           } else {
-            WarsCoreAPI.debug(player, "何も起きず！")
+            // WarsCoreAPI.debug(player, "何も起きず！")
+            player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
           }
         }
       case _ =>

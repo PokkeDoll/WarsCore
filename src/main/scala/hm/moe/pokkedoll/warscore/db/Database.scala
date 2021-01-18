@@ -36,14 +36,6 @@ trait Database extends WeaponDB {
   def insert(uuid: String): Boolean
 
   /**
-   * データベースから一つのInt型のデータを取得する
-   *
-   * @return
-   */
-  @Deprecated
-  def getInt(table: String, column: String, uuid: String): Option[Int]
-
-  /**
    * rankテーブルに保存されているデータを取得する
    *
    * @param uuid UUID

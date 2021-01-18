@@ -81,27 +81,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
     }
   }
 
-  override def getInt(table: String, column: String, uuid: String): Option[Int] = {
-    val c = hikari.getConnection
-    val ps = c.prepareStatement(s"SELECT $column FROM $table WHERE uuid=?")
-    try {
-      ps.setString(1, uuid)
-      val rs = ps.executeQuery()
-      if (rs.next()) {
-        Option(rs.getInt(column))
-      } else {
-        None
-      }
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        None
-    } finally {
-      ps.close()
-      c.close()
-    }
-  }
-
   override def getRankData(uuid: String): Option[(Int, Int)] = {
     val c = hikari.getConnection()
     val ps = c.prepareStatement("SELECT id, exp FROM rank WHERE uuid=?")

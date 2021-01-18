@@ -62,12 +62,15 @@ object ShopUtil {
         .flatMap(text => {
           val typeAndProduct = text.split(":")
           if(typeAndProduct.length < 1) None else {
+            val rank = if(typeAndProduct.length > 2) {
+              WarsCoreAPI.parseInt(typeAndProduct(2))
+            } else -1
             val item = typeAndProduct(1).split(",")
             if (item.length < 1) None else {
               val product = createShopItem(item.head)
               val price = item.tail.flatMap(createShopItem)
               if (product.isEmpty || price.isEmpty) None else {
-                Some(new Shop(typeAndProduct(0), product.get, price))
+                Some(new Shop(typeAndProduct(0), product.get, price, rank))
               }
             }
           }
@@ -110,5 +113,5 @@ object ShopUtil {
    * @param product 製品
    * @param price   購入するために必要なアイテム
    */
-  class Shop(val `type`: String, val product: Item, val price: Array[Item])
+  class Shop(val `type`: String, val product: Item, val price: Array[Item], val rank: Int = -1)
 }

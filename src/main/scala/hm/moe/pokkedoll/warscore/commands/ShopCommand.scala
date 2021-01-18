@@ -44,12 +44,17 @@ class ShopCommand extends CommandExecutor {
               if(args.length > 2) {
                 val string = args(2)
                 val content = ShopUtil.config.getStringList(name)
-                WarsCoreAPI.debug(player, "コンテキストチェックを行っていません！！！！！！１１")
                 if(string.startsWith("+")) {
                   val text = string.substring(1)
-                  content.add(text)
-                  ShopUtil.setShop(name, content)
-                  WarsCoreAPI.info(player, "追加しました(構文未チェック)")
+                  "(primary|secondary|melee|item):.*@[0-9]*,(.*@[0-9]*,)*.*@[0-9]:\\d".r.findFirstMatchIn(text) match {
+                    case Some(_) =>
+                      content.add(text)
+                      ShopUtil.setShop(name, content)
+                      WarsCoreAPI.info(player, "追加しました")
+                    case None =>
+                      WarsCoreAPI.error(player, "構文が間違っています！")
+                  }
+
                 } else if (string.startsWith("-")) {
                   val index = WarsCoreAPI.parseInt(string.substring(1))
                   if(index != -1) {

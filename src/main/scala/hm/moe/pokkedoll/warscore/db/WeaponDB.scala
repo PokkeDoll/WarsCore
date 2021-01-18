@@ -1,6 +1,5 @@
 package hm.moe.pokkedoll.warscore.db
 
-import hm.moe.pokkedoll.warscore.Callback
 import hm.moe.pokkedoll.warscore.utils.Item
 
 trait WeaponDB {
