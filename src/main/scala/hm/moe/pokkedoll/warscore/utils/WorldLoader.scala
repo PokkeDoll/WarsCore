@@ -132,14 +132,15 @@ object WorldLoader {
 
   def asyncUnloadWorld(world: String): Unit = {
     val file = new File(s"./$world")
-    Option(Bukkit.getWorld(world)) match {
-      case Some(w) if (unload(w)) | file.exists() =>
-        new BukkitRunnable {
-          override def run(): Unit = {
-            delete(file)
-          }
-        }.runTaskAsynchronously(WarsCore.instance)
-      case _ =>
+    if ((Option(Bukkit.getWorld(world)) match {
+      case Some(w) => unload(w)
+      case _ => false
+    }) || file.exists()) {
+      new BukkitRunnable {
+        override def run(): Unit = {
+          delete(file)
+        }
+      }.runTaskAsynchronously(WarsCore.instance)
     }
   }
 }
