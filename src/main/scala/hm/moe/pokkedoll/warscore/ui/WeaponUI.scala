@@ -83,9 +83,6 @@ object WeaponUI {
   val MELEE: String = ChatColor.translateAlternateColorCodes('&', "&e&lMelee")
   val ITEM: String = ChatColor.translateAlternateColorCodes('&', "&e&lItem")
 
-  @Deprecated
-  val WEAPON_TYPES: Array[String] = Array(MAIN, SUB, MELEE, ITEM)
-
   val MAIN_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
 
   def openMainUI(player: HumanEntity): Unit = {
@@ -168,7 +165,7 @@ object WeaponUI {
    * @param player 対象のPlayer
    * @param page   ページ。デフォルトは1
    */
-  def openStorageUI(player: HumanEntity, page: Int = 1): Unit = {
+  def openStorageUI(player: HumanEntity, page: Int): Unit = {
     val inv = Bukkit.createInventory(null, 54, STORAGE_TITLE)
     val header = Array.fill(9)(PANEL)
     header.update(0, new ItemStack(Material.BARRIER))
@@ -206,6 +203,49 @@ object WeaponUI {
     }.runTask(WarsCore.instance)
   }
 
+
+  /**
+   * ストレージUIを開く
+   *
+   * @param player 対象のPlayer
+   * @param page   ページ。デフォルトは1
+   */
+  def openStorageUI(player: HumanEntity, page: Int, `type`: String): Unit = {
+    val inv = Bukkit.createInventory(null, 54, STORAGE_TITLE)
+    val header = Array.fill(9)(PANEL)
+    header.update(0, new ItemStack(Material.BARRIER))
+    header.update(1, BACK_MAIN_UI)
+    header.update(4, pageIcon(page))
+    val offset = (page - 1) * 45
+    new BukkitRunnable {
+      override def run(): Unit = {
+        inv.setContents(
+          header ++
+            db.getOriginalItem(player.getUniqueId.toString, offset, `type`)
+              .map(data => {
+                val item = ItemUtil.getItem(data._1).getOrElse(EMPTY).clone()
+                val meta = item.getItemMeta
+                val lore = new util.ArrayList[String](java.util.Arrays.asList(
+                  ChatColor.WHITE + "【情報】",
+                  ChatColor.GRAY + "" + ChatColor.BOLD + "所持数: " + ChatColor.GREEN + data._2,
+                  " ",
+                  ChatColor.WHITE + "【説明】"
+                ))
+                if (meta.hasLore) lore.addAll(meta.getLore)
+                meta.setLore(lore)
+                item.setItemMeta(meta)
+                if (data._3) {
+                  item.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 0)
+                  item.addItemFlags(ItemFlag.HIDE_ENCHANTS)
+                }
+                item
+              })
+              .toArray
+        )
+        player.openInventory(inv)
+      }
+    }.runTask(WarsCore.instance)
+  }
   /**
    * ストレージUIをクリックしたときに呼ばれる
    *

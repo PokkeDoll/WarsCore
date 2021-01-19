@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore.lisners
 import java.util
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.info
-import hm.moe.pokkedoll.warscore.ui.{GameUI, ShopUI, SndCheckerUI, TagUI, WeaponUI}
+import hm.moe.pokkedoll.warscore.ui.{EnderChestUI, GameUI, ShopUI, SndCheckerUI, TagUI, WeaponUI}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
@@ -137,13 +137,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       SndCheckerUI.onClick(e)
     } else if (title == WeaponUI.STORAGE_TITLE) {
       WeaponUI.onClickStorageUI(e)
-    }
-    else {
-      val wp = WarsCoreAPI.getWPlayer(p.asInstanceOf[Player])
-      if (wp.game.isDefined && p.getGameMode != GameMode.CREATIVE) {
-        e.setCancelled(true)
-        p.sendMessage(ChatColor.RED + "インベントリを変更することはできません！")
-      }
+    } else if (title == EnderChestUI.TITLE) {
+      EnderChestUI.onClick(e)
     }
   }
 
@@ -180,7 +175,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     } else if (e.getClickedBlock != null) {
       if (e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
         e.setCancelled(true)
-        WeaponUI.openStorageUI(e.getPlayer)
+        //WeaponUI.openStorageUI(e.getPlayer)
+        EnderChestUI.openUI(e.getPlayer)
       }
     }
   }

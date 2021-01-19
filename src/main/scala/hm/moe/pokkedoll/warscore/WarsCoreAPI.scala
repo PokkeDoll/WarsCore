@@ -7,7 +7,7 @@ import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, Ho
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{EntityType, Firework, Player}
-import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
@@ -463,6 +463,20 @@ object WarsCoreAPI {
       case _: NumberFormatException =>
         -1
     }
+  }
+
+  def getNamedItemStack(material: Material, name: String): ItemStack = {
+    getNamedItemStack(material, name, java.util.Collections.emptyList())
+  }
+
+  def getNamedItemStack(material: Material, name: String, lore: java.util.List[String]): ItemStack = {
+    val i = new ItemStack(material)
+    i.addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
+    val m = i.getItemMeta
+    m.setDisplayName(name)
+    m.setLore(lore)
+    i.setItemMeta(m)
+    i
   }
 
   /**

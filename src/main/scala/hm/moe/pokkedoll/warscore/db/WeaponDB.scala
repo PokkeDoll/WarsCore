@@ -13,6 +13,26 @@ trait WeaponDB {
   def getOriginalItem(uuid: String, offset: Int): List[(String, String, Int, Boolean)]
 
   /**
+   * データベースから未加工のデータを取得する
+   *
+   * @param uuid   UUID
+   * @param offset 取得を始める番号
+   * @param `type` アイテムのタイプ
+   * @return (name, amount, use)の組
+   */
+  def getOriginalItem(uuid: String, offset: Int, `type`: String): List[(String, Int, Boolean)]
+
+  /**
+   * データベースからアイテムの数字を取得する
+   *
+   * @param uuid   UUID
+   * @param name   名前
+   * @param `type` タイプ
+   * @return
+   */
+  def getAmount(uuid: String, name: String, `type`: String = "item"): Int
+
+  /**
    * 武器を取得する
    *
    * @param uuid 対象のUUID
