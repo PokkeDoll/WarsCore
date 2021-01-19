@@ -505,6 +505,64 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
+   * データベースから未加工のデータを取得する
+   *
+   * @param uuid   UUID
+   * @param offset 取得を始める番号
+   * @param `type` アイテムのタイプ
+   * @return (name, amount, use)の組
+   */
+  override def getOriginalItem(uuid: String, offset: Int, `type`: String): List[(String, Int, Boolean)] = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    var list = List.empty[(String, Int, Boolean)]
+    try {
+      val rs = s.executeQuery(s"SELECT name, amount, use FROM weapon WHERE uuid='$uuid' and type='${`type`}' LIMIT 45 OFFSET $offset")
+      while (rs.next()) {
+        list :+= (rs.getString("name"), rs.getInt("amount"), rs.getBoolean("use"))
+      }
+      rs.close()
+      list
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        list
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+  /**
+   * データベースからアイテムの数字を取得する
+   *
+   * @param uuid   UUID
+   * @param name   名前
+   * @param `type` タイプ
+   * @return
+   */
+  override def getAmount(uuid: String, name: String, `type`: String = "item"): Int = {
+    val c = hikari.getConnection
+    val s = c.createStatement()
+    try {
+      val rs = s.executeQuery(s"SELECT amount FROM weapon WHERE uuid='$uuid' and type='${`type`}' and name='$name'")
+      if(rs.next()) {
+        rs.getInt("amount")
+      } else {
+        0
+      }
+    } catch {
+      case e: SQLException =>
+        e.printStackTrace()
+        -1
+    } finally {
+      s.close()
+      c.close()
+    }
+  }
+
+
+  /**
    * 武器を取得する
    *
    * @param uuid 対象のUUID
@@ -561,6 +619,8 @@ class SQLite(private val plugin: WarsCore) extends Database {
       c.close()
     }
   }
+
+
 
   /**
    * 武器をセットする
