@@ -154,7 +154,7 @@ object WarsCoreAPI {
    */
   def getAttackerWeaponName(player: Player): Option[String] = {
     val item = player.getInventory.getItemInMainHand
-    if (item == null) None
+    if (item == null && !item.hasItemMeta) None
     else {
       val meta = item.getItemMeta
       if (meta.hasDisplayName) Some(meta.getDisplayName) else Some(item.getType.toString)

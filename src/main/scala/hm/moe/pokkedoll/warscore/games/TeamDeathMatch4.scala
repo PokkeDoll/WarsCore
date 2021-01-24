@@ -1,9 +1,7 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
-import hm.moe.pokkedoll.warscore.ui.WeaponUI
-import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, RankManager, WeakLocation, WorldLoader}
+import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder, HoverEvent}
@@ -12,7 +10,6 @@ import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{Arrow, Player}
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
@@ -462,15 +459,17 @@ class TeamDeathMatch4(override val id: String) extends Game {
           sendMessage(s"§f0X ${victim.getName} dead")
           Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
       }
-      // テスト処理
-      if(true) {
-        val item = victim.getInventory.getItemInMainHand
-        if(item != null && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
-          world.dropItem(victim.getLocation(), item)
-        }
+      println("p1")
+      val item = victim.getInventory.getItemInMainHand
+      if(item != null && item.getType != Material.AIR && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+        println("p1-1")
+        world.dropItem(victim.getLocation(), item)
+        println("p1-2")
       }
+      println("p2")
       // とにかく死んだのでリスポン処理
       spawn(victim, coolTime = true)
+      println("p3")
     } else {
 
     }

@@ -43,7 +43,6 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         }
       case _ =>
     }
-
   }
 
   @EventHandler
@@ -79,11 +78,11 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
           e.setCancelled(true)
           if (player.isSneaking) {
             val item = player.getInventory.getItemInMainHand
-            if (item != null && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+            if (WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
               player.getInventory.setItemInMainHand(e.getItem.getItemStack)
               e.getItem.remove()
               player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
-              WarsCoreAPI.info(player, "武器を切り替えた！")
+              WarsCoreAPI.info(player, "武器を拾った！")
             } else {
               player.sendActionBar(ChatColor.BLUE + "手に武器を持っていません！")
             }
