@@ -33,7 +33,12 @@ class GameCommand extends CommandExecutor with TabCompleter {
             case Some(game) =>
               game.hub(wp)
             case None =>
-              player.sendMessage("§cゲームに参加していません！")
+              WarsCoreAPI.games.values.find(p => p.world == player.getWorld) match {
+                case Some(game) if game.state == GameState.END =>
+                  game.hub(player)
+                case _ =>
+                  player.sendMessage("§cゲームに参加していません！")
+              }
           }
         } else if (args(0).length >= 2 && (args(0) == "delete" || args(0) == "d") && player.hasPermission("pokkedoll.game.admin")) {
           val wp = WarsCoreAPI.getWPlayer(player)
