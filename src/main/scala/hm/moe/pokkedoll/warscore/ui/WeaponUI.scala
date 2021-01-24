@@ -111,6 +111,7 @@ object WeaponUI {
         inv.setItem(11, weaponIcon(ItemUtil.getItem(weapons._2).getOrElse(EMPTY)))
         inv.setItem(12, weaponIcon(ItemUtil.getItem(weapons._3).getOrElse(EMPTY)))
         inv.setItem(13, weaponIcon(ItemUtil.getItem(weapons._4).getOrElse(EMPTY)))
+        inv.setItem(14, weaponIcon(ItemUtil.getItem(weapons._5).getOrElse(EMPTY)))
       }
     }.runTask(WarsCore.instance)
   }
@@ -128,7 +129,8 @@ object WeaponUI {
       case 10 => openSettingUI(player, weaponType = WeaponDB.PRIMARY)
       case 11 => openSettingUI(player, weaponType = WeaponDB.SECONDARY)
       case 12 => openSettingUI(player, weaponType = WeaponDB.MELEE)
-      case 13 => openSettingUI(player, weaponType = WeaponDB.ITEM)
+      case 13 => openSettingUI(player, weaponType = WeaponDB.GRENADE)
+      case 14 => openSettingUI(player, weaponType = WeaponDB.HEAD)
 
       //case 15 => openWeaponStorageUI(player)
       //case 16 => openMySetUI(player)
@@ -329,13 +331,17 @@ object WeaponUI {
           val meta = i.getItemMeta
           val per = meta.getPersistentDataContainer
           if (per.has(weaponKey, PersistentDataType.STRING)) {
-            db.setWeapon(player.getUniqueId.toString, t = per.get(weaponTypeKey, PersistentDataType.STRING), name = per.get(weaponKey, PersistentDataType.STRING))
+            val t = per.get(weaponTypeKey, PersistentDataType.STRING)
+            val name = per.get(weaponKey, PersistentDataType.STRING)
+            db.setWeapon(player.getUniqueId.toString, t = t, name = name)
+            if (t == "head") {
+              // 帽子だけの特殊な設定
+              ItemUtil.getItem(name).foreach(head => player.getInventory.setHelmet(head))
+            }
             openMainUI(player)
           }
         }
       case _ =>
     }
   }
-
-
 }

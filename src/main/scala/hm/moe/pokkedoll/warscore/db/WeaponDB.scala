@@ -47,7 +47,7 @@ trait WeaponDB {
    * @param uuid 対象のUUID
    * @return 武器のタプル(メイン, サブ, 近接, アイテム)
    */
-  def getActiveWeapon(uuid: String): (String, String, String, String)
+  def getActiveWeapon(uuid: String): (String, String, String, String, String)
 
   /**
    * 武器をセットする
@@ -97,7 +97,9 @@ object WeaponDB {
   val PRIMARY = "primary"
   val SECONDARY = "secondary"
   val MELEE = "melee"
+  val GRENADE = "grenade"
   val ITEM = "item"
+  val HEAD = "head"
 
-  def is(string: String): Boolean = Array(PRIMARY, SECONDARY, MELEE, ITEM).contains(string)
+  def is(string: String): Boolean = Array(PRIMARY, SECONDARY, MELEE, GRENADE, ITEM, HEAD).contains(string)
 }

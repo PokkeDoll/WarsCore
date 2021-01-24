@@ -595,7 +595,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param uuid 対象のUUID
    * @return 武器のタプル(メイン, サブ, 近接, アイテム)
    */
-  override def getActiveWeapon(uuid: String): (String, String, String, String) = {
+  override def getActiveWeapon(uuid: String): (String, String, String, String, String) = {
     val c = hikari.getConnection
     val ps = c.prepareStatement("SELECT name FROM weapon WHERE use=? and uuid=? and type=?")
     try {
@@ -608,12 +608,14 @@ class SQLite(private val plugin: WarsCore) extends Database {
       val secondary = gr(ps.executeQuery())
       ps.setString(3, WeaponDB.MELEE)
       val melee = gr(ps.executeQuery())
-      ps.setString(3, WeaponDB.ITEM)
-      val item = gr(ps.executeQuery())
-      (primary, secondary, melee, item)
+      ps.setString(3, WeaponDB.GRENADE)
+      val grenade = gr(ps.executeQuery())
+      ps.setString(3, WeaponDB.HEAD)
+      val head = gr(ps.executeQuery())
+      (primary, secondary, melee, grenade, head)
     } catch {
       case _: SQLException =>
-        ("", "", "", "")
+        ("", "", "", "", "")
     } finally {
       ps.close()
       c.close()
