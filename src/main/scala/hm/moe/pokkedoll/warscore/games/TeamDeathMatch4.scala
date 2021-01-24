@@ -302,7 +302,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
     worldId = WarsCoreAPI.createWorldHash(this)
     new BukkitRunnable {
       override def run(): Unit = {
-        load(beforeMembers:_*)
+        load(beforeMembers.filter(player => player.getWorld == world): _*)
         new BukkitRunnable {
           override def run(): Unit = {
             WorldLoader.asyncUnloadWorld(beforeId)
