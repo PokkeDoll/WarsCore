@@ -1,0 +1,92 @@
+name: 'WarsCore'
+version: '1.9.7.6'
+api-version: '1.16'
+main: hm.moe.pokkedoll.warscore.WarsCore
+authors: [Emorard]
+softdepend: [Vault]
+
+commands:
+  game:
+    permission: pokkedoll.command.game
+  invite:
+    permission: pokkedoll.command.invite
+  resourcepack:
+    aliases: [rs]
+    permission: pokkedoll.command.resourcepack
+  stats:
+    permission: pokkedoll.command.stats
+  whelp:
+    permission: pokkedoll.command.whelp
+  tag:
+    permission: pokkedoll.command.tag
+  killsound:
+    aliases: [ks]
+    permission: pokkedoll.command.killsound
+  killeffect:
+    aliases: [ke]
+    permission: pokkedoll.command.killeffect
+  warscore:
+    aliases: [wc, wars]
+    permission: pokkedoll.command.warscore
+  item:
+    permission: pokkedoll.command.item
+  upgrade:
+    aliases: [upg]
+    permission: pokkedoll.command.upgrade
+  merchant:
+    aliases: [mer]
+    permission: pokkedoll.command.merchant
+  spawn:
+    permission: pokkedoll.command.spawn
+  wp:
+    permission: pokkedoll.command.weapon
+  shop:
+    permission: pokkedoll.command.shop
+  sndchecker:
+    aliases: [sc]
+    permission: sndchecker.use
+  money:
+    permission: pokkedoll.command.money
+permissions:
+  pokkedoll.command.game:
+    default: true
+  pokkedoll.command.invite:
+    default: true
+  pokkedoll.command.resourcepack:
+    default: true
+  pokkedoll.command.stats:
+    default: true
+  pokkedoll.command.spawn:
+    default: true
+  pokkedoll.command.warscore:
+    default: op
+  pokkedoll.command.item:
+    default: op
+  pokkedoll.command.upgrade:
+    default: op
+  pokkedoll.command.merchant:
+    default: op
+  pokkedoll.command.shop:
+    default: op
+  pokkedoll.command.weapon:
+    default: true
+  pokkedoll.command.money:
+    default: true
+  pokkedoll.user:
+    default: true
+    children:
+      pokkedoll.command.game: true
+      pokkedoll.command.invite: true
+      pokkedoll.command.stats: true
+      pokkedoll.command.spawn: true
+      pokkedoll.command.weapon: true
+      pokkedoll.command.money: true
+  pokkedoll.admin:
+    default: op
+    children:
+      pokkedoll.command.warscore: true
+      pokkedoll.command.item: true
+      pokkedoll.command.upgrade: true
+      pokkedoll.command.merchant: true
+  sndchecker.use:
+    default: op
