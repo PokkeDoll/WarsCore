@@ -529,6 +529,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
               if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
                   WarsCoreAPI.unfreeze(player)
+                  WarsCoreAPI.setActiveWeapons(player)
                   if (redTeam.hasEntry(player.getName)) {
                     player.teleport(locationData._2)
                   } else {

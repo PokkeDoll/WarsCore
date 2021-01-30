@@ -364,26 +364,31 @@ object WarsCoreAPI {
     val player = wp.player
     database.setVInv(player.getUniqueId.toString, player.getInventory.getStorageContents, new Callback[Unit] {
       override def success(value: Unit): Unit = {
-        val weapons = database.getActiveWeapon(player.getUniqueId.toString)
-        val get = (key: String, default: String) => ItemUtil.getItem(key).getOrElse(ItemUtil.getItem(default).get)
-        player.getInventory.setContents(
-          Array(
-            get(weapons._1, "ak-47"),
-            get(weapons._2, "m92"),
-            get(weapons._3, "knife"),
-            get(weapons._4, "grenade"),
-            new ItemStack(Material.AIR),
-            new ItemStack(Material.AIR),
-            new ItemStack(Material.AIR),
-            new ItemStack(Material.AIR),
-            new ItemStack(Material.CLOCK)
-          ))
+        setActiveWeapons(player)
       }
 
       override def failure(error: Exception): Unit = {
         wp.sendMessage("ロビーインベントリの読み込みに失敗しました")
       }
     })
+  }
+
+  def setActiveWeapons(player: Player): Unit = {
+    val weapons = database.getActiveWeapon(player.getUniqueId.toString)
+    val get = (key: String, default: String) => ItemUtil.getItem(key).getOrElse(ItemUtil.getItem(default).get)
+    player.getInventory.setContents(
+      Array(
+        get(weapons._1, "ak-47"),
+        get(weapons._2, "m92"),
+        get(weapons._3, "knife"),
+        get(weapons._4, "grenade"),
+        new ItemStack(Material.AIR),
+        new ItemStack(Material.AIR),
+        new ItemStack(Material.AIR),
+        new ItemStack(Material.AIR),
+        new ItemStack(Material.CLOCK)
+      ))
+    // player.getInventory.setHelmet(get(weapons._5, "air"))
   }
 
   /**
