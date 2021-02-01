@@ -7,7 +7,7 @@ import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder, HoverEvent}
 import org.bukkit._
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
-import org.bukkit.entity.{Arrow, Player}
+import org.bukkit.entity.{Arrow, Entity, Player}
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.potion.PotionEffectType
@@ -459,19 +459,15 @@ class TeamDeathMatch4(override val id: String) extends Game {
           sendMessage(s"§f0X ${victim.getName} dead")
           Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
       }
-      println("p1")
       val item = victim.getInventory.getItemInMainHand
       if(item != null && item.getType != Material.AIR && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
-        println("p1-1")
-        world.dropItem(victim.getLocation(), item)
-        println("p1-2")
+        val dropItem = world.dropItem(victim.getLocation(), item)
+        // 30秒で消滅するように
+        dropItem.setWillAge(true)
+        dropItem.asInstanceOf[Entity].setTicksLived(5400)
       }
-      println("p2")
       // とにかく死んだのでリスポン処理
       spawn(victim, coolTime = true)
-      println("p3")
-    } else {
-
     }
   }
 
