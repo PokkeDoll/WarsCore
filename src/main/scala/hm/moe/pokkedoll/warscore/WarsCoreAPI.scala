@@ -22,6 +22,8 @@ import scala.util.Random
  * @author Emorard
  */
 object WarsCoreAPI {
+
+  @Deprecated
   val LOBBY = "p-lobby"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
@@ -274,6 +276,7 @@ object WarsCoreAPI {
     )
   }
 
+  @Deprecated
   def sendNews4Staff(player: Player): Unit = {
 
   }
@@ -418,6 +421,7 @@ object WarsCoreAPI {
    * @since v1.6.1
    * @return 0から999までの**文字列**を返す
    */
+  @Deprecated
   def getWorldHash: String = random.nextInt(1000).toString
 
   /**
@@ -426,6 +430,7 @@ object WarsCoreAPI {
    * @return
    */
   @tailrec
+  @Deprecated
   def createWorldHash(game: Game): String = {
     val id = game.id + getWorldHash
     if (game.worldId == id)

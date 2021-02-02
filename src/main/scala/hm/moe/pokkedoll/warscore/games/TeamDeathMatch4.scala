@@ -30,7 +30,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
   /**
    * 読み込むワールドのID.  最初は必ず0
    */
-  override var worldId: String = s"$id-0"
+  override var worldId: String = s"$id"
 
   /**
    * ゲームの構成
@@ -99,7 +99,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
   /**
    * ゲームを読み込む
    */
-  override def load(players: Array[Player] = Array.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
+  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
     state = GameState.INIT
     this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
     WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
@@ -292,21 +292,20 @@ class TeamDeathMatch4(override val id: String) extends Game {
       }
     })
     //WarsCore.instance.database.updateTDMAsync(this)
-    sendMessage(ChatColor.BLUE + "10秒後にマップが切り替わります")
-    bossbar.removeAll()
-    val beforeId = worldId
     val beforeMembers = members.map(_.player)
-    worldId = WarsCoreAPI.createWorldHash(this)
+    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
+    sendMessage(ChatColor.BLUE + "10秒後に自動で試合に参加します")
+    bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
-        load(players = beforeMembers.filter(player => player.getWorld == world).toArray)
+        WorldLoader.asyncUnloadWorld(id)
         new BukkitRunnable {
           override def run(): Unit = {
-            WorldLoader.asyncUnloadWorld(beforeId)
+            load(players = beforeMembers.filter(player => player.getWorld == world))
           }
-        }.runTaskLater(WarsCore.instance, 200L)
+        }.runTaskLater(WarsCore.instance, 190L)
       }
-    }.runTaskLater(WarsCore.instance, 200L)
+    }.runTaskLater(WarsCore.instance, 10L)
   }
 
   /**
@@ -320,7 +319,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
     if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
     } else if (!loaded && state == GameState.DISABLE) {
-      load(players = Array(wp.player))
+      load(players = Vector(wp.player))
     } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
     } else if (members.length >= maxMember) {

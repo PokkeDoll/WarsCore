@@ -27,7 +27,7 @@ class Domination(override val id: String) extends Game {
   /**
    * 読み込むワールドのID.  最初は必ず0
    */
-  override var worldId: String = s"$id-0"
+  override var worldId: String = s"$id"
 
 
   /**
@@ -96,13 +96,11 @@ class Domination(override val id: String) extends Game {
   /**
    * ゲームを読み込む
    */
-  override def load(players: Player*): Unit = {
+  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
     state = GameState.INIT
-    val worlds = config.maps
-    val info = scala.util.Random.shuffle(worlds).head
-    WorldLoader.asyncLoadWorld(world = info.mapId, worldId = worldId, new Callback[World] {
+    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
+    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
       override def success(value: World): Unit = {
-        mapInfo = info
         world = value
         loaded = true
         disable = false
@@ -111,7 +109,6 @@ class Domination(override val id: String) extends Game {
       }
 
       override def failure(error: Exception): Unit = {
-        WarsCore.log(s"Failed to load world! id=$id, worldId=$worldId, MapInfo.mapId=${info.mapId}")
         players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
         state = GameState.ERROR
       }
@@ -359,17 +356,20 @@ class Domination(override val id: String) extends Game {
       }
     })
     //WarsCore.instance.database.updateTDMAsync(this)
-    sendMessage(ChatColor.BLUE + "10秒後にマップが切り替わります")
-    bossbar.removeAll()
-    val beforeId = worldId
     val beforeMembers = members.map(_.player)
-    worldId = WarsCoreAPI.createWorldHash(this)
-    load(beforeMembers:_*)
+    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
+    sendMessage(ChatColor.BLUE + "10秒後に自動で試合に参加します")
+    bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
-        WorldLoader.asyncUnloadWorld(beforeId)
+        WorldLoader.asyncUnloadWorld(id)
+        new BukkitRunnable {
+          override def run(): Unit = {
+            load(players = beforeMembers.filter(player => player.getWorld == world))
+          }
+        }.runTaskLater(WarsCore.instance, 190L)
       }
-    }.runTaskLater(WarsCore.instance, 200L)
+    }.runTaskLater(WarsCore.instance, 10L)
   }
 
   /**
