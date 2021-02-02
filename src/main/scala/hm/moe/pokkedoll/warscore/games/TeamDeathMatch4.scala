@@ -99,13 +99,11 @@ class TeamDeathMatch4(override val id: String) extends Game {
   /**
    * ゲームを読み込む
    */
-  override def load(players: Player*): Unit = {
+  override def load(players: Array[Player] = Array.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
     state = GameState.INIT
-    val worlds = config.maps
-    val info = scala.util.Random.shuffle(worlds).head
-    WorldLoader.asyncLoadWorld(world = info.mapId, worldId = worldId, new Callback[World] {
+    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
+    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
       override def success(value: World): Unit = {
-        mapInfo = info
         world = value
         loaded = true
         disable = false
@@ -114,7 +112,6 @@ class TeamDeathMatch4(override val id: String) extends Game {
       }
 
       override def failure(error: Exception): Unit = {
-        WarsCore.log(s"Failed to load world! id=$id, worldId=${worldId}, MapInfo.mapId=${info.mapId}")
         players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
         state = GameState.ERROR
       }
@@ -302,7 +299,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
     worldId = WarsCoreAPI.createWorldHash(this)
     new BukkitRunnable {
       override def run(): Unit = {
-        load(beforeMembers.filter(player => player.getWorld == world): _*)
+        load(players = beforeMembers.filter(player => player.getWorld == world).toArray)
         new BukkitRunnable {
           override def run(): Unit = {
             WorldLoader.asyncUnloadWorld(beforeId)
@@ -323,7 +320,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
     if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
     } else if (!loaded && state == GameState.DISABLE) {
-      load(wp.player)
+      load(players = Array(wp.player))
     } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
     } else if (members.length >= maxMember) {

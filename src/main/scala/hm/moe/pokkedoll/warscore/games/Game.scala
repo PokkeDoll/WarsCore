@@ -89,7 +89,7 @@ trait Game {
   /**
    * ゲームを読み込む
    */
-  def load(players: Player*): Unit
+  def load(players: Array[Player] = Array.empty[Player], mapInfo: Option[MapInfo] = None): Unit
 
   /**
    * ゲームを初期化する
