@@ -10,7 +10,7 @@ class CommandSpec extends AnyFlatSpec with Diagrams {
    */
   private def modContext(input: String): Boolean = {
     val text = input.substring(1)
-    ".*:(.*@.*)+:\\d".r findFirstMatchIn(text) isDefined
+    ".*:(.*@.*)+:\\d".r.findFirstMatchIn(text).isDefined
   }
 
   "ShopCommandのmod関数の構文チェック" should "正規表現通りだったらtrueを返す" in {
