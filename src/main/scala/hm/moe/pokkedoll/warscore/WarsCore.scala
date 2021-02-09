@@ -78,7 +78,7 @@ class WarsCore extends JavaPlugin {
     // WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))
     WarsCoreAPI.reloadGame(null)
 
-    setupCSPP()
+    // setupCSPP()
 
     new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 20 * 60 * 10L)
 
