@@ -319,7 +319,7 @@ object WarsCoreAPI {
       Some(location)
     } catch {
       case e: Exception =>
-        e.printStackTrace()
+        WarsCore.instance.getLogger.warning(s"${e.getMessage} at WarsCoreAPI.getLocation($string)")
         None
     }
   }
