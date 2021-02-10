@@ -15,31 +15,32 @@ trait WeaponDB {
   /**
    * データベースから未加工のデータを取得する
    *
-   * @param uuid   UUID
-   * @param offset 取得を始める番号
-   * @param `type` アイテムのタイプ
+   * @param uuid       UUID
+   * @param offset     取得を始める番号
+   * @param weaponType アイテムのタイプ
    * @return (name, amount, use)の組
    */
-  def getOriginalItem(uuid: String, offset: Int, `type`: String): List[(String, Int, Boolean)]
+  def getOriginalItem(uuid: String, offset: Int, weaponType: String): List[(String, Int, Boolean)]
 
   /**
    * データベースからアイテムの数字を取得する
    *
-   * @param uuid   UUID
-   * @param name   名前
-   * @param `type` タイプ
+   * @param uuid       UUID
+   * @param name       名前
+   * @param weaponType タイプ
    * @return
    */
-  def getAmount(uuid: String, name: String, `type`: String = "item"): Int
+  def getAmount(uuid: String, name: String, weaponType: String = "item"): Int
 
   /**
    * 武器を取得する
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
+   * @param sortType   ソートタイプ
    * @return 武器たち
    */
-  def getWeapons(uuid: String, t: String): Seq[Item]
+  def getWeapons(uuid: String, weaponType: String, sortType: Int = 0): Seq[Item]
 
   /**
    * 現在設定されている武器のリストを取得する
@@ -52,20 +53,20 @@ trait WeaponDB {
   /**
    * 武器をセットする
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
-   * @param name 武器のデータ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
+   * @param name       武器のデータ
    */
-  def setWeapon(uuid: String, t: String, name: String)
+  def setWeapon(uuid: String, weaponType: String, name: String)
 
   /**
    * 武器を追加する
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
-   * @param name 武器のデータ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
+   * @param name       武器のデータ
    */
-  def addWeapon(uuid: String, t: String, name: String, amount: Int)
+  def addWeapon(uuid: String, weaponType: String, name: String, amount: Int)
 
   /**
    * アイテムを追加する。タイプはitemに固定される。さらに非同期！
@@ -78,8 +79,8 @@ trait WeaponDB {
   /**
    * 武器を削除する
    *
-   * @param uuid
-   * @param price
+   * @param uuid  対象のUUID
+   * @param price 価格
    */
   def delWeapon(uuid: String, price: Array[Item])
 

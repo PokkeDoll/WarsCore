@@ -3,7 +3,7 @@ package hm.moe.pokkedoll.warscore.ui
 import java.util
 
 import hm.moe.pokkedoll.warscore.db.WeaponDB
-import hm.moe.pokkedoll.warscore.utils.ItemUtil
+import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
@@ -17,6 +17,13 @@ import org.bukkit.{Bukkit, Material, NamespacedKey}
 object WeaponUI {
 
   private lazy val db = WarsCore.instance.database
+
+  /**
+   * getWeapons()したときのキャッシュを保存する
+   */
+  var weaponCache = Map.empty[(HumanEntity, Int), Seq[Item]]
+
+  val sortTypeMap = Map(0 -> "獲得順", 1 -> "個数順", 2 -> "名前順")
 
   private val PANEL = {
     val i = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE)
@@ -277,7 +284,7 @@ object WeaponUI {
    * @param player 対象のプレイヤー
    * @param page   ページ番号
    */
-  def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: String): Unit = {
+  def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: String, sortType: Int = 0): Unit = {
     if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
@@ -287,7 +294,14 @@ object WeaponUI {
     val baseSlot = (page - 1) * 45
     new BukkitRunnable {
       override def run(): Unit = {
-        val weapons = db.getWeapons(player.getUniqueId.toString, weaponType).slice(baseSlot, baseSlot + 45)
+        val weapons = (weaponCache.get((player, sortType)) match {
+          case Some(seq) => seq
+          case None =>
+            val weapons = db.getWeapons(player.getUniqueId.toString, weaponType, sortType)
+            weaponCache = weaponCache.filterNot(pred => pred._1._1 == player) + ((player, sortType) -> weapons)
+            weapons
+        }).slice(baseSlot, baseSlot + 45)
+        //
         inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
         val barrier = new ItemStack(Material.BARRIER)
@@ -333,7 +347,7 @@ object WeaponUI {
           if (per.has(weaponKey, PersistentDataType.STRING)) {
             val t = per.get(weaponTypeKey, PersistentDataType.STRING)
             val name = per.get(weaponKey, PersistentDataType.STRING)
-            db.setWeapon(player.getUniqueId.toString, t = t, name = name)
+            db.setWeapon(player.getUniqueId.toString, weaponType = t, name = name)
             if (t == "head") {
               // 帽子だけの特殊な設定
               ItemUtil.getItem(name).foreach(head => player.getInventory.setHelmet(head))
@@ -344,4 +358,11 @@ object WeaponUI {
       case _ =>
     }
   }
+
+  object ASC extends SortType
+  object DESC extends SortType
+  object AMOUNT extends SortType
+  object NAME extends SortType
+
+  sealed abstract class SortType
 }

@@ -82,7 +82,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
       } else {
         None
       }
-    } .getOrElse(None)
+    }.getOrElse(None)
   }
 
   override def setRankData(uuid: String, data: (Int, Int)): Unit = {
@@ -501,16 +501,23 @@ class SQLite(private val plugin: WarsCore) extends Database {
   /**
    * 武器を取得する
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
    * @return 武器たち
    */
-  override def getWeapons(uuid: String, t: String): Seq[Item] = {
+  override def getWeapons(uuid: String, weaponType: String, sortType: Int = 0): Seq[Item] = {
     var seq = IndexedSeq.empty[Item]
     Using.Manager { use =>
       val c = use(hikari.getConnection)
       val s = use(c.createStatement())
-      val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and type='$t'")
+      val rs = sortType match {
+        // 個数でソート
+        case 2 => s.executeQuery(s"SELECT weapon.name, amount FROM weapon ORDER BY amount WHERE uuid='$uuid' and type='$weaponType'")
+        // アイテムの名前でソート
+        case 1 => s.executeQuery(s"SELECT weapon.name, amount FROM weapon INNER JOIN item ON item.name = weapon.name ORDER BY item.displayname WHERE uuid='$uuid' and type='$weaponType'")
+        // 何もせず(獲得順)
+        case _ => s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and type='$weaponType'")
+      }
       while (rs.next()) {
         seq :+= new Item(rs.getString(1), rs.getInt("amount"))
       }
@@ -550,16 +557,16 @@ class SQLite(private val plugin: WarsCore) extends Database {
   /**
    * 武器をセットする
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
-   * @param name 武器のデータ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
+   * @param name       武器のデータ
    */
-  override def setWeapon(uuid: String, t: String, name: String): Unit = {
+  override def setWeapon(uuid: String, weaponType: String, name: String): Unit = {
     Using.Manager { use =>
       val c = use(hikari.getConnection)
       val s = use(c.createStatement())
-      s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and type='$t'")
-      s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and type='$t' and name='$name'")
+      s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and type='$weaponType'")
+      s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and type='$weaponType' and name='$name'")
       s.executeBatch()
     }
   }
@@ -567,16 +574,16 @@ class SQLite(private val plugin: WarsCore) extends Database {
   /**
    * 武器を追加する
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
-   * @param name 武器のデータ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
+   * @param name       武器のデータ
    */
-  override def addWeapon(uuid: String, t: String, name: String, amount: Int = 1): Unit = {
+  override def addWeapon(uuid: String, weaponType: String, name: String, amount: Int = 1): Unit = {
     Using.Manager { use =>
-      val c = use( hikari.getConnection)
+      val c = use(hikari.getConnection)
       val s = use(c.createStatement())
       s.executeUpdate(
-        s"INSERT INTO weapon (uuid, type, name, amount) VALUES('$uuid', '$t', '$name', $amount) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+$amount"
+        s"INSERT INTO weapon (uuid, type, name, amount) VALUES('$uuid', '$weaponType', '$name', $amount) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+$amount"
       )
     }
   }
@@ -607,7 +614,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
     }.runTaskAsynchronously(plugin)
   }
 
-  def buylWeapon(uuid: String, t: String, shop: ShopUtil.Shop, callback: Callback[String]): Unit = {
+  def buylWeapon(uuid: String, weaponType: String, shop: ShopUtil.Shop, callback: Callback[String]): Unit = {
     Using.Manager { use =>
       val c = use(hikari.getConnection)
       val s = use(c.createStatement())
@@ -655,6 +662,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
         map += rs.getString("name") -> rs.getInt("amount")
       }
       map
-    } .getOrElse(map)
+    }.getOrElse(map)
   }
 }
