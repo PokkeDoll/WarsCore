@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 
 import scala.collection.mutable
+import scala.util.Using
 
 /**
  * SQLite3でのDatabase実装
@@ -38,20 +39,17 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @return UUIDが存在すればtrue
    */
   override def hasUUID(uuid: String): Boolean = {
-    val c = hikari.getConnection()
-    val ps = c.prepareStatement("SELECT uuid FROM player WHERE uuid=?")
-    try {
+    // 試験的に実装する
+    var bool = false
+    bool = Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val ps = use(c.prepareStatement("SELECT uuid FROM player WHERE uuid=?"))
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
       rs.next()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        false
-    } finally {
-      ps.close()
-      c.close()
-    }
+    } .getOrElse(false)
+    WarsCore.instance.getLogger.info(s"hikari connection closed: ${hikari.isClosed}")
+    bool
   }
 
   /**
@@ -727,20 +725,14 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param price
    */
   override def delWeapon(uuid: String, price: Array[Item]): Unit = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
-    try {
-      price.foreach(f => {
-        s.addBatch(s"UPDATE weapon SET amount=amount-${f.amount} WHERE uuid='$uuid' and name='${f.name}'")
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      price.foreach(item => {
+        s.addBatch(s"UPDATE weapon SET amount=amount-${item.amount} WHERE uuid='$uuid' and name='${item.name}'")
       })
       s.addBatch(s"DELETE FROM weapon WHERE uuid='$uuid' and 0>=amount")
       s.executeBatch()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      s.close()
-      c.close()
     }
   }
 
