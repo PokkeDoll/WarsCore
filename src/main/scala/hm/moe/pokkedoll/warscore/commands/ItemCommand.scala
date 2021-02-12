@@ -1,9 +1,12 @@
 package hm.moe.pokkedoll.warscore.commands
 
+import hm.moe.pokkedoll.warscore.WarsCore
 import hm.moe.pokkedoll.warscore.utils.ItemUtil
 import org.bukkit.{ChatColor, Material}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
+
+import scala.util.{Failure, Success}
 
 class ItemCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
@@ -47,6 +50,14 @@ class ItemCommand extends CommandExecutor {
         } else if (v0.equalsIgnoreCase("reload")) {
           ItemUtil.reloadItem()
           player.sendMessage("リロードしました")
+        } else if(v0.equalsIgnoreCase("migration")) {
+          WarsCore.instance.database.migrate() match {
+            case Success(value) =>
+              sender.sendMessage("成功！")
+            case Failure(exception) =>
+              exception.printStackTrace()
+              sender.sendMessage(s"失敗！: ${exception.getMessage}")
+          }
         } else {
           sender.sendMessage(
             "構文: /item (list|set|remove|reload) (...)\n" +

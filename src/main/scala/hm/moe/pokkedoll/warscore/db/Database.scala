@@ -17,7 +17,7 @@ import scala.collection.mutable
  * @author Emorard
  * @version 3.0
  */
-trait Database extends WeaponDB {
+trait Database extends WeaponDB with ItemDB {
   /**
    * データベースに自分のデータがあるか確認するメソッド
    *

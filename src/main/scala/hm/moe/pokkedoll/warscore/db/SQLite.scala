@@ -1,21 +1,18 @@
 package hm.moe.pokkedoll.warscore.db
 
-import java.sql.{ResultSet, SQLException}
-
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.ui.WeaponUI
-import hm.moe.pokkedoll.warscore.utils.ShopUtil.Shop
-import hm.moe.pokkedoll.warscore.utils.{Item, ShopUtil}
 import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
-import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
+import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil, ShopUtil}
+import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import net.md_5.bungee.api.ChatColor
 import org.bukkit.Material
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 
+import java.sql.{ResultSet, SQLException}
 import scala.collection.mutable
-import scala.util.Using
+import scala.util.{Failure, Success, Try, Using}
 
 /**
  * SQLite3でのDatabase実装
@@ -663,5 +660,64 @@ class SQLite(private val plugin: WarsCore) extends Database {
       }
       map
     }.getOrElse(map)
+  }
+
+  /**
+   * item.ymlからデータベースへ移動する
+   */
+  override def migrate(): Try[Unit] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val ps = use(c.prepareStatement("INSERT INTO item VALUES(?, ?, ?)"))
+      ItemUtil.cache.foreach(f => {
+        ps.setString(1, f._1)
+        ps.setString(2, ChatColor.stripColor(WarsCoreAPI.getItemStackName(f._2)))
+        ps.setBytes(3, f._2.serializeAsBytes())
+        ps.addBatch()
+        plugin.getLogger.info(s"added batch ${f._1}")
+      })
+      ps.executeBatch()
+    }
+  }
+
+  /**
+   * データベースにアイテムを登録する
+   * @param name アイテムのID
+   * @param item アイテム, Noneなら削除を意味する
+   */
+  override def update(name: String, item: Option[ItemStack]): Try[Unit] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      item match {
+        case Some(itemStack) =>
+          val ps = use(c.prepareStatement("REPLACE INTO item VALUES(?, ?, ?)"))
+          val displayname = ChatColor.stripColor(WarsCoreAPI.getItemStackName(itemStack))
+          ps.setString(1, name)
+          ps.setString(2, displayname)
+          ps.setBytes(3, itemStack.serializeAsBytes())
+          ps.executeUpdate()
+        case None =>
+          val ps = use(c.prepareStatement("DELETE FROM item WHERE name=?"))
+          ps.setString(1, name)
+          ps.executeUpdate()
+      }
+    }
+  }
+
+  /**
+   * データベースのカラムをすべて持ってくる
+   * @return
+   */
+  override def getItems(): Try[Seq[(String, String, ItemStack)]] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      var seq = Seq.empty[(String, String, ItemStack)]
+      val rs = use(s.executeQuery("SELECT * FROM item"))
+      while (rs.next()) {
+        seq :+= (rs.getString("name"), rs.getString("displayname"), ItemStack.deserializeBytes(rs.getBytes("data")))
+      }
+      seq
+    }
   }
 }
