@@ -415,30 +415,6 @@ object WarsCoreAPI {
     })
   }
 
-  /**
-   * ワールドの識別子を設定する
-   *
-   * @since v1.6.1
-   * @return 0から999までの**文字列**を返す
-   */
-  @Deprecated
-  def getWorldHash: String = random.nextInt(1000).toString
-
-  /**
-   * @since v1.6.1
-   * @param game 対象のゲーム
-   * @return
-   */
-  @tailrec
-  @Deprecated
-  def createWorldHash(game: Game): String = {
-    val id = game.id + getWorldHash
-    if (game.worldId == id)
-      createWorldHash(game)
-    else
-      id
-  }
-
   def getItemStackName(itemStack: ItemStack): String = {
     if (itemStack.hasItemMeta && itemStack.getItemMeta.hasDisplayName) {
       itemStack.getItemMeta.getDisplayName
