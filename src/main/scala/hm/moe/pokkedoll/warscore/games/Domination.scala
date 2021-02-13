@@ -722,7 +722,7 @@ class Domination(override val id: String) extends Game {
 
     comp.append("* ")
       .append("K/D: ").color(ChatColor.GRAY)
-      .append((data.kill / (data.death + 1).toDouble).toString).color(ChatColor.GREEN).bold(true)
+      .append((data.kill / (if(data.death == 0) 1 else data.death).toDouble).toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
 
     comp.append("* ")
