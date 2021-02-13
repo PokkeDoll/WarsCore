@@ -1,13 +1,11 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import java.io.File
-
 import hm.moe.pokkedoll.warscore.WarsCore
 import org.bukkit.Material
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 import org.bukkit.inventory.ItemStack
 
-import scala.jdk.CollectionConverters._
+import java.io.File
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -27,19 +25,16 @@ object ItemUtil {
   var configFile: File = _
   var config: FileConfiguration = _
 
-  def reloadItem(): Unit = {
-    if (configFile == null) {
-      createConfig() match {
-        case Success(_) =>
-          plugin.getLogger.info("item.ymlの読み込みに成功しました")
-        case Failure(e) =>
-          e.printStackTrace()
-          plugin.getLogger.warning("item.ymlの読み込みに失敗しました")
-          return
-      }
+
+  def reloadItem(): String = {
+    plugin.database.getItems match {
+      case Success(value) =>
+        cache = value.map(f => (f._1, f._3)).toMap
+        "Itemテーブルの読み込みに成功しました"
+      case Failure(e) =>
+        e.printStackTrace()
+        "Itemテーブルの読み込みに失敗しました"
     }
-    val cs = config.getKeys(false)
-    cache = cs.asScala.map(f => (f, config.getItemStack(f))).toMap
   }
 
   def createConfig(): Try[Unit] = {
@@ -68,19 +63,11 @@ object ItemUtil {
    */
   def getKey(item: ItemStack): String = cache.find(p => p._2.isSimilar(item)).map(_._1).getOrElse("")
 
-
-  def setItem(key: String, item: ItemStack): Unit = {
-    val c = item.clone()
-    config.set(key, c)
-    config.save(configFile)
-    reloadItem()
-  }
-
-  def removeItem(key: String): Unit = {
-    config.set(key, null)
-    config.save(configFile)
-    reloadItem()
-  }
+  /**
+   * アイテムを更新する。関数型言語で書く？
+   * @return
+   */
+  val updateItem: ((String, Option[ItemStack])) => String = (plugin.database.updateItem(_, _)).tupled.andThen({ case Success(_) => reloadItem() case Failure(e) => e.getMessage})
 
   def getItemName(item: ItemStack): String =
     if (item.hasItemMeta) if (item.getItemMeta.hasDisplayName) item.getItemMeta.getDisplayName else "" else ""

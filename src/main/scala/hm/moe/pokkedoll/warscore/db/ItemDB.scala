@@ -20,11 +20,11 @@ trait ItemDB {
    * @param name アイテムのID
    * @param item アイテム, Noneなら削除を意味する
    */
-  def update(name: String, item: Option[ItemStack]): Try[Unit]
+  def updateItem(name: String, item: Option[ItemStack]): Try[Unit]
 
   /**
    * データベースのカラムをすべて持ってくる
    * @return
    */
-  def getItems(): Try[Seq[(String, String, ItemStack)]]
+  def getItems: Try[Seq[(String, String, ItemStack)]]
 }
