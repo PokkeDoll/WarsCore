@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
+import hm.moe.pokkedoll.warscore.events.GameEndEvent
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WeakLocation, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -173,6 +174,7 @@ class Tactics(override val id: String) extends Game {
     world.setPVP(false)
     // ここで勝敗を決める
     val winner = if (first > second) members.head.player.getName else members.last.player.getName
+    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
     sendMessage(
       "§7==========================================\n" +
         "§7                Game Over!                \n" +
