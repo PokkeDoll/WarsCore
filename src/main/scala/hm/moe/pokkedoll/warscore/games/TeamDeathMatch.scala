@@ -14,6 +14,7 @@ import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
 
+import java.awt.ItemSelectable
 import scala.collection.mutable
 /**
  * 10vs10で行うゲームモード <br>
@@ -97,27 +98,6 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   val log: (String, String) => Unit = WarsCoreAPI.gameLog(id, _, _)
 
-  /**
-   * ゲームを読み込む
-   */
-  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
-    state = GameState.INIT
-    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
-    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
-      override def success(value: World): Unit = {
-        world = value
-        loaded = true
-        disable = false
-        init()
-        players.foreach(join)
-      }
-
-      override def failure(error: Exception): Unit = {
-        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
-        state = GameState.ERROR
-      }
-    })
-  }
 
   /**
    * ゲームを初期化する
@@ -427,10 +407,9 @@ class TeamDeathMatch(override val id: String) extends Game {
             EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
           }
            */
-          WarsCore.instance.database.addItem(
-            attacker.getUniqueId.toString,
-            config.onKillItem
-          )
+
+          reward(attacker, GameRewardType.KILL)
+
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
           e.setDeathSoundVolume(2f)
