@@ -174,8 +174,9 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     } else if (e.getClickedBlock != null) {
       if (e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
         e.setCancelled(true)
-        //WeaponUI.openStorageUI(e.getPlayer)
-        EnderChestUI.openUI(e.getPlayer)
+        // WeaponUI.openStorageUI(e.getPlayer)
+        // EnderChestUI.openUI(e.getPlayer)
+        WeaponUI.openMainUI(e.getPlayer)
       }
     }
   }
