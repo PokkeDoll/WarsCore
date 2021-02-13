@@ -389,14 +389,18 @@ class TeamDeathMatch(override val id: String) extends Game {
     // ゲーム情報をリセット
     wp.game = None
     sendMessage(s"${wp.player.getName} が退出しました")
-    if (wp.player.isOnline) {
-      if (wp.player.getGameMode == GameMode.SPECTATOR) wp.player.setGameMode(GameMode.SURVIVAL)
-      // スコアボード情報をリセット
-      wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
-      wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
-      // インベントリをリストア
-      WarsCoreAPI.restoreLobbyInventory(wp.player)
-    }
+    new BukkitRunnable {
+      override def run(): Unit = {
+        if (wp.player.isOnline) {
+          wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
+          if (wp.player.getGameMode == GameMode.SPECTATOR) wp.player.setGameMode(GameMode.SURVIVAL)
+          // インベントリをリストア
+          WarsCoreAPI.restoreLobbyInventory(wp.player)
+          // スコアボード情報をリセット
+          wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
+        }
+      }
+    }.runTaskLater(WarsCore.instance, 1L)
   }
 
 
