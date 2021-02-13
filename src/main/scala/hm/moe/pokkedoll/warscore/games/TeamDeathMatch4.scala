@@ -423,7 +423,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
            */
           WarsCore.instance.database.addItem(
             attacker.getUniqueId.toString,
-            config.onKillItem:_*
+            config.onKillItem
           )
           WarsCoreAPI.debug(attacker, "アイテムを獲得 > '/wc storage' or エンダーチェストで確認")
           e.setShouldPlayDeathSound(true)

@@ -483,7 +483,7 @@ class Domination(override val id: String) extends Game {
           }
           WarsCore.instance.database.addItem(
             attacker.getUniqueId.toString,
-            config.onKillItem:_*
+            config.onKillItem
           )
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)

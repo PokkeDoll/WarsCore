@@ -76,7 +76,7 @@ trait WeaponDB {
    * @param uuid 対象のUUID
    * @param item アイテム
    */
-  def addItem(uuid: String, item: Item*)
+  def addItem(uuid: String, item: Array[Item])
 
   /**
    * 武器を削除する

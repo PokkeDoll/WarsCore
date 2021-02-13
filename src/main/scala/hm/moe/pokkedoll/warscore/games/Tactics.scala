@@ -281,7 +281,7 @@ class Tactics(override val id: String) extends Game {
           }
           WarsCore.instance.database.addItem(
             attacker.getUniqueId.toString,
-            config.onKillItem:_*
+            config.onKillItem
           )
           sendMessage(s"${attacker.getName}が1ポイント獲得しました")
           e.setShouldPlayDeathSound(true)
