@@ -36,17 +36,13 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @return UUIDが存在すればtrue
    */
   override def hasUUID(uuid: String): Boolean = {
-    // 試験的に実装する
-    var bool = false
-    bool = Using.Manager { use =>
+    Using.Manager { use =>
       val c = use(hikari.getConnection())
       val ps = use(c.prepareStatement("SELECT uuid FROM player WHERE uuid=?"))
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
       rs.next()
     }.getOrElse(false)
-    WarsCore.instance.getLogger.info(s"hikari connection closed: ${hikari.isClosed}")
-    bool
   }
 
   /**
@@ -685,7 +681,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param name アイテムのID
    * @param item アイテム, Noneなら削除を意味する
    */
-  override def update(name: String, item: Option[ItemStack]): Try[Unit] = {
+  override def updateItem(name: String, item: Option[ItemStack]): Try[Unit] = {
     Using.Manager { use =>
       val c = use(hikari.getConnection)
       item match {
@@ -708,7 +704,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * データベースのカラムをすべて持ってくる
    * @return
    */
-  override def getItems(): Try[Seq[(String, String, ItemStack)]] = {
+  override def getItems: Try[Seq[(String, String, ItemStack)]] = {
     Using.Manager { use =>
       val c = use(hikari.getConnection)
       val s = use(c.createStatement())
