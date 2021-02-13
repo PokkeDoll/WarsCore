@@ -537,6 +537,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
                 }
               } else {
                 WarsCoreAPI.unfreeze(player)
+                WarsCoreAPI.setActiveWeapons(player)
                 player.setGameMode(GameMode.SURVIVAL)
                 cancel()
               }
