@@ -587,7 +587,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param uuid 対象のUUID
    * @param item アイテム
    */
-  override def addItem(uuid: String, item: Item*): Unit = {
+  override def addItem(uuid: String, item: Array[Item]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
         Using.Manager { use =>
