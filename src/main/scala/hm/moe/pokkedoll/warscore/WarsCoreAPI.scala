@@ -391,7 +391,7 @@ object WarsCoreAPI {
         new ItemStack(Material.AIR),
         new ItemStack(Material.CLOCK)
       ))
-    // player.getInventory.setHelmet(get(weapons._5, "air"))
+    player.getInventory.setHelmet(ItemUtil.getItem(weapons._5).getOrElse(new ItemStack(Material.AIR)))
   }
 
   /**
