@@ -37,6 +37,7 @@ object ItemUtil {
     }
   }
 
+  @Deprecated
   def createConfig(): Try[Unit] = {
     configFile = new File(plugin.getDataFolder, "item.yml")
     if (!configFile.exists()) {

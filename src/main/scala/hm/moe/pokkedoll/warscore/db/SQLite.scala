@@ -505,16 +505,18 @@ class SQLite(private val plugin: WarsCore) extends Database {
       val s = use(c.createStatement())
       val rs = sortType match {
         // 個数でソート
-        case 2 => s.executeQuery(s"SELECT weapon.name, amount FROM weapon ORDER BY amount WHERE uuid='$uuid' and type='$weaponType'")
+        case 2 =>
+          s.executeQuery(s"SELECT weapon.name, amount FROM weapon WHERE uuid='$uuid' and type='$weaponType' ORDER BY amount DESC")
         // アイテムの名前でソート
-        case 1 => s.executeQuery(s"SELECT weapon.name, amount FROM weapon INNER JOIN item ON item.name = weapon.name ORDER BY item.displayname WHERE uuid='$uuid' and type='$weaponType'")
+        case 1 =>
+          s.executeQuery(s"SELECT weapon.name, amount FROM weapon INNER JOIN item ON item.name = weapon.name WHERE uuid='$uuid' and type='$weaponType' ORDER BY item.displayname")
         // 何もせず(獲得順)
-        case _ => s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and type='$weaponType'")
+        case _ =>
+          s.executeQuery(s"SELECT weapon.name, amount FROM weapon WHERE uuid='$uuid' and type='$weaponType'")
       }
       while (rs.next()) {
-        seq :+= new Item(rs.getString(1), rs.getInt("amount"))
+        seq :+= new Item(rs.getString(1), rs.getInt(2))
       }
-      rs.close()
       seq
     }.getOrElse(seq)
   }

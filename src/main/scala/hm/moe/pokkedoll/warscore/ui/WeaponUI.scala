@@ -20,7 +20,7 @@ object WeaponUI {
   /**
    * getWeapons()したときのキャッシュを保存する
    */
-  var weaponCache = Map.empty[HumanEntity, (Int, Seq[Item])]
+  var weaponCache = Map.empty[HumanEntity, (String, Int, Seq[Item])]
 
   val sortTypeMap = Map(0 -> "獲得順", 1 -> "個数順", 2 -> "名前順")
 
@@ -132,11 +132,12 @@ object WeaponUI {
     val player = e.getWhoClicked
     if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     e.getSlot match {
-      case 10 => openSettingUI(player, weaponType = WeaponDB.PRIMARY)
-      case 11 => openSettingUI(player, weaponType = WeaponDB.SECONDARY)
-      case 12 => openSettingUI(player, weaponType = WeaponDB.MELEE)
-      case 13 => openSettingUI(player, weaponType = WeaponDB.GRENADE)
-      case 14 => openSettingUI(player, weaponType = WeaponDB.HEAD)
+
+      case 10 => openSettingUI(player, 1, WeaponDB.PRIMARY)
+      case 11 => openSettingUI(player, 1, WeaponDB.SECONDARY)
+      case 12 => openSettingUI(player, 1, WeaponDB.MELEE)
+      case 13 => openSettingUI(player, 1, WeaponDB.GRENADE)
+      case 14 => openSettingUI(player, 1, WeaponDB.HEAD)
 
       //case 15 => openWeaponStorageUI(player)
       //case 16 => openMySetUI(player)
@@ -317,12 +318,13 @@ object WeaponUI {
     new BukkitRunnable {
       override def run(): Unit = {
         val weapons = (weaponCache.get(player) match {
-          case Some(tuple) if tuple._1 == sortType => tuple._2
+          case Some(tuple) if tuple._1 == weaponType && tuple._2 == sortType => tuple._3
           case _ =>
             val weapons = db.getWeapons(player.getUniqueId.toString, weaponType, sortType)
-            weaponCache += (player -> (sortType, weapons))
+            weaponCache += (player -> (weaponType, sortType, weapons))
             weapons
         }).slice(baseSlot, baseSlot + 45)
+        println(s"size: ${weapons.size}")
         //
         inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
@@ -384,19 +386,9 @@ object WeaponUI {
               }
               openMainUI(player)
             }
+          case _ =>
         }
       case _ =>
     }
   }
-
-  object ASC extends SortType
-
-  object DESC extends SortType
-
-  object AMOUNT extends SortType
-
-  object NAME extends SortType
-
-  sealed abstract class SortType
-
 }
