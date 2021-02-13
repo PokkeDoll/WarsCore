@@ -38,8 +38,6 @@ class WarsCoreCommand extends CommandExecutor {
                     ItemUtil.reloadItem()
                   case "tag" =>
                     TagUtil.reloadConfig()
-                  case "cspp" =>
-                    WarsCore.instance.setupCSPP()
                   case "default" =>
                     WarsCore.instance.reloadConfig()
                     // WarsCoreAPI.reloadMapInfo(WarsCore.instance.getConfig.getConfigurationSection("mapinfo"))

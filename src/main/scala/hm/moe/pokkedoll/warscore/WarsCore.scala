@@ -24,8 +24,6 @@ class WarsCore extends JavaPlugin {
 
   private val develop = true
 
-  var cspp: Option[CrackShotPP] = None
-
   var cs: CSUtility = _
 
   override def onEnable(): Unit = {
@@ -113,16 +111,11 @@ class WarsCore extends JavaPlugin {
 
   def getCSUtility: CSUtility = cs
 
-  def setupCSPP(): Unit = {
-    cspp match {
-      case Some(v) =>
-        HandlerList.unregisterAll(v)
-        getLogger.info("Reset CSPP handler!")
-      case None =>
-        getLogger.info("CSPP is not loaded!")
-    }
-    cspp = Some(new CrackShotPP(this, getConfig))
-  }
+  /**
+   * onEnableメソッドより早く呼び出すとnullが返る
+   * @return
+   */
+  def getDatabase: Database = database
 }
 
 object WarsCore {
@@ -131,5 +124,9 @@ object WarsCore {
 
   def log(string: String): Unit = instance.getLogger.info(string)
 
+  /**
+   * onEnableメソッドより早く呼び出すとnullが返る
+   * @return
+   */
   def getInstance: WarsCore = instance
 }
