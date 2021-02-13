@@ -8,7 +8,7 @@ object Registry {
 
   protected[warscore] def init(): Unit = {
     val plugin = WarsCore.instance
-    map ++= (
+    map ++= Map(
       "PAGE_KEY" -> new NamespacedKey(plugin, "ui-page"),
       "WEAPON_TYPE_KEY" -> new NamespacedKey(plugin, "weapon-type"),
       "WEAPON_KEY" -> new NamespacedKey(plugin, "weapon-key"),
