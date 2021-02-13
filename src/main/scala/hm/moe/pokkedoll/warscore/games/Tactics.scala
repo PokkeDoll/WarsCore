@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
+import hm.moe.pokkedoll.warscore.events.GameEndEvent
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WeakLocation, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -75,13 +76,11 @@ class Tactics(override val id: String) extends Game {
       blue.getLocation(world))
   }
 
-  override def load(players: Player*): Unit = {
+  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
     state = GameState.INIT
-    val worlds = config.maps
-    val info = scala.util.Random.shuffle(worlds).head
-    WorldLoader.asyncLoadWorld(world = info.mapId, worldId = worldId, new Callback[World] {
+    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
+    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
       override def success(value: World): Unit = {
-        mapInfo = info
         world = value
         loaded = true
         disable = false
@@ -90,7 +89,6 @@ class Tactics(override val id: String) extends Game {
       }
 
       override def failure(error: Exception): Unit = {
-        WarsCore.log(s"Failed to load world! id=$id, worldId=$worldId, MapInfo.mapId=${info.mapId}")
         players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
         state = GameState.ERROR
       }
@@ -176,6 +174,7 @@ class Tactics(override val id: String) extends Game {
     world.setPVP(false)
     // ここで勝敗を決める
     val winner = if (first > second) members.head.player.getName else members.last.player.getName
+    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
     sendMessage(
       "§7==========================================\n" +
         "§7                Game Over!                \n" +
@@ -192,16 +191,21 @@ class Tactics(override val id: String) extends Game {
       WarsCoreAPI.restoreLobbyInventory(wp.player)
       wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
     })
-    bossbar.removeAll()
-    val beforeId = worldId
+    //WarsCore.instance.database.updateTDMAsync(this)
     val beforeMembers = members.map(_.player)
-    worldId = WarsCoreAPI.createWorldHash(this)
-    load(beforeMembers: _*)
+    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
+    sendMessage(ChatColor.BLUE + "10秒後に自動で試合に参加します")
+    bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
-        WorldLoader.asyncUnloadWorld(beforeId)
+        WorldLoader.asyncUnloadWorld(id)
+        new BukkitRunnable {
+          override def run(): Unit = {
+            load(players = beforeMembers.filter(player => player.getWorld == world))
+          }
+        }.runTaskLater(WarsCore.instance, 190L)
       }
-    }.runTaskLater(WarsCore.instance, 100L)
+    }.runTaskLater(WarsCore.instance, 10L)
   }
 
   override def join(wp: WPlayer): Boolean = {
@@ -209,7 +213,7 @@ class Tactics(override val id: String) extends Game {
       wp.sendMessage("ほかのゲームに参加しています!")
       false
     } else if (!loaded && state == GameState.DISABLE) {
-      load(wp.player)
+      load(Vector(wp.player))
       false
     } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
@@ -253,12 +257,18 @@ class Tactics(override val id: String) extends Game {
     // ゲーム情報をリセット
     wp.game = None
     sendMessage(s"${wp.player.getName} が退出しました")
-    if (wp.player.isOnline) {
-      // スコアボードをリセット
-      wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
-      wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
-      WarsCoreAPI.restoreLobbyInventory(wp.player)
-    }
+    new BukkitRunnable {
+      override def run(): Unit = {
+        if (wp.player.isOnline) {
+          wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
+          if (wp.player.getGameMode == GameMode.SPECTATOR) wp.player.setGameMode(GameMode.SURVIVAL)
+          // インベントリをリストア
+          WarsCoreAPI.restoreLobbyInventory(wp.player)
+          // スコアボード情報をリセット
+          wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
+        }
+      }
+    }.runTaskLater(WarsCore.instance, 1L)
   }
 
   override def death(e: PlayerDeathEvent): Unit = {
@@ -277,7 +287,7 @@ class Tactics(override val id: String) extends Game {
           }
           WarsCore.instance.database.addItem(
             attacker.getUniqueId.toString,
-            config.onKillItem:_*
+            config.onKillItem
           )
           sendMessage(s"${attacker.getName}が1ポイント獲得しました")
           e.setShouldPlayDeathSound(true)

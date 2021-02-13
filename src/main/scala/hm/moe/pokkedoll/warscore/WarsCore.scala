@@ -24,8 +24,6 @@ class WarsCore extends JavaPlugin {
 
   private val develop = true
 
-  var cspp: Option[CrackShotPP] = None
-
   var cs: CSUtility = _
 
   override def onEnable(): Unit = {
@@ -78,9 +76,11 @@ class WarsCore extends JavaPlugin {
     // WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))
     WarsCoreAPI.reloadGame(null)
 
-    setupCSPP()
+    // setupCSPP()
 
-    new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 20 * 60 * 10L)
+    if(getConfig.isList("periodic_message")) {
+      new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 20 * 60 * 10L)
+    }
 
     cs = new CSUtility
 
@@ -97,6 +97,8 @@ class WarsCore extends JavaPlugin {
       out2.writeByte(2)
       getServer.sendPluginMessage(this, MODERN_TORUS_CHANNEL, out2.toByteArray)
     }
+
+    Registry.init()
   }
 
   override def onDisable(): Unit = {
@@ -109,16 +111,11 @@ class WarsCore extends JavaPlugin {
 
   def getCSUtility: CSUtility = cs
 
-  def setupCSPP(): Unit = {
-    cspp match {
-      case Some(v) =>
-        HandlerList.unregisterAll(v)
-        getLogger.info("Reset CSPP handler!")
-      case None =>
-        getLogger.info("CSPP is not loaded!")
-    }
-    cspp = Some(new CrackShotPP(this, getConfig))
-  }
+  /**
+   * onEnableメソッドより早く呼び出すとnullが返る
+   * @return
+   */
+  def getDatabase: Database = database
 }
 
 object WarsCore {
@@ -126,4 +123,10 @@ object WarsCore {
   val MODERN_TORUS_CHANNEL = "torus:main"
 
   def log(string: String): Unit = instance.getLogger.info(string)
+
+  /**
+   * onEnableメソッドより早く呼び出すとnullが返る
+   * @return
+   */
+  def getInstance: WarsCore = instance
 }

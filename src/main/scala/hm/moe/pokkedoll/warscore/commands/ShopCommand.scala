@@ -46,7 +46,7 @@ class ShopCommand extends CommandExecutor {
                 val content = ShopUtil.config.getStringList(name)
                 if(string.startsWith("+")) {
                   val text = string.substring(1)
-                  "(primary|secondary|melee|grenade|item|head):.*@[0-9]*,(.*@[0-9]*,)*.*@[0-9]:\\d".r.findFirstMatchIn(text) match {
+                  ".*:(.*@.*)+:\\d".r.findFirstMatchIn(text) match {
                     case Some(_) =>
                       content.add(text)
                       ShopUtil.setShop(name, content)

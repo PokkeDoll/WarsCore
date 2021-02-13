@@ -29,7 +29,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   /**
    * 読み込むワールドのID.  最初は必ず0
    */
-  override var worldId: String = s"$id-0"
+  override var worldId: String = s"$id"
 
   /**
    * ゲームの構成
@@ -100,13 +100,11 @@ class TeamDeathMatch(override val id: String) extends Game {
   /**
    * ゲームを読み込む
    */
-  override def load(players: Player*): Unit = {
+  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
     state = GameState.INIT
-    val worlds = config.maps
-    val info = scala.util.Random.shuffle(worlds).head
-    WorldLoader.asyncLoadWorld(world = info.mapId, worldId = worldId, new Callback[World] {
+    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
+    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
       override def success(value: World): Unit = {
-        mapInfo = info
         world = value
         loaded = true
         disable = false
@@ -115,7 +113,6 @@ class TeamDeathMatch(override val id: String) extends Game {
       }
 
       override def failure(error: Exception): Unit = {
-        WarsCore.log(s"Failed to load world! id=$id, worldId=$worldId, MapInfo.mapId=${info.mapId}")
         players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
         state = GameState.ERROR
       }
@@ -296,17 +293,20 @@ class TeamDeathMatch(override val id: String) extends Game {
       }
     })
     WarsCore.instance.database.updateTDMAsync(this)
-    sendMessage(ChatColor.BLUE + "10秒後にマップが切り替わります")
-    bossbar.removeAll()
-    val beforeId = worldId
     val beforeMembers = members.map(_.player)
-    worldId = WarsCoreAPI.createWorldHash(this)
-    load(beforeMembers:_*)
+    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
+    sendMessage(ChatColor.BLUE + "10秒後に自動で試合に参加します")
+    bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
-        WorldLoader.asyncUnloadWorld(beforeId)
+        WorldLoader.asyncUnloadWorld(id)
+        new BukkitRunnable {
+          override def run(): Unit = {
+            load(players = beforeMembers.filter(player => player.getWorld == world))
+          }
+        }.runTaskLater(WarsCore.instance, 190L)
       }
-    }.runTaskLater(WarsCore.instance, 200L)
+    }.runTaskLater(WarsCore.instance, 10L)
   }
 
   /**
@@ -320,7 +320,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
     } else if (!loaded && state == GameState.DISABLE) {
-      load(wp.player)
+      load(Vector(wp.player))
     } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
     } else if (members.length >= maxMember) {
@@ -389,14 +389,18 @@ class TeamDeathMatch(override val id: String) extends Game {
     // ゲーム情報をリセット
     wp.game = None
     sendMessage(s"${wp.player.getName} が退出しました")
-    if (wp.player.isOnline) {
-      if (wp.player.getGameMode == GameMode.SPECTATOR) wp.player.setGameMode(GameMode.SURVIVAL)
-      // スコアボード情報をリセット
-      wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
-      wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
-      // インベントリをリストア
-      WarsCoreAPI.restoreLobbyInventory(wp.player)
-    }
+    new BukkitRunnable {
+      override def run(): Unit = {
+        if (wp.player.isOnline) {
+          wp.player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
+          if (wp.player.getGameMode == GameMode.SPECTATOR) wp.player.setGameMode(GameMode.SURVIVAL)
+          // インベントリをリストア
+          WarsCoreAPI.restoreLobbyInventory(wp.player)
+          // スコアボード情報をリセット
+          wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
+        }
+      }
+    }.runTaskLater(WarsCore.instance, 1L)
   }
 
 
@@ -425,7 +429,7 @@ class TeamDeathMatch(override val id: String) extends Game {
            */
           WarsCore.instance.database.addItem(
             attacker.getUniqueId.toString,
-            config.onKillItem:_*
+            config.onKillItem
           )
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
@@ -532,6 +536,7 @@ class TeamDeathMatch(override val id: String) extends Game {
                 }
               } else {
                 WarsCoreAPI.unfreeze(player)
+                WarsCoreAPI.setActiveWeapons(player)
                 player.setGameMode(GameMode.SURVIVAL)
                 cancel()
               }
@@ -585,7 +590,7 @@ class TeamDeathMatch(override val id: String) extends Game {
       redTeam.addEntry(p.getName)
       data(p).team = "red"
     } else {
-      WarsCoreAPI.random.nextInt(1) match {
+      WarsCoreAPI.random.nextInt(2) match {
         case 1 =>
           blueTeam.addEntry(p.getName)
           data(p).team = "blue"
@@ -634,7 +639,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
     comp.append("* ")
       .append("K/D: ").color(ChatColor.GRAY)
-      .append((data.kill / (data.death + 1)).toString).color(ChatColor.GREEN).bold(true)
+      .append((data.kill / (if(data.death == 0) 1 else data.death).toDouble).toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
     /*
         comp.append("* ")

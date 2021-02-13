@@ -1,20 +1,18 @@
 package hm.moe.pokkedoll.warscore.db
 
-import java.sql.{ResultSet, SQLException}
-
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.ui.WeaponUI
-import hm.moe.pokkedoll.warscore.utils.ShopUtil.Shop
-import hm.moe.pokkedoll.warscore.utils.{Item, ShopUtil}
 import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
-import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
+import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil, ShopUtil}
+import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import net.md_5.bungee.api.ChatColor
 import org.bukkit.Material
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 
+import java.sql.{ResultSet, SQLException}
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try, Using}
 
 /**
  * SQLite3でのDatabase実装
@@ -38,20 +36,13 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @return UUIDが存在すればtrue
    */
   override def hasUUID(uuid: String): Boolean = {
-    val c = hikari.getConnection()
-    val ps = c.prepareStatement("SELECT uuid FROM player WHERE uuid=?")
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val ps = use(c.prepareStatement("SELECT uuid FROM player WHERE uuid=?"))
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
       rs.next()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        false
-    } finally {
-      ps.close()
-      c.close()
-    }
+    }.getOrElse(false)
   }
 
   /**
@@ -61,30 +52,22 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @return
    */
   override def insert(uuid: String): Boolean = {
-    val c = hikari.getConnection()
-    val s = c.createStatement()
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val s = use(c.createStatement())
       s.addBatch(s"INSERT INTO player(uuid) VALUES('$uuid')")
       s.addBatch(s"INSERT INTO rank(uuid) VALUES('$uuid')")
       s.addBatch(s"INSERT INTO tag(uuid, use) VALUES('$uuid', 1)")
       s.addBatch(s"INSERT INTO tdm(uuid) VALUES('$uuid')")
       s.addBatch(s"INSERT INTO tactics(uuid) VALUES('$uuid')")
       s.executeBatch()
-      true
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        false
-    } finally {
-      s.close()
-      c.close()
-    }
+    }.isSuccess
   }
 
   override def getRankData(uuid: String): Option[(Int, Int)] = {
-    val c = hikari.getConnection()
-    val ps = c.prepareStatement("SELECT id, exp FROM rank WHERE uuid=?")
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val ps = use(c.prepareStatement("SELECT id, exp FROM rank WHERE uuid=?"))
       ps.setString(1, uuid)
       val rs = ps.executeQuery()
       if (rs.next()) {
@@ -92,37 +75,24 @@ class SQLite(private val plugin: WarsCore) extends Database {
       } else {
         None
       }
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        None
-    } finally {
-      ps.close()
-      c.close()
-    }
+    }.getOrElse(None)
   }
 
   override def setRankData(uuid: String, data: (Int, Int)): Unit = {
-    val c = hikari.getConnection()
-    val ps = c.prepareStatement("UPDATE rank SET id=?, exp=? WHERE uuid=?")
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val ps = use(c.prepareStatement("UPDATE rank SET id=?, exp=? WHERE uuid=?"))
       ps.setInt(1, data._1)
       ps.setInt(2, data._2)
       ps.setString(3, uuid)
       ps.executeUpdate()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      ps.close()
-      c.close()
     }
   }
 
   override def updateTDM(game: TeamDeathMatch): Boolean = {
-    val c = hikari.getConnection()
-    val ps = c.prepareStatement("UPDATE tdm SET kill=kill+?, death=death+?, assist=assist+?, damage=damage+?, damaged=damaged+?, win=win+?, play=play+1 WHERE uuid=?")
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val ps = use(c.prepareStatement("UPDATE tdm SET kill=kill+?, death=death+?, assist=assist+?, damage=damage+?, damaged=damaged+?, win=win+?, play=play+1 WHERE uuid=?"))
       game.data.map(f => (f._1.getUniqueId.toString, f._2)).foreach(f => {
         ps.setInt(1, f._2.kill)
         ps.setInt(2, f._2.death)
@@ -133,15 +103,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
         ps.setString(7, f._1)
         ps.executeUpdate()
       })
-      true
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        false
-    } finally {
-      ps.close()
-      c.close()
-    }
+    }.isSuccess
   }
 
   /**
@@ -157,10 +119,9 @@ class SQLite(private val plugin: WarsCore) extends Database {
       override def run(): Unit = {
 
         callback.async = true
-
-        val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT * FROM tag WHERE uuid=?")
-        try {
+        Using.Manager { use =>
+          val c = use(hikari.getConnection)
+          val ps = use(c.prepareStatement("SELECT * FROM tag WHERE uuid=?"))
           ps.setString(1, uuid)
           val rs = ps.executeQuery()
           var vec = Vector.empty[UserTagInfo]
@@ -168,12 +129,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
             vec :+= new UserTagInfo(rs.getString("tagId"), rs.getBoolean("use"))
           }
           callback.success(vec)
-        } catch {
-          case e: SQLException =>
-            callback.failure(e)
-        } finally {
-          ps.close()
-          c.close()
         }
       }
     }.runTaskAsynchronously(plugin)
@@ -193,9 +148,9 @@ class SQLite(private val plugin: WarsCore) extends Database {
 
         callback.async = true
 
-        val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT tagId FROM tag WHERE uuid=? and use=1")
-        try {
+        Using.Manager { use =>
+          val c = use(hikari.getConnection)
+          val ps = use(c.prepareStatement("SELECT tagId FROM tag WHERE uuid=? and use=1"))
           ps.setString(1, uuid)
           val rs = ps.executeQuery()
           if (rs.next()) {
@@ -203,12 +158,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
           } else {
             callback.success("")
           }
-        } catch {
-          case e: SQLException =>
-            callback.failure(e)
-        } finally {
-          ps.close()
-          c.close()
         }
       }
     }.runTaskAsynchronously(plugin)
@@ -222,18 +171,12 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param id   タグID
    */
   override def setTag(uuid: String, id: String): Unit = {
-    val c = hikari.getConnection
-    val ps = c.prepareStatement("UPDATE `tag` SET `tagId`=? WHERE `uuid`=?")
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val ps = use(c.prepareStatement("UPDATE `tag` SET `tagId`=? WHERE `uuid`=?"))
       ps.setString(1, id)
       ps.setString(2, uuid)
       ps.executeUpdate()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      ps.close()
-      c.close()
     }
   }
 
@@ -484,28 +427,21 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @return (type, name, amount, use)の組
    */
   override def getOriginalItem(uuid: String, offset: Int): List[(String, String, Int, Boolean)] = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
     var list = List.empty[(String, String, Int, Boolean)]
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
       val rs = s.executeQuery(s"SELECT type, name, amount, use FROM weapon WHERE uuid='$uuid' LIMIT 45 OFFSET $offset")
       while (rs.next()) {
         list :+= (rs.getString("type"), rs.getString("name"), rs.getInt("amount"), rs.getBoolean("use"))
       }
       rs.close()
       list
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        list
-    } finally {
-      s.close()
-      c.close()
-    }
+    }.getOrElse(list)
   }
 
   /**
-   * データベースから未加工のデータを取得する
+   * データベースから未加工のデータを取得する。この場合はタイプを考える
    *
    * @param uuid   UUID
    * @param offset 取得を始める番号
@@ -513,24 +449,17 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @return (name, amount, use)の組
    */
   override def getOriginalItem(uuid: String, offset: Int, `type`: String): List[(String, Int, Boolean)] = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
     var list = List.empty[(String, Int, Boolean)]
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
       val rs = s.executeQuery(s"SELECT name, amount, use FROM weapon WHERE uuid='$uuid' and type='${`type`}' LIMIT 45 OFFSET $offset")
       while (rs.next()) {
         list :+= (rs.getString("name"), rs.getInt("amount"), rs.getBoolean("use"))
       }
       rs.close()
       list
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-        list
-    } finally {
-      s.close()
-      c.close()
-    }
+    }.getOrElse(list)
   }
 
   /**
@@ -546,7 +475,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
     val s = c.createStatement()
     try {
       val rs = s.executeQuery(s"SELECT amount FROM weapon WHERE uuid='$uuid' and type='${`type`}' and name='$name'")
-      if(rs.next()) {
+      if (rs.next()) {
         rs.getInt("amount")
       } else {
         0
@@ -565,28 +494,31 @@ class SQLite(private val plugin: WarsCore) extends Database {
   /**
    * 武器を取得する
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
    * @return 武器たち
    */
-  override def getWeapons(uuid: String, t: String): Seq[Item] = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
+  override def getWeapons(uuid: String, weaponType: String, sortType: Int = 0): Seq[Item] = {
     var seq = IndexedSeq.empty[Item]
-    try {
-      val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and type='$t'")
-      while (rs.next()) {
-        seq :+= new Item(rs.getString(1), rs.getInt("amount"))
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      val rs = sortType match {
+        // 個数でソート
+        case 2 =>
+          s.executeQuery(s"SELECT weapon.name, amount FROM weapon WHERE uuid='$uuid' and type='$weaponType' ORDER BY amount DESC")
+        // アイテムの名前でソート
+        case 1 =>
+          s.executeQuery(s"SELECT weapon.name, amount FROM weapon INNER JOIN item ON item.name = weapon.name WHERE uuid='$uuid' and type='$weaponType' ORDER BY item.displayname")
+        // 何もせず(獲得順)
+        case _ =>
+          s.executeQuery(s"SELECT weapon.name, amount FROM weapon WHERE uuid='$uuid' and type='$weaponType'")
       }
-      rs.close()
+      while (rs.next()) {
+        seq :+= new Item(rs.getString(1), rs.getInt(2))
+      }
       seq
-    } catch {
-      case _: SQLException =>
-        seq
-    } finally {
-      s.close()
-      c.close()
-    }
+    }.getOrElse(seq)
   }
 
   /**
@@ -596,9 +528,9 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @return 武器のタプル(メイン, サブ, 近接, アイテム)
    */
   override def getActiveWeapon(uuid: String): (String, String, String, String, String) = {
-    val c = hikari.getConnection
-    val ps = c.prepareStatement("SELECT name FROM weapon WHERE use=? and uuid=? and type=?")
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val ps = use(c.prepareStatement("SELECT name FROM weapon WHERE use=? and uuid=? and type=?"))
       ps.setInt(1, 1)
       ps.setString(2, uuid)
       val gr = ((rs: ResultSet) => if (rs.next()) rs.getString(1) else "")
@@ -613,74 +545,54 @@ class SQLite(private val plugin: WarsCore) extends Database {
       ps.setString(3, WeaponDB.HEAD)
       val head = gr(ps.executeQuery())
       (primary, secondary, melee, grenade, head)
-    } catch {
-      case _: SQLException =>
-        ("", "", "", "", "")
-    } finally {
-      ps.close()
-      c.close()
-    }
+    }.getOrElse(("", "", "", "", ""))
   }
-
 
 
   /**
    * 武器をセットする
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
-   * @param name 武器のデータ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
+   * @param name       武器のデータ
    */
-  override def setWeapon(uuid: String, t: String, name: String): Unit = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
-    try {
-      s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and type='$t'")
-      s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and type='$t' and name='$name'")
+  override def setWeapon(uuid: String, weaponType: String, name: String): Unit = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      s.addBatch(s"UPDATE weapon SET use=0 WHERE uuid='$uuid' and type='$weaponType'")
+      s.addBatch(s"UPDATE weapon SET use=1 WHERE uuid='$uuid' and type='$weaponType' and name='$name'")
       s.executeBatch()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      s.close()
-      c.close()
     }
   }
 
   /**
    * 武器を追加する
    *
-   * @param uuid 対象のUUID
-   * @param t    武器のタイプ
-   * @param name 武器のデータ
+   * @param uuid       対象のUUID
+   * @param weaponType 武器のタイプ
+   * @param name       武器のデータ
    */
-  override def addWeapon(uuid: String, t: String, name: String, amount: Int = 1): Unit = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
-    try {
-      s.executeUpdate(
-        s"INSERT INTO weapon (uuid, type, name, amount) VALUES('$uuid', '$t', '$name', $amount) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+$amount"
-      )
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      s.close()
-      c.close()
+  override def addWeapon(uuid: String, weaponType: String, name: String, amount: Int = 1): Try[Unit] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      s.executeUpdate(s"INSERT INTO weapon (uuid, type, name, amount) VALUES('$uuid', '$weaponType', '$name', $amount) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+$amount")
     }
   }
 
   /**
    * アイテムを追加する。タイプはitemに固定される。さらに非同期！
+   *
    * @param uuid 対象のUUID
    * @param item アイテム
    */
-  override def addItem(uuid: String, item: Item*): Unit = {
+  override def addItem(uuid: String, item: Array[Item]): Unit = {
     new BukkitRunnable {
       override def run(): Unit = {
-        val c = hikari.getConnection
-        val s = c.prepareStatement("INSERT INTO weapon (uuid, type, name, amount) VALUES(?, ?, ?, ?) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+?")
-        try {
+        Using.Manager { use =>
+          val c = use(hikari.getConnection)
+          val s = use(c.prepareStatement("INSERT INTO weapon (uuid, type, name, amount) VALUES(?, ?, ?, ?) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+?"))
           s.setString(1, uuid)
           s.setString(2, WeaponDB.ITEM)
           item.foreach(i => {
@@ -690,33 +602,21 @@ class SQLite(private val plugin: WarsCore) extends Database {
             s.addBatch()
           })
           s.executeBatch()
-        } catch {
-          case e: SQLException =>
-            e.printStackTrace()
-        } finally {
-          s.close()
-          c.close()
         }
       }
     }.runTaskAsynchronously(plugin)
   }
 
-  def buylWeapon(uuid: String, t: String, shop: ShopUtil.Shop, callback: Callback[String]): Unit = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
-    try {
+  def buylWeapon(uuid: String, weaponType: String, shop: ShopUtil.Shop, callback: Callback[String]): Unit = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
       val text = shop.price.map(shopItem => s"(name='${shopItem.name}' AND amount>=${shopItem.amount})").mkString(" OR ")
       val rs = s.executeQuery(s"SELECT CASE WHEN $text THEN 1 ELSE 0 FROM weapon WHERE uuid='$uuid'")
-      if(rs.next() && rs.getBoolean(1)) {
+      if (rs.next() && rs.getBoolean(1)) {
         addWeapon(uuid, shop.`type`, shop.product.name, shop.product.amount)
         delWeapon(uuid, shop.price)
       }
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      s.close()
-      c.close()
     }
   }
 
@@ -727,46 +627,95 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param price
    */
   override def delWeapon(uuid: String, price: Array[Item]): Unit = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
-    try {
-      price.foreach(f => {
-        s.addBatch(s"UPDATE weapon SET amount=amount-${f.amount} WHERE uuid='$uuid' and name='${f.name}'")
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      price.foreach(item => {
+        s.addBatch(s"UPDATE weapon SET amount=amount-${item.amount} WHERE uuid='$uuid' and name='${item.name}'")
       })
       s.addBatch(s"DELETE FROM weapon WHERE uuid='$uuid' and 0>=amount")
       s.executeBatch()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      s.close()
-      c.close()
     }
   }
 
   /**
    * 実際にプレイやーが所持しているアイテムを付け加えて返す。非同期で使う
+   *
    * @param uuid UUID
    * @param item Shop.priceで獲得できる
    * @return Itemと実際に所持しているアイテムの組
    */
   override def getRequireItemsAmount(uuid: String, item: Array[Item]): Map[String, Int] = {
-    val c = hikari.getConnection
-    val s = c.createStatement()
     var map = Map.empty[String, Int]
-    try {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
       val rs = s.executeQuery(s"SELECT name, amount FROM weapon WHERE uuid='$uuid' and name in (${item.map(f => s"'${f.name}'").mkString(", ")})")
-      while(rs.next()) {
+      while (rs.next()) {
         map += rs.getString("name") -> rs.getInt("amount")
       }
-      rs.close()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      s.close()
-      c.close()
+      map
+    }.getOrElse(map)
+  }
+
+  /**
+   * item.ymlからデータベースへ移動する
+   */
+  override def migrate(): Try[Unit] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val ps = use(c.prepareStatement("INSERT INTO item VALUES(?, ?, ?)"))
+      ItemUtil.cache.foreach(f => {
+        ps.setString(1, f._1)
+        ps.setString(2, ChatColor.stripColor(WarsCoreAPI.getItemStackName(f._2)))
+        ps.setBytes(3, f._2.serializeAsBytes())
+        ps.addBatch()
+        plugin.getLogger.info(s"added batch ${f._1}")
+      })
+      ps.executeBatch()
     }
-    map
+  }
+
+  /**
+   * データベースにアイテムを登録する
+   *
+   * @param name アイテムのID
+   * @param item アイテム, Noneなら削除を意味する
+   */
+  override def updateItem(name: String, item: Option[ItemStack]): Try[Unit] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      item match {
+        case Some(itemStack) =>
+          val ps = use(c.prepareStatement("REPLACE INTO item VALUES(?, ?, ?)"))
+          val displayname = ChatColor.stripColor(WarsCoreAPI.getItemStackName(itemStack))
+          ps.setString(1, name)
+          ps.setString(2, displayname)
+          ps.setBytes(3, itemStack.serializeAsBytes())
+          ps.executeUpdate()
+        case None =>
+          val ps = use(c.prepareStatement("DELETE FROM item WHERE name=?"))
+          ps.setString(1, name)
+          ps.executeUpdate()
+      }
+    }
+  }
+
+  /**
+   * データベースのカラムをすべて持ってくる
+   *
+   * @return
+   */
+  override def getItems: Try[Seq[(String, String, ItemStack)]] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      var seq = Seq.empty[(String, String, ItemStack)]
+      val rs = use(s.executeQuery("SELECT * FROM item"))
+      while (rs.next()) {
+        seq :+= (rs.getString("name"), rs.getString("displayname"), ItemStack.deserializeBytes(rs.getBytes("data")))
+      }
+      seq
+    }
   }
 }

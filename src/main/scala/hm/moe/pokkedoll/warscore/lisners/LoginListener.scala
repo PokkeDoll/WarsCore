@@ -47,7 +47,6 @@ class LoginListener(plugin: WarsCore) extends Listener {
     if (player.getWorld.getName != "p-lobby") {
       player.teleport(Bukkit.getWorlds.get(0).getSpawnLocation)
     }
-    WarsCoreAPI.removeScoreboard(player)
     val wp = WarsCoreAPI.getWPlayer(player)
     wp.game match {
       case Some(game) =>
@@ -57,5 +56,6 @@ class LoginListener(plugin: WarsCore) extends Listener {
     }
     // キャッシュから削除
     WarsCoreAPI.wplayers.remove(player)
+    WarsCoreAPI.removeScoreboard(player)
   }
 }

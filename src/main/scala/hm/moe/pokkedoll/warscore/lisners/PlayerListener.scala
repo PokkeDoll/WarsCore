@@ -78,7 +78,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
           e.setCancelled(true)
           if (player.isSneaking) {
             val item = player.getInventory.getItemInMainHand
-            if (WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+            if (WarsCore.instance.getCSUtility.getWeaponTitle(e.getItem.getItemStack) != null) {
               player.getInventory.setItemInMainHand(e.getItem.getItemStack)
               e.getItem.remove()
               player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
@@ -174,8 +174,9 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     } else if (e.getClickedBlock != null) {
       if (e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
         e.setCancelled(true)
-        //WeaponUI.openStorageUI(e.getPlayer)
-        EnderChestUI.openUI(e.getPlayer)
+        // WeaponUI.openStorageUI(e.getPlayer)
+        // EnderChestUI.openUI(e.getPlayer)
+        WeaponUI.openMainUI(e.getPlayer)
       }
     }
   }

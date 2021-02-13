@@ -12,7 +12,6 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Random
 
@@ -22,7 +21,6 @@ import scala.util.Random
  * @author Emorard
  */
 object WarsCoreAPI {
-  val LOBBY = "p-lobby"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -274,10 +272,6 @@ object WarsCoreAPI {
     )
   }
 
-  def sendNews4Staff(player: Player): Unit = {
-
-  }
-
   /**
    * ヘッダーを作成する。改行もしてくれる
    *
@@ -316,7 +310,7 @@ object WarsCoreAPI {
       Some(location)
     } catch {
       case e: Exception =>
-        e.printStackTrace()
+        WarsCore.instance.getLogger.warning(s"${e.getMessage} at WarsCoreAPI.getLocation($string)")
         None
     }
   }
@@ -364,26 +358,31 @@ object WarsCoreAPI {
     val player = wp.player
     database.setVInv(player.getUniqueId.toString, player.getInventory.getStorageContents, new Callback[Unit] {
       override def success(value: Unit): Unit = {
-        val weapons = database.getActiveWeapon(player.getUniqueId.toString)
-        val get = (key: String, default: String) => ItemUtil.getItem(key).getOrElse(ItemUtil.getItem(default).get)
-        player.getInventory.setContents(
-          Array(
-            get(weapons._1, "ak-47"),
-            get(weapons._2, "m92"),
-            get(weapons._3, "knife"),
-            get(weapons._4, "grenade"),
-            new ItemStack(Material.AIR),
-            new ItemStack(Material.AIR),
-            new ItemStack(Material.AIR),
-            new ItemStack(Material.AIR),
-            new ItemStack(Material.CLOCK)
-          ))
+        setActiveWeapons(player)
       }
 
       override def failure(error: Exception): Unit = {
         wp.sendMessage("ロビーインベントリの読み込みに失敗しました")
       }
     })
+  }
+
+  def setActiveWeapons(player: Player): Unit = {
+    val weapons = database.getActiveWeapon(player.getUniqueId.toString)
+    val get = (key: String, default: String) => ItemUtil.getItem(key).getOrElse(ItemUtil.getItem(default).get)
+    player.getInventory.setContents(
+      Array(
+        get(weapons._1, "ak-47"),
+        get(weapons._2, "m92"),
+        get(weapons._3, "knife"),
+        get(weapons._4, "grenade"),
+        new ItemStack(Material.AIR),
+        new ItemStack(Material.AIR),
+        new ItemStack(Material.AIR),
+        new ItemStack(Material.AIR),
+        new ItemStack(Material.CLOCK)
+      ))
+    player.getInventory.setHelmet(ItemUtil.getItem(weapons._5).getOrElse(new ItemStack(Material.AIR)))
   }
 
   /**
@@ -405,28 +404,6 @@ object WarsCoreAPI {
         player.sendMessage("なんと復元できませんでした")
       }
     })
-  }
-
-  /**
-   * ワールドの識別子を設定する
-   *
-   * @since v1.6.1
-   * @return 0から999までの**文字列**を返す
-   */
-  def getWorldHash: String = random.nextInt(1000).toString
-
-  /**
-   * @since v1.6.1
-   * @param game 対象のゲーム
-   * @return
-   */
-  @tailrec
-  def createWorldHash(game: Game): String = {
-    val id = game.id + getWorldHash
-    if (game.worldId == id)
-      createWorldHash(game)
-    else
-      id
   }
 
   def getItemStackName(itemStack: ItemStack): String = {
@@ -485,6 +462,7 @@ object WarsCoreAPI {
    * @author Emorard
    */
   object UI {
+    @Deprecated
     val PAGE_KEY = new NamespacedKey(WarsCore.instance, "ui-page")
 
     val PAGE_ICON: Int => ItemStack = (page: Int) => {

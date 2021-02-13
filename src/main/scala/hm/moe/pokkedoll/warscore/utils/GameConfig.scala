@@ -47,8 +47,8 @@ object GameConfig {
   def reload(): Unit = {
     createConfig() match {
       case Success(_) =>
-        plugin.getLogger.info("game.ymlの読み込みに成功しました")
         gameConfig = config.getKeys(false).asScala.map(f => (f, new GameConfig(config.getConfigurationSection(f)))).toMap
+        plugin.getLogger.info("game.ymlの読み込みに成功しました")
       case Failure(exception) =>
         exception.printStackTrace()
         plugin.getLogger.warning("game.ymlの読み込みに失敗しました")

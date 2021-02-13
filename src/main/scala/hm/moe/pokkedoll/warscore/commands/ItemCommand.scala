@@ -1,9 +1,9 @@
 package hm.moe.pokkedoll.warscore.commands
 
 import hm.moe.pokkedoll.warscore.utils.ItemUtil
-import org.bukkit.{ChatColor, Material}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
+import org.bukkit.{ChatColor, Material}
 
 class ItemCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
@@ -30,11 +30,11 @@ class ItemCommand extends CommandExecutor {
           if (item == null || item.getType == Material.AIR) {
             player.sendMessage("無効なアイテムです")
           } else {
-            ItemUtil.setItem(args(1), item.clone())
+            ItemUtil.updateItem.apply(args(1), Some(item))
             player.sendMessage(s"${args(1)}をセットしました")
           }
         } else if (args.length > 1 && v0.equalsIgnoreCase("remove")) {
-          ItemUtil.removeItem(args(1))
+          ItemUtil.updateItem.apply(args(1), None)
           player.sendMessage(s"${args(1)}を削除しました")
         } else if (args.length > 1 && v0.equalsIgnoreCase("get")) {
           ItemUtil.getItem(args(1)) match {

@@ -1,7 +1,5 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import scala.collection.mutable
-
 /**
  * Q: なぜLoaction型じゃないんですか！？<br>
  * A: Game.load()するたびにワールドの情報が変わるため、読み込みエラーが発生してしまう。 <br>

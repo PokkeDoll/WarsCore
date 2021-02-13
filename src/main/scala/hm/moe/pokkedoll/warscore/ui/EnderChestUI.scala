@@ -42,17 +42,17 @@ object EnderChestUI {
     val player = e.getWhoClicked
     e.getSlot match {
       case 1 =>
-        WeaponUI.openStorageUI(player, 1, "primary")
+        WeaponUI.openSettingUI(player, 1, "primary")
       case 2 =>
-        WeaponUI.openStorageUI(player, 1, "secondary")
+        WeaponUI.openSettingUI(player, 1, "secondary")
       case 3 =>
-        WeaponUI.openStorageUI(player, 1, "melee")
+        WeaponUI.openSettingUI(player, 1, "melee")
       case 4 =>
-        WeaponUI.openStorageUI(player, 1, "grenade")
+        WeaponUI.openSettingUI(player, 1, "grenade")
       case 5 =>
-        WeaponUI.openStorageUI(player, 1, "head")
+        WeaponUI.openSettingUI(player, 1, "head")
       case 6 =>
-        WeaponUI.openStorageUI(player, 1, "item")
+        WeaponUI.openSettingUI(player, 1, "item")
       case _ =>
     }
   }
