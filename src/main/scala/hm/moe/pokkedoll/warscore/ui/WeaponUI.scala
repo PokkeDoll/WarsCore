@@ -1,7 +1,6 @@
 package hm.moe.pokkedoll.warscore.ui
 
 import java.util
-
 import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
@@ -9,7 +8,7 @@ import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
-import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, Material, NamespacedKey}
@@ -21,7 +20,7 @@ object WeaponUI {
   /**
    * getWeapons()したときのキャッシュを保存する
    */
-  var weaponCache = Map.empty[(HumanEntity, Int), Seq[Item]]
+  var weaponCache = Map.empty[HumanEntity, (Int, Seq[Item])]
 
   val sortTypeMap = Map(0 -> "獲得順", 1 -> "個数順", 2 -> "名前順")
 
@@ -166,6 +165,8 @@ object WeaponUI {
 
   private val weaponKey = new NamespacedKey(WarsCore.instance, "weapon-key")
 
+  private val sortTypeKey = new NamespacedKey(WarsCore.instance, "sort-type")
+
   val STORAGE_TITLE = "Storage"
 
   /**
@@ -255,6 +256,7 @@ object WeaponUI {
       }
     }.runTask(WarsCore.instance)
   }
+
   /**
    * ストレージUIをクリックしたときに呼ばれる
    *
@@ -291,20 +293,39 @@ object WeaponUI {
 
     val p = pageIcon(page)
 
+    val barrier = {
+      val i = new ItemStack(Material.BARRIER)
+      val meta = i.getItemMeta
+      meta.getPersistentDataContainer.set(weaponTypeKey, PersistentDataType.STRING, weaponType)
+      meta.getPersistentDataContainer.set(sortTypeKey, PersistentDataType.INTEGER, Integer.valueOf(sortType))
+      i.setItemMeta(meta)
+      i
+    }
+
+    inv.setItem(0, barrier)
+
+    //TODO レジストリを作成する
+
+    // 獲得順
+    inv.setItem(6, new ItemStack(Material.FEATHER))
+    // 名前順
+    inv.setItem(7, new ItemStack(Material.NAME_TAG))
+    // 個数順
+    inv.setItem(8, new ItemStack(Material.EMERALD, 64))
+
     val baseSlot = (page - 1) * 45
     new BukkitRunnable {
       override def run(): Unit = {
-        val weapons = (weaponCache.get((player, sortType)) match {
-          case Some(seq) => seq
-          case None =>
+        val weapons = (weaponCache.get(player) match {
+          case Some(tuple) if tuple._1 == sortType => tuple._2
+          case _ =>
             val weapons = db.getWeapons(player.getUniqueId.toString, weaponType, sortType)
-            weaponCache = weaponCache.filterNot(pred => pred._1._1 == player) + ((player, sortType) -> weapons)
+            weaponCache += (player -> (sortType, weapons))
             weapons
         }).slice(baseSlot, baseSlot + 45)
         //
         inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
-        val barrier = new ItemStack(Material.BARRIER)
         weapons.indices.foreach(f => {
           val item = weapons(f)
           val i = ItemUtil.getItem(item.name).getOrElse(EMPTY).clone()
@@ -315,7 +336,6 @@ object WeaponUI {
           i.setItemMeta(m)
           inv.setItem(9 + f, i)
         })
-        inv.setItem(0, barrier)
       }
     }.runTask(WarsCore.instance)
     player.openInventory(inv)
@@ -333,36 +353,50 @@ object WeaponUI {
     inv.getType match {
       case InventoryType.CHEST =>
         val i = e.getCurrentItem
-        val pageItem = inv.getItem(4)
-        val usedSlotItem = inv.getItem(0)
-        // バリアブロック。インベントリを閉じる
-        if (e.getSlot == 0) {
-          player.closeInventory()
+        // val pageItem = inv.getItem(4)
+        // val usedSlotItem = inv.getItem(0)
+        val index0 = inv.getItem(0).getItemMeta.getPersistentDataContainer
+        val weaponType = index0.get(weaponTypeKey, PersistentDataType.STRING)
+        val sortType = index0.get(sortTypeKey, PersistentDataType.INTEGER)
+        e.getSlot match {
+          // バリアブロック。インベントリを閉じる
+          case 0 =>
+            player.closeInventory()
           // 額縁。メインメニューに戻る
-        } else if (e.getSlot == 1) {
-          openMainUI(player)
-        } else if (i != null && i.getType != Material.AIR && i.getType != PANEL.getType) {
-          val meta = i.getItemMeta
-          val per = meta.getPersistentDataContainer
-          if (per.has(weaponKey, PersistentDataType.STRING)) {
-            val t = per.get(weaponTypeKey, PersistentDataType.STRING)
-            val name = per.get(weaponKey, PersistentDataType.STRING)
-            db.setWeapon(player.getUniqueId.toString, weaponType = t, name = name)
-            if (t == "head") {
-              // 帽子だけの特殊な設定
-              ItemUtil.getItem(name).foreach(head => player.getInventory.setHelmet(head))
-            }
+          case 1 =>
             openMainUI(player)
-          }
+          case 6 if sortType != 0 =>
+            openSettingUI(player, 1, weaponType, 0)
+          case 7 if sortType != 1 =>
+            openSettingUI(player, 1, weaponType, 1)
+          case 8 if sortType != 2 =>
+            openSettingUI(player, 1, weaponType, 2)
+          case _ if i != null && i.getType != Material.AIR && i.getType != PANEL.getType =>
+            val meta = i.getItemMeta
+            val per = meta.getPersistentDataContainer
+            if (per.has(weaponKey, PersistentDataType.STRING)) {
+              val t = per.get(weaponTypeKey, PersistentDataType.STRING)
+              val name = per.get(weaponKey, PersistentDataType.STRING)
+              db.setWeapon(player.getUniqueId.toString, weaponType = t, name = name)
+              if (t == "head") {
+                // 帽子だけの特殊な設定
+                ItemUtil.getItem(name).foreach(head => player.getInventory.setHelmet(head))
+              }
+              openMainUI(player)
+            }
         }
       case _ =>
     }
   }
 
   object ASC extends SortType
+
   object DESC extends SortType
+
   object AMOUNT extends SortType
+
   object NAME extends SortType
 
   sealed abstract class SortType
+
 }

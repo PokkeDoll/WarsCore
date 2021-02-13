@@ -678,6 +678,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
 
   /**
    * データベースにアイテムを登録する
+   *
    * @param name アイテムのID
    * @param item アイテム, Noneなら削除を意味する
    */
@@ -702,6 +703,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
 
   /**
    * データベースのカラムをすべて持ってくる
+   *
    * @return
    */
   override def getItems: Try[Seq[(String, String, ItemStack)]] = {
