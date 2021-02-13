@@ -1,6 +1,6 @@
 name := "WarsCore"
 
-version := "1.10.7"
+version := "1.10.8"
 
 scalaVersion := "2.13.3"
 

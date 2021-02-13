@@ -1,6 +1,5 @@
 package hm.moe.pokkedoll.warscore.ui
 
-import java.util
 import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
@@ -8,10 +7,12 @@ import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
-import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
+import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, Material, NamespacedKey}
+
+import java.util
 
 object WeaponUI {
 
@@ -21,6 +22,13 @@ object WeaponUI {
    * getWeapons()したときのキャッシュを保存する
    */
   var weaponCache = Map.empty[HumanEntity, (String, Int, Seq[Item])]
+
+  /**
+   * キャッシュを削除する
+   *
+   * @param player 削除するプレイヤー
+   */
+  def clearCache(player: HumanEntity): Unit = weaponCache -= player
 
   val sortTypeMap = Map(0 -> "獲得順", 1 -> "個数順", 2 -> "名前順")
 

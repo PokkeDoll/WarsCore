@@ -135,6 +135,7 @@ object ShopUI {
     player.openInventory(inv)
     test.log(1L)
   }
+  
 
 
   // TODO どちらかというとoffsetKey

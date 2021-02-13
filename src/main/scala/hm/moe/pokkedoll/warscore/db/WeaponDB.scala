@@ -2,6 +2,8 @@ package hm.moe.pokkedoll.warscore.db
 
 import hm.moe.pokkedoll.warscore.utils.Item
 
+import scala.util.Try
+
 trait WeaponDB {
   /**
    * データベースから未加工のデータを取得する
@@ -66,7 +68,7 @@ trait WeaponDB {
    * @param weaponType 武器のタイプ
    * @param name       武器のデータ
    */
-  def addWeapon(uuid: String, weaponType: String, name: String, amount: Int)
+  def addWeapon(uuid: String, weaponType: String, name: String, amount: Int): Try[Unit]
 
   /**
    * アイテムを追加する。タイプはitemに固定される。さらに非同期！

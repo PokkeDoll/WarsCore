@@ -573,13 +573,11 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param weaponType 武器のタイプ
    * @param name       武器のデータ
    */
-  override def addWeapon(uuid: String, weaponType: String, name: String, amount: Int = 1): Unit = {
+  override def addWeapon(uuid: String, weaponType: String, name: String, amount: Int = 1): Try[Unit] = {
     Using.Manager { use =>
       val c = use(hikari.getConnection)
       val s = use(c.createStatement())
-      s.executeUpdate(
-        s"INSERT INTO weapon (uuid, type, name, amount) VALUES('$uuid', '$weaponType', '$name', $amount) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+$amount"
-      )
+      s.executeUpdate(s"INSERT INTO weapon (uuid, type, name, amount) VALUES('$uuid', '$weaponType', '$name', $amount) ON CONFLICT(uuid, type, name) DO UPDATE SET amount = amount+$amount")
     }
   }
 
