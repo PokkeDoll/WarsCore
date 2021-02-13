@@ -94,28 +94,6 @@ class Domination(override val id: String) extends Game {
   val buildRange = 6
 
   /**
-   * ゲームを読み込む
-   */
-  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
-    state = GameState.INIT
-    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
-    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
-      override def success(value: World): Unit = {
-        world = value
-        loaded = true
-        disable = false
-        init()
-        players.foreach(join)
-      }
-
-      override def failure(error: Exception): Unit = {
-        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
-        state = GameState.ERROR
-      }
-    })
-  }
-
-  /**
    * ゲームを初期化する
    */
   override def init(): Unit = {
@@ -485,10 +463,9 @@ class Domination(override val id: String) extends Game {
           if (attacker.isOp || victim.getAddress != attacker.getAddress) {
             // EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
           }
-          WarsCore.instance.database.addItem(
-            attacker.getUniqueId.toString,
-            config.onKillItem
-          )
+
+          reward(attacker, GameRewardType.KILL)
+
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
           e.setDeathSoundVolume(2f)

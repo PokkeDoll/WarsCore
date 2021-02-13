@@ -1,13 +1,14 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo}
-import hm.moe.pokkedoll.warscore.{WPlayer, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WorldLoader}
+import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.BaseComponent
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
-import org.bukkit.{ChatColor, World}
+import org.bukkit.World
 
 /**
  * ゲームのコア部分のトレイト
@@ -87,9 +88,26 @@ trait Game {
   val time: Int
 
   /**
-   * ゲームを読み込む
+   * ゲームを開始するためのワールドを読み込むメソッド。
    */
-  def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit
+  def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
+    state = GameState.INIT
+    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
+    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
+      override def success(value: World): Unit = {
+        world = value
+        loaded = true
+        disable = false
+        init()
+        players.foreach(join)
+      }
+
+      override def failure(error: Exception): Unit = {
+        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
+        state = GameState.ERROR
+      }
+    })
+  }
 
   /**
    * ゲームを初期化する
@@ -157,6 +175,23 @@ trait Game {
    * @param e イベント
    */
   def place(e: BlockPlaceEvent): Unit
+
+  /**
+   * 報酬を与えるメソッド
+   * @param p 報酬を与えるプレイヤー
+   * @param rewardType 報酬タイプ
+   */
+  def reward(p: Player, rewardType: GameRewardType): Unit = {
+    (rewardType match {
+      case GameRewardType.KILL => config.events.get("kill")
+      case GameRewardType.LOSE => config.events.get("lose")
+      case GameRewardType.WIN => config.events.get("win")
+    }) match {
+      case Some(v) =>
+        WarsCore.instance.database.addItem(p.getUniqueId.toString, v._1)
+      case None =>
+    }
+  }
 
   /**
    * ゲームに参加しているプレイヤー全員にメッセージを送信する

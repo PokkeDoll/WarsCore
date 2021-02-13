@@ -76,26 +76,8 @@ class Tactics(override val id: String) extends Game {
       blue.getLocation(world))
   }
 
-  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
-    state = GameState.INIT
-    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
-    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
-      override def success(value: World): Unit = {
-        world = value
-        loaded = true
-        disable = false
-        init()
-        players.foreach(join)
-      }
-
-      override def failure(error: Exception): Unit = {
-        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
-        state = GameState.ERROR
-      }
-    })
-  }
-
   override def init(): Unit = {
+
     state = GameState.INIT
 
     // getPlayer().clear()よりよいはず
@@ -285,10 +267,9 @@ class Tactics(override val id: String) extends Game {
           } else {
             first += 1
           }
-          WarsCore.instance.database.addItem(
-            attacker.getUniqueId.toString,
-            config.onKillItem
-          )
+
+          reward(attacker, GameRewardType.KILL)
+
           sendMessage(s"${attacker.getName}が1ポイント獲得しました")
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)

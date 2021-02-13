@@ -31,11 +31,11 @@ class GameConfig(cs: ConfigurationSection) {
     })
     .toList
 
-  val onKillItem: Array[Item] = cs.getStringList("event.kill.item").asScala.flatMap(Item.of).toArray
-  val onKillExp: Int = cs.getInt("event.kill.exp", 0)
-
-  val onWinItem: Array[Item] = cs.getStringList("event.win.item").asScala.flatMap(Item.of).toArray
-  val onWinExp: Int = cs.getInt("event.win.exp", 0)
+  val events = Map(
+    "kill" -> (cs.getStringList("event.kill.item").asScala.flatMap(Item.of).toArray, cs.getInt("event.kill.exp")),
+    "win" -> (cs.getStringList("event.win.item").asScala.flatMap(Item.of).toArray, cs.getInt("event.win.exp", 0)),
+    "lose" -> (cs.getStringList("event.lose.item").asScala.flatMap(Item.of).toArray, cs.getInt("event.lose.exp", 0))
+  )
 }
 
 object GameConfig {
