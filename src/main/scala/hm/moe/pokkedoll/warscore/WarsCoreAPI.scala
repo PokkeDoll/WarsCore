@@ -12,7 +12,6 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Random
 
@@ -22,9 +21,6 @@ import scala.util.Random
  * @author Emorard
  */
 object WarsCoreAPI {
-
-  @Deprecated
-  val LOBBY = "p-lobby"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -276,11 +272,6 @@ object WarsCoreAPI {
     )
   }
 
-  @Deprecated
-  def sendNews4Staff(player: Player): Unit = {
-
-  }
-
   /**
    * ヘッダーを作成する。改行もしてくれる
    *
@@ -471,6 +462,7 @@ object WarsCoreAPI {
    * @author Emorard
    */
   object UI {
+    @Deprecated
     val PAGE_KEY = new NamespacedKey(WarsCore.instance, "ui-page")
 
     val PAGE_ICON: Int => ItemStack = (page: Int) => {

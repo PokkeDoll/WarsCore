@@ -16,11 +16,11 @@ object Registry {
     )
   }
 
-  val WEAPON_UI_PAGE: NamespacedKey = map("PAGE_KEY")
+  val PAGE_KEY: NamespacedKey = map("PAGE_KEY")
 
   val WEAPON_TYPE_KEY: NamespacedKey = map("WEAPON_TYPE_KEY")
 
   val WEAPON_KEY: NamespacedKey = map("WEAPON_KEY")
 
-  val SORT_TYPE: NamespacedKey = map("SORT_TYPE_KEY")
+  val SORT_TYPE_KEY: NamespacedKey = map("SORT_TYPE_KEY")
 }

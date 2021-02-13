@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil}
-import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{Registry, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
@@ -91,7 +91,6 @@ object WeaponUI {
     i
   }
 
-
   val MAIN: String = ChatColor.translateAlternateColorCodes('&', "&e&lMain")
   val SUB: String = ChatColor.translateAlternateColorCodes('&', "&e&lSub")
   val MELEE: String = ChatColor.translateAlternateColorCodes('&', "&e&lMelee")
@@ -154,14 +153,12 @@ object WeaponUI {
     }
   }
 
-  val UI_PAGE_KEY = new NamespacedKey(WarsCore.instance, "weapon-ui-page")
-
   private val pageIcon = (page: Int) => {
     val i = new ItemStack(Material.WRITABLE_BOOK)
     val m = i.getItemMeta
     m.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&e${if (page == 1) "-" else page - 1} &7← &a&l$page &r&7→ &e${page + 1}"))
     m.setLore(java.util.Arrays.asList("左クリック | - | 右クリック"))
-    m.getPersistentDataContainer.set(UI_PAGE_KEY, PersistentDataType.INTEGER, java.lang.Integer.valueOf(page))
+    m.getPersistentDataContainer.set(Registry.PAGE_KEY, PersistentDataType.INTEGER, java.lang.Integer.valueOf(page))
     i.setItemMeta(m)
     i
   }
@@ -169,12 +166,6 @@ object WeaponUI {
   val WEAPON_CHEST_UI_TITLE = "Weapon Chest"
 
   val SETTING_TITLE = "Weapon Settings"
-
-  val weaponTypeKey = new NamespacedKey(WarsCore.instance, "weapon-type")
-
-  private val weaponKey = new NamespacedKey(WarsCore.instance, "weapon-key")
-
-  private val sortTypeKey = new NamespacedKey(WarsCore.instance, "sort-type")
 
   val STORAGE_TITLE = "Storage"
 
@@ -279,7 +270,7 @@ object WeaponUI {
       case 1 => openMainUI(player)
       case 4 =>
         val i = e.getCurrentItem
-        val page = i.getItemMeta.getPersistentDataContainer.get(UI_PAGE_KEY, PersistentDataType.INTEGER)
+        val page = i.getItemMeta.getPersistentDataContainer.get(Registry.PAGE_KEY, PersistentDataType.INTEGER)
         if (e.isLeftClick) {
           if (page != 1) openStorageUI(player, page - 1)
         } else if (e.isRightClick) {
@@ -305,8 +296,8 @@ object WeaponUI {
     val barrier = {
       val i = new ItemStack(Material.BARRIER)
       val meta = i.getItemMeta
-      meta.getPersistentDataContainer.set(weaponTypeKey, PersistentDataType.STRING, weaponType)
-      meta.getPersistentDataContainer.set(sortTypeKey, PersistentDataType.INTEGER, Integer.valueOf(sortType))
+      meta.getPersistentDataContainer.set(Registry.WEAPON_TYPE_KEY, PersistentDataType.STRING, weaponType)
+      meta.getPersistentDataContainer.set(Registry.SORT_TYPE_KEY, PersistentDataType.INTEGER, Integer.valueOf(sortType))
       i.setItemMeta(meta)
       i
     }
@@ -341,8 +332,8 @@ object WeaponUI {
           val i = ItemUtil.getItem(item.name).getOrElse(EMPTY).clone()
           val m = i.getItemMeta
           m.setDisplayName(m.getDisplayName + " × " + item.amount)
-          m.getPersistentDataContainer.set(weaponKey, PersistentDataType.STRING, item.name)
-          m.getPersistentDataContainer.set(weaponTypeKey, PersistentDataType.STRING, weaponType)
+          m.getPersistentDataContainer.set(Registry.WEAPON_KEY, PersistentDataType.STRING, item.name)
+          m.getPersistentDataContainer.set(Registry.WEAPON_TYPE_KEY, PersistentDataType.STRING, weaponType)
           i.setItemMeta(m)
           inv.setItem(9 + f, i)
         })
@@ -366,8 +357,8 @@ object WeaponUI {
         // val pageItem = inv.getItem(4)
         // val usedSlotItem = inv.getItem(0)
         val index0 = inv.getItem(0).getItemMeta.getPersistentDataContainer
-        val weaponType = index0.get(weaponTypeKey, PersistentDataType.STRING)
-        val sortType = index0.get(sortTypeKey, PersistentDataType.INTEGER)
+        val weaponType = index0.get(Registry.WEAPON_TYPE_KEY, PersistentDataType.STRING)
+        val sortType = index0.get(Registry.SORT_TYPE_KEY, PersistentDataType.INTEGER)
         e.getSlot match {
           // バリアブロック。インベントリを閉じる
           case 0 =>
@@ -384,9 +375,9 @@ object WeaponUI {
           case _ if i != null && i.getType != Material.AIR && i.getType != PANEL.getType =>
             val meta = i.getItemMeta
             val per = meta.getPersistentDataContainer
-            if (per.has(weaponKey, PersistentDataType.STRING)) {
-              val t = per.get(weaponTypeKey, PersistentDataType.STRING)
-              val name = per.get(weaponKey, PersistentDataType.STRING)
+            if (per.has(Registry.WEAPON_KEY, PersistentDataType.STRING)) {
+              val t = per.get(Registry.WEAPON_TYPE_KEY, PersistentDataType.STRING)
+              val name = per.get(Registry.WEAPON_KEY, PersistentDataType.STRING)
               db.setWeapon(player.getUniqueId.toString, weaponType = t, name = name)
               if (t == "head") {
                 // 帽子だけの特殊な設定

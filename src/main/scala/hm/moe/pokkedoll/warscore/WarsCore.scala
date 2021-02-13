@@ -99,6 +99,8 @@ class WarsCore extends JavaPlugin {
       out2.writeByte(2)
       getServer.sendPluginMessage(this, MODERN_TORUS_CHANNEL, out2.toByteArray)
     }
+
+    Registry.init()
   }
 
   override def onDisable(): Unit = {
