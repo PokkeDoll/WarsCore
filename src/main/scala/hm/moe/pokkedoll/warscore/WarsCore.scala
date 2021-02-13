@@ -80,7 +80,9 @@ class WarsCore extends JavaPlugin {
 
     // setupCSPP()
 
-    new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 20 * 60 * 10L)
+    if(getConfig.isList("periodic_message")) {
+      new PeriodicMessage(getConfig.getStringList("periodic_message").asScala.toList).runTaskTimerAsynchronously(this, 0L, 20 * 60 * 10L)
+    }
 
     cs = new CSUtility
 
