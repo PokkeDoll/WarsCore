@@ -645,7 +645,7 @@ class Domination(override val id: String) extends Game {
       redTeam.addEntry(p.getName)
       data(p).team = "red"
     } else {
-      WarsCoreAPI.random.nextInt(1) match {
+      WarsCoreAPI.random.nextInt(2) match {
         case 1 =>
           blueTeam.addEntry(p.getName)
           data(p).team = "blue"
