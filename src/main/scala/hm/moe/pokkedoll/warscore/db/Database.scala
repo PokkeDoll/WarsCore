@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 
 import scala.collection.mutable
+import scala.util.Try
 
 /**
  * データベースとのデータをやり取りするトレイト <br>
@@ -95,8 +96,6 @@ trait Database extends WeaponDB with ItemDB {
    */
   def addTag(uuid: String, id: String)
 
-  def gameLog(gameid: String, level: String, message: String)
-
   /**
    * 仮想インベントリを読み込む
    *
@@ -148,6 +147,14 @@ trait Database extends WeaponDB with ItemDB {
    * @param uuid 対象のUUID
    */
   def setDisconnect(uuid: String, disconnect: Boolean)
+
+  /**
+   * ゲームのログを設定する
+   * @param game ゲームID
+   * @param reason 記録される理由
+   * @param message 内容
+   */
+  def gameLog(game: String, reason: String, message: String): Try[Unit]
 
   def close(): Unit
 }

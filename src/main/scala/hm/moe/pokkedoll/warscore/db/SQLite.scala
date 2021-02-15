@@ -202,22 +202,20 @@ class SQLite(private val plugin: WarsCore) extends Database {
     }
   }
 
-  def gameLog(gameid: String, level: String, message: String): Unit = {
-    val c = hikari.getConnection
-    val ps = c.prepareStatement("INSERT INTO `gamelog` VALUES((select datetime()), ?, ?, ?)")
-    try {
-      ps.setString(1, gameid)
-      ps.setString(2, level)
-      ps.setString(3, message)
-      ps.executeUpdate()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      ps.close()
-      c.close()
+  /**
+   * ゲームのログを設定する
+   * @param game ゲームID
+   * @param reason 記録される理由
+   * @param message 内容
+   */
+  override def gameLog(game: String, reason: String, message: String): Try[Unit] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection())
+      val s = use(c.createStatement())
+      s.executeUpdate(s"INSERT INTO gamelog VALUES(date(), '$game', '$reason', '$message')")
     }
   }
+
 
   /**
    * 仮想インベントリを読み込む
