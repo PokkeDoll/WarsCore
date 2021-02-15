@@ -44,6 +44,7 @@ class LoginListener(plugin: WarsCore) extends Listener {
   def onQuit(e: PlayerQuitEvent): Unit = {
     e.setQuitMessage("")
     val player = e.getPlayer
+    player.setSpectatorTarget(null)
     if (player.getWorld.getName != "p-lobby") {
       player.teleport(Bukkit.getWorlds.get(0).getSpawnLocation)
     }
@@ -54,6 +55,7 @@ class LoginListener(plugin: WarsCore) extends Listener {
         game.hub(wp)
       case _ =>
     }
+
     // キャッシュから削除
     WarsCoreAPI.wplayers.remove(player)
     WarsCoreAPI.removeScoreboard(player)

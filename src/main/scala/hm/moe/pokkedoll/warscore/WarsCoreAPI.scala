@@ -345,10 +345,6 @@ object WarsCoreAPI {
     fw.setFireworkMeta(meta)
   }
 
-  def gameLog(gameid: String, level: String, message: String): Unit = {
-    database.gameLog(gameid, level, message)
-  }
-
   /**
    * ロビーのインベントリを退避する
    *
@@ -455,6 +451,27 @@ object WarsCoreAPI {
     i.setItemMeta(m)
     i
   }
+
+  private var cache = Map.empty[Player, Player]
+
+  /**
+   * 安全に(?)観戦するメソッド。<br>
+   * 観戦者の観戦者を最初に習得し、観戦を外してキャッシュから削除する。<br>
+   * その後に観戦を行うようにする。
+   *
+   * @param spectator 観戦を行うプレイヤー
+   * @param target    観戦されるプレイヤー
+   */
+  def spectate(spectator: Player, target: Player): Unit = {
+    cache.filter(pred => pred._2 == spectator).foreach(f => {
+      f._1.setSpectatorTarget(null)
+      cache -= f._1
+    })
+    spectator.setSpectatorTarget(target)
+    cache += (spectator -> target)
+  }
+
+  //TODO val mutableをvar immutableに変更する。参照とオブジェクトを間違えてはいけない！
 
   /**
    * 共通して使えるUIを定義する
