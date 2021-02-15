@@ -417,8 +417,10 @@ class TeamDeathMatch4(override val id: String) extends Game {
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
               case None =>
                 sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
             }
             // 青チーム用のメッセージ
           } else {
@@ -427,8 +429,10 @@ class TeamDeathMatch4(override val id: String) extends Game {
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §9${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §c${victim.getName}")
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
               case None =>
                 sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
             }
           }
           Bukkit.getServer.getPluginManager.callEvent(preEvent(attacker))
@@ -493,7 +497,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
             player.teleport(locationData._3)
           }
         } else if (player.getKiller != null) {
-          player.setSpectatorTarget(player.getKiller)
+          WarsCoreAPI.spectate(player, player.getKiller)
         }
         if (coolTime) {
           WarsCoreAPI.freeze(player)
@@ -619,10 +623,13 @@ class TeamDeathMatch4(override val id: String) extends Game {
       .append(data.death.toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
 
+    val kd = if(data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
+
     comp.append("* ")
       .append("K/D: ").color(ChatColor.GRAY)
-      .append((data.kill / (if(data.death == 0) 1 else data.death).toDouble).toString).color(ChatColor.GREEN).bold(true)
+      .append(kd.toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
+
     /*
         comp.append("* ")
           .append("アシスト: ").color(ChatColor.GRAY)

@@ -277,8 +277,10 @@ class Tactics(override val id: String) extends Game {
           WarsCoreAPI.getAttackerWeaponName(attacker) match {
             case Some(name) =>
               sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
+              log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
             case None =>
               sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
+              log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
           }
         case None =>
           sendMessage(s"§f0X ${victim.getName} dead")

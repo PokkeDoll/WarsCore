@@ -10,6 +10,8 @@ import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.World
 
+import scala.util.Try
+
 /**
  * ゲームのコア部分のトレイト
  * @author Emorard
@@ -207,5 +209,9 @@ trait Game {
 
   def sendActionBar(string: String): Unit = {
     world.getPlayers.forEach(_.sendActionBar(ChatColor.translateAlternateColorCodes('&', string)))
+  }
+
+  def log(reason: String, message: String): Try[Unit] = {
+    WarsCore.instance.database.gameLog(id, reason, message)
   }
 }
