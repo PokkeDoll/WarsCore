@@ -138,7 +138,6 @@ object WeaponUI {
   def onClickMainUI(e: InventoryClickEvent): Unit = {
     e.setCancelled(true)
     val player = e.getWhoClicked
-    if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     val metadata = player.getMetadata("sortType")
     val sortType = if(metadata.isEmpty) {
       0
@@ -316,8 +315,6 @@ object WeaponUI {
    * @param page   ページ番号
    */
   def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: String, sortType: Int = 0): Unit = {
-    if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
-
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
 
@@ -339,9 +336,9 @@ object WeaponUI {
     // 獲得順
     inv.setItem(6, sortByHaving)
     // 名前順
-    inv.setItem(7, sortByAmount)
+    inv.setItem(7, sortByName)
     // 個数順
-    inv.setItem(8, sortByName)
+    inv.setItem(8, sortByAmount)
 
     val baseSlot = (page - 1) * 45
     new BukkitRunnable {
@@ -353,7 +350,7 @@ object WeaponUI {
             weaponCache += (player -> (weaponType, sortType, weapons))
             weapons
         }).slice(baseSlot, baseSlot + 45)
-        println(s"size: ${weapons.size}")
+        // println(s"size: ${weapons.size}")
         //
         inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
