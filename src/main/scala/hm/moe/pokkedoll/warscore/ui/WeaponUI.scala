@@ -8,6 +8,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
 import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, Material, NamespacedKey}
@@ -138,14 +139,18 @@ object WeaponUI {
     e.setCancelled(true)
     val player = e.getWhoClicked
     if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
+    val metadata = player.getMetadata("sortType")
+    val sortType = if(metadata.isEmpty) {
+      0
+    } else {
+      metadata.get(0).asInt()
+    }
     e.getSlot match {
-
-      case 10 => openSettingUI(player, 1, WeaponDB.PRIMARY)
-      case 11 => openSettingUI(player, 1, WeaponDB.SECONDARY)
-      case 12 => openSettingUI(player, 1, WeaponDB.MELEE)
-      case 13 => openSettingUI(player, 1, WeaponDB.GRENADE)
-      case 14 => openSettingUI(player, 1, WeaponDB.HEAD)
-
+      case 10 => openSettingUI(player, 1, WeaponDB.PRIMARY, sortType)
+      case 11 => openSettingUI(player, 1, WeaponDB.SECONDARY, sortType)
+      case 12 => openSettingUI(player, 1, WeaponDB.MELEE, sortType)
+      case 13 => openSettingUI(player, 1, WeaponDB.GRENADE, sortType)
+      case 14 => openSettingUI(player, 1, WeaponDB.HEAD, sortType)
       //case 15 => openWeaponStorageUI(player)
       //case 16 => openMySetUI(player)
       case 17 => player.closeInventory()
@@ -280,6 +285,30 @@ object WeaponUI {
     }
   }
 
+  private val sortByHaving = {
+    val i = new ItemStack(Material.FEATHER)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.UNDERLINE + "" + ChatColor.GREEN + "獲得順で並び変える")
+    i.setItemMeta(m)
+    i
+  }
+
+  private val sortByName = {
+    val i = new ItemStack(Material.NAME_TAG)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.UNDERLINE + "" + ChatColor.GREEN + "名前順で並び変える")
+    i.setItemMeta(m)
+    i
+  }
+
+  private val sortByAmount = {
+    val i = new ItemStack(Material.EMERALD, 64)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.UNDERLINE + "" + ChatColor.GREEN + "所持数順で並び変える")
+    i.setItemMeta(m)
+    i
+  }
+
   /**
    * 武器設定UIを開く
    *
@@ -288,6 +317,7 @@ object WeaponUI {
    */
   def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: String, sortType: Int = 0): Unit = {
     if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
+
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
 
@@ -307,11 +337,11 @@ object WeaponUI {
     //TODO レジストリを作成する
 
     // 獲得順
-    inv.setItem(6, new ItemStack(Material.FEATHER))
+    inv.setItem(6, sortByHaving)
     // 名前順
-    inv.setItem(7, new ItemStack(Material.NAME_TAG))
+    inv.setItem(7, sortByAmount)
     // 個数順
-    inv.setItem(8, new ItemStack(Material.EMERALD, 64))
+    inv.setItem(8, sortByName)
 
     val baseSlot = (page - 1) * 45
     new BukkitRunnable {
@@ -368,10 +398,13 @@ object WeaponUI {
             openMainUI(player)
           case 6 if sortType != 0 =>
             openSettingUI(player, 1, weaponType, 0)
+            player.setMetadata("sortType", new FixedMetadataValue(WarsCore.instance, 0))
           case 7 if sortType != 1 =>
             openSettingUI(player, 1, weaponType, 1)
+            player.setMetadata("sortType", new FixedMetadataValue(WarsCore.instance, 1))
           case 8 if sortType != 2 =>
             openSettingUI(player, 1, weaponType, 2)
+            player.setMetadata("sortType", new FixedMetadataValue(WarsCore.instance, 2))
           case _ if i != null && i.getType != Material.AIR && i.getType != PANEL.getType =>
             val meta = i.getItemMeta
             val per = meta.getPersistentDataContainer
