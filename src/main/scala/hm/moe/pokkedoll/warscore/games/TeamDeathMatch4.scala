@@ -14,8 +14,6 @@ import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
 
-import scala.collection.immutable.HashMap
-
 /**
  * 4vs4で行うゲームモード <br>
  * version2.0では 10 vs 10というわけではない。<br>
@@ -321,7 +319,8 @@ class TeamDeathMatch4(override val id: String) extends Game {
       //data.put(wp.player, new TDMData)
       data += wp.player -> new TDMData
       bossbar.addPlayer(wp.player)
-      members = members :+ wp
+      //members = members :+ wp
+      members :+= wp
       sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a$maxMember§f)")
       state match {
         case GameState.PLAY =>
