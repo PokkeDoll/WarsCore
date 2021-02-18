@@ -1,8 +1,8 @@
 package hm.moe.pokkedoll.warscore.games
 
 import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
-import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, RankManager, WeakLocation, WorldLoader}
-import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.utils._
+import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder, HoverEvent}
 import org.bukkit._
@@ -14,8 +14,8 @@ import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
 
-import java.awt.ItemSelectable
 import scala.collection.mutable
+
 /**
  * 10vs10で行うゲームモード <br>
  * version2.0では 10 vs 10というわけではない。<br>
@@ -144,7 +144,7 @@ class TeamDeathMatch(override val id: String) extends Game {
         } else if (count <= 0) {
           play()
           cancel()
-        } else if(members.map(_.player).forall(_.isSneaking)) {
+        } else if (members.map(_.player).forall(_.isSneaking)) {
           count = 0
           sendMessage(ChatColor.BLUE + "カウントをスキップします...")
         } else {
@@ -229,7 +229,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("               Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
 
-    val winner = if(redPoint > bluePoint) {
+    val winner = if (redPoint > bluePoint) {
       endMsg.append("              ")
         .append("Red Team").color(ChatColor.RED).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
@@ -385,7 +385,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    *
    * @param e イベント
    */
-  override def death(e: PlayerDeathEvent): Unit = {
+  override def onDeath(e: PlayerDeathEvent): Unit = {
     e.setCancelled(true)
     val victim = e.getEntity
     // 試合中のみのできごと
@@ -397,16 +397,7 @@ class TeamDeathMatch(override val id: String) extends Game {
         case Some(attacker) =>
           val aData = data(attacker)
           aData.kill += 1
-          /*
-          // 同じIPアドレスなら報酬をスキップする
-          if (attacker.isOp || victim.getAddress != attacker.getAddress) {
-            EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
-          }
-           */
           reward(attacker, GameRewardType.KILL)
-          e.setShouldPlayDeathSound(true)
-          e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
-          e.setDeathSoundVolume(2f)
           // 赤チーム用のメッセージ
           if (redTeam.hasEntry(attacker.getName)) {
             redPoint += 1
@@ -444,13 +435,12 @@ class TeamDeathMatch(override val id: String) extends Game {
     }
   }
 
-
   /**
    * プレイヤーがダメージを受けた時のイベント
    *
    * @param e イベント
    */
-  override def damage(e: EntityDamageByEntityEvent): Unit = {
+  override def onDamage(e: EntityDamageByEntityEvent): Unit = {
     // ここで、ダメージを受けたエンティティはPlayerであることがわかっている
     val victim = e.getEntity.asInstanceOf[Player]
     val vData = data(victim)
@@ -526,26 +516,6 @@ class TeamDeathMatch(override val id: String) extends Game {
   }
 
 
-  /**
-   * ブロックを破壊するときに呼び出されるイベント
-   *
-   * @param e イベント
-   */
-  override def break(e: BlockBreakEvent): Unit = {
-    e.setCancelled(true)
-  }
-
-
-  /**
-   * ブロックを設置するときに呼び出されるイベント
-   *
-   * @param e イベント
-   */
-  override def place(e: BlockPlaceEvent): Unit = {
-    e.setCancelled(true)
-  }
-
-
   private def setLocationData(): Unit = {
     val spawn = mapInfo.locations.getOrElse("spawn", WeakLocation.empty)
     val red = mapInfo.locations.getOrElse("red", WeakLocation.empty)
@@ -592,7 +562,6 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   private val helpTeamPoint = new ComponentBuilder("各チームの獲得ポイントです").color(ChatColor.GREEN).create()
 
-
   private def createResult(data: TDMData, winner: GameTeam): Array[BaseComponent] = {
     val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
       .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
@@ -626,7 +595,7 @@ class TeamDeathMatch(override val id: String) extends Game {
       .append(data.death.toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
 
-    val kd = if(data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
+    val kd = if (data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
 
     comp.append("* ")
       .append("K/D: ").color(ChatColor.GRAY)
@@ -653,6 +622,7 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   /**
    * Java用メソッド。Optionalではないためnullの可能性がある。
+   *
    * @param player データを持つプレイヤー。
    * @return 現時点のTDMのデータ。存在しないならnull
    */
@@ -661,18 +631,6 @@ class TeamDeathMatch(override val id: String) extends Game {
   /**
    * 試合中の一時的なデータを管理するクラス
    */
-  class TDMData {
-    // 順に, キル, デス, アシスト, ダメージ量, 受けたダメージ量
-    var kill, death, assist: Int = 0
-    var damage, damaged: Double = 0d
-    var win = false
-    var damagedPlayer = mutable.Set.empty[Player]
-    protected[games] var team: GameTeam = GameTeam.DEFAULT
-    def getTeam: GameTeam = team
+  class TDMData extends GamePlayerData
 
-    def setTeam(team: GameTeam): Unit = this.team = team
-    def calcExp(): Int = {
-      kill * 5 + death + assist + (if (win) 100 else 0)
-    }
-  }
 }
