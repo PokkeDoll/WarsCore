@@ -682,52 +682,6 @@ class Domination(override val id: String) extends Game {
       (location.getZ >= p.location.getZ - buildRange && location.getZ <= p.location.getZ + buildRange))
   }
 
-  private def createResult(data: DOMData, winner: GameTeam): Array[BaseComponent] = {
-    val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
-      .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
-      .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
-      .append("* ").underlined(false).color(ChatColor.WHITE)
-      .append("結果: ").color(ChatColor.GRAY)
-
-    if (winner == GameTeam.DEFAULT) {
-      comp.append("引き分け\n")
-    } else if (winner == data.team) {
-      comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
-    } else {
-      comp.append("敗北").color(ChatColor.BLUE).append("\n")
-    }
-
-    comp.append("* ").reset()
-      .append("キル数: ").color(ChatColor.GRAY)
-      .append(data.kill.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("デス数: ").color(ChatColor.GRAY)
-      .append(data.death.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    val kd = if (data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
-
-    comp.append("* ")
-      .append("K/D: ").color(ChatColor.GRAY)
-      .append(kd.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-
-    comp.append("* ")
-      .append("与えたダメージ: ").color(ChatColor.GRAY)
-      .append(s"❤ × ${data.damage.toInt / 2}").color(ChatColor.RED).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("受けたダメージ: ").color(ChatColor.GRAY)
-      .append(s"❤ × ${data.damaged.toInt / 2}").color(ChatColor.RED).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.create()
-  }
-
   class CapturePoint(var name: String, var team: String, var count: Int, var location: Location)
 
   /**
@@ -741,21 +695,5 @@ class Domination(override val id: String) extends Game {
   /**
    * 試合中の一時的なデータを管理するクラス
    */
-  class DOMData {
-    // 順に, キル, デス, アシスト, ダメージ量, 受けたダメージ量
-    var kill, death, assist: Int = 0
-    var damage, damaged: Double = 0d
-    var win = false
-    var damagedPlayer = mutable.Set.empty[Player]
-    protected[games] var team: GameTeam = GameTeam.DEFAULT
-
-    def getTeam: GameTeam = team
-
-    def setTeam(team: GameTeam): Unit = this.team = team
-
-    def calcExp(): Int = {
-      kill * 5 + death + assist + (if (win) 100 else 0)
-    }
-  }
-
+  class DOMData extends GamePlayerData
 }

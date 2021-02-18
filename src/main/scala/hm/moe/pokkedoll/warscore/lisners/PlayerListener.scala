@@ -23,7 +23,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
   def onDeath(e: PlayerDeathEvent): Unit = {
     WarsCoreAPI.getWPlayer(e.getEntity).game match {
       case Some(game) =>
-        game.death(e)
+        game.onDeath(e)
       case _ =>
         e.setCancelled(true)
         if (e.getEntity.getWorld == Bukkit.getWorlds.get(0)) {
@@ -38,7 +38,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       case player: Player =>
         WarsCoreAPI.getWPlayer(player).game match {
           case Some(game) =>
-            game.damage(e)
+            game.onDamage(e)
           case _ =>
         }
       case _ =>
@@ -50,7 +50,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     if (e.getPlayer.getGameMode == GameMode.SURVIVAL) {
       WarsCoreAPI.getWPlayer(e.getPlayer).game match {
         case Some(game) =>
-          game.break(e)
+          game.onBreak(e)
         case _ =>
           e.setCancelled(true)
       }
@@ -62,7 +62,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     if (e.getPlayer.getGameMode == GameMode.SURVIVAL) {
       WarsCoreAPI.getWPlayer(e.getPlayer).game match {
         case Some(game) =>
-          game.place(e)
+          game.onPlace(e)
         case _ =>
           e.setCancelled(true)
       }
@@ -161,21 +161,12 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
           )
           info(player, s"${WarsCoreAPI.getItemStackName(item)} をアンロックしました！")
           player.playSound(player.getLocation, Sound.BLOCK_CHEST_LOCKED, 1f, 2f)
-        } else {
-          /*
-          WarsCoreAPI.getWPlayer(player).game match {
-            case Some(game) if item.getType == Material.CLOCK =>
-              WeaponUI.openMySetUI(e.getPlayer)
-            case _ =>
-          }
-           */
         }
+        // TODO ここにマイセット
       }
     } else if (e.getClickedBlock != null) {
       if (e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
         e.setCancelled(true)
-        // WeaponUI.openStorageUI(e.getPlayer)
-        // EnderChestUI.openUI(e.getPlayer)
         WeaponUI.openMainUI(e.getPlayer)
       }
     }
@@ -188,41 +179,6 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       if (name != null && ShopUtil.hasName(name)) {
         ShopUI.openShopUI(e.getPlayer, name)
       }
-    }
-  }
-
-  @EventHandler
-  def onAnvilPrepare(e: PrepareAnvilEvent): Unit = {
-    val inv = e.getInventory
-    // 元となるアイテム
-    val sourceItem = inv.getItem(0)
-    // 強化素材となるアイテム
-    val materialItem = inv.getItem(1)
-    if (sourceItem == null || materialItem == null) {
-    } else {
-      if (UpgradeUtil.isUpgradeItem(sourceItem)) {
-        if (sourceItem != null) {
-          val baseChance = UpgradeUtil.getChance(materialItem)
-          UpgradeUtil.getUpgradeItem(sourceItem) match {
-            case Some(upgradeItem) =>
-              val key = ItemUtil.getKey(materialItem)
-              upgradeItem.list.get(if (upgradeItem.list.contains(key)) key else "else") match {
-                case Some(value) =>
-                  val result = ItemUtil.getItem(value._1).getOrElse(UpgradeUtil.invalidItem).clone()
-                  val rMeta = result.getItemMeta
-                  val chance = if (baseChance - value._2 > 0) baseChance - value._2 else 0.0
-                  rMeta.setLore(util.Arrays.asList(s"§f成功確率: §a${chance * materialItem.getAmount}%", "§4§n確率で失敗します!!"))
-                  result.setItemMeta(rMeta)
-                  e.setResult(result)
-                  e.getInventory.setRepairCost(1)
-                  return
-                case _ =>
-              }
-            case _ =>
-          }
-        }
-      }
-      e.getInventory.setRepairCost(40)
     }
   }
 

@@ -1,14 +1,13 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
+import hm.moe.pokkedoll.warscore.events._
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder, HoverEvent}
+import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit._
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{Arrow, Entity, Player}
-import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
@@ -258,8 +257,6 @@ class TeamDeathMatch4(override val id: String) extends Game {
       data.get(wp.player) match {
         case Some(d) =>
           if (winner == d.team) {
-            //d.money += 500
-            // EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
             d.win = true
           }
           wp.sendMessage(createResult(d, winner): _*)
@@ -573,67 +570,6 @@ class TeamDeathMatch4(override val id: String) extends Game {
     }
   }
 
-  private val helpTeamPoint = new ComponentBuilder("各チームの獲得ポイントです").color(ChatColor.GREEN).create()
-
-
-  private def createResult(data: TDMData, winner: GameTeam): Array[BaseComponent] = {
-    val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
-      .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
-      .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
-      .append("* ").underlined(false).color(ChatColor.WHITE)
-      .append("結果: ").color(ChatColor.GRAY)
-
-    if (winner == GameTeam.DEFAULT) {
-      comp.append("引き分け\n")
-    } else if (winner == data.team) {
-      comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
-    } else {
-      comp.append("敗北").color(ChatColor.BLUE).append("\n")
-    }
-
-    comp.append("* ").color(ChatColor.WHITE).append("赤チーム: ").color(ChatColor.RED)
-      .append(redPoint.toString).color(ChatColor.GREEN).bold(true)
-      .append("     |     ").color(ChatColor.GRAY).bold(false)
-      .append("青チーム: ").color(ChatColor.BLUE)
-      .append(bluePoint.toString).color(ChatColor.GREEN).bold(true)
-      .append("        [?]").bold(false).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, helpTeamPoint))
-      .append("\n").color(ChatColor.RESET)
-
-    comp.append("* ").reset()
-      .append("キル数: ").color(ChatColor.GRAY)
-      .append(data.kill.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("デス数: ").color(ChatColor.GRAY)
-      .append(data.death.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    val kd = if (data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
-
-    comp.append("* ")
-      .append("K/D: ").color(ChatColor.GRAY)
-      .append(kd.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("アシスト: ").color(ChatColor.GRAY)
-      .append(data.assist.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("与えたダメージ: ").color(ChatColor.GRAY)
-      .append(s"❤ × ${data.damage.toInt / 2}").color(ChatColor.RED).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("受けたダメージ: ").color(ChatColor.GRAY)
-      .append(s"❤ × ${data.damaged.toInt / 2}").color(ChatColor.RED).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.create()
-  }
-
   /**
    * Java用メソッド。Optionalではないためnullの可能性がある。
    *
@@ -646,5 +582,4 @@ class TeamDeathMatch4(override val id: String) extends Game {
    * 試合中の一時的なデータを管理するクラス
    */
   class TDMData extends GamePlayerData
-
 }

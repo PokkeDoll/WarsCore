@@ -3,14 +3,13 @@ package hm.moe.pokkedoll.warscore.games
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.BaseComponent
+import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
+import org.bukkit.World
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
-import org.bukkit.World
 
-import scala.collection.mutable
 import scala.util.Try
 
 /**
@@ -78,6 +77,7 @@ trait Game {
    *
    * @return
    */
+  @Deprecated
   def getMembersAsJava: java.util.List[WPlayer] = members.asJava
 
   /**
@@ -230,4 +230,55 @@ trait Game {
   def log(reason: String, message: String): Try[Unit] = {
     WarsCore.instance.database.gameLog(id, reason, message)
   }
+
+  def createResult(data: GamePlayerData, winner: GameTeam): Array[BaseComponent] = {
+    val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
+      .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
+      .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
+      .append("* ").underlined(false).color(ChatColor.WHITE)
+      .append("結果: ").color(ChatColor.GRAY)
+
+    if (winner == GameTeam.DEFAULT) {
+      comp.append("引き分け\n")
+    } else if (winner == data.team) {
+      comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
+    } else {
+      comp.append("敗北").color(ChatColor.BLUE).append("\n")
+    }
+
+    comp.append("* ").reset()
+      .append("キル数: ").color(ChatColor.GRAY)
+      .append(data.kill.toString).color(ChatColor.GREEN).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.append("* ")
+      .append("デス数: ").color(ChatColor.GRAY)
+      .append(data.death.toString).color(ChatColor.GREEN).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    val kd = if (data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
+
+    comp.append("* ")
+      .append("K/D: ").color(ChatColor.GRAY)
+      .append(kd.toString).color(ChatColor.GREEN).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.append("* ")
+      .append("アシスト: ").color(ChatColor.GRAY)
+      .append(data.assist.toString).color(ChatColor.GREEN).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.append("* ")
+      .append("与えたダメージ: ").color(ChatColor.GRAY)
+      .append(s"❤ × ${data.damage.toInt / 2}").color(ChatColor.RED).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.append("* ")
+      .append("受けたダメージ: ").color(ChatColor.GRAY)
+      .append(s"❤ × ${data.damaged.toInt / 2}").color(ChatColor.RED).bold(true)
+      .append("\n").color(ChatColor.RESET).bold(false)
+
+    comp.create()
+  }
 }
+

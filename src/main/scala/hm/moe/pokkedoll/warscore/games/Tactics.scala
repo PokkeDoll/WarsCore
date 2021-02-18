@@ -253,7 +253,7 @@ class Tactics(override val id: String) extends Game {
     }.runTaskLater(WarsCore.instance, 1L)
   }
 
-  override def death(e: PlayerDeathEvent): Unit = {
+  override def onDeath(e: PlayerDeathEvent): Unit = {
     e.setCancelled(true)
     val victim = e.getEntity
     // 試合中のみのできごと
@@ -346,25 +346,4 @@ class Tactics(override val id: String) extends Game {
       }
     }.runTaskLater(WarsCore.instance, 1L)
   }
-
-  /**
-   * ブロックを破壊するときに呼び出されるイベント
-   *
-   * @param e BlockBreakEvent
-   */
-  override def break(e: BlockBreakEvent): Unit = {}
-
-  /**
-   * ブロックを設置するときに呼び出されるイベント
-   *
-   * @param e BlockPlaceEvent
-   */
-  override def place(e: BlockPlaceEvent): Unit = {}
-
-  /**
-   * プレイヤーがダメージを受けた時のイベント
-   *
-   * @param e EntityDamageByEntityEvent
-   */
-  override def damage(e: EntityDamageByEntityEvent): Unit = {}
 }
