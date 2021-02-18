@@ -184,7 +184,7 @@ class Domination(override val id: String) extends Game {
     Bukkit.getServer.getPluginManager.callEvent(new GameStartEvent(this))
     WarsCoreAPI.playBattleSound(this)
 
-    val captureParam = if(members.length >= 10) 1 else 3
+    val captureParam = if (members.length >= 10) 1 else 3
 
     new BukkitRunnable {
       var TIME: Int = time
@@ -209,7 +209,7 @@ class Domination(override val id: String) extends Game {
             f.location.getNearbyPlayers(3d, 6d).forEach(p => {
               val d = data(p)
               // TODO 確かに連続して占領が行われることはないが、指を加えて見ないといけない！！
-              if(d.team != GameTeam.valueOf(f.team)) {
+              if (d.team != GameTeam.valueOf(f.team)) {
                 // データ上は 1 ~ 100: スコアボードでは 0 ~ 100
                 if (d.team == GameTeam.RED) {
                   f.count += captureParam
@@ -220,18 +220,18 @@ class Domination(override val id: String) extends Game {
             })
             // TODO ゴミみたいなコードの修正
             // 赤ちーむ
-            if(f.count > 0) {
+            if (f.count > 0) {
               // 赤の勝ち
-              if(f.count >= 100 && f.team != "red") {
+              if (f.count >= 100 && f.team != "red") {
                 occupy(f, Material.RED_STAINED_GLASS)
               } else if (f.team == "neutral") {
                 // 中立から赤へ
-                if(f.name.startsWith("§7")) {
+                if (f.name.startsWith("§7")) {
                   sendActionBar("TEST => SUC R: A &' A &'")
                   scoreboard.resetScores(f.name)
                   val stripName = ChatColor.stripColor(f.name)
                   val name = Array(stripName.substring(0, stripName.length / 2), stripName.substring(stripName.length / 2, stripName.length))
-                  f.name =ChatColor.RED + name(0) + ChatColor.GRAY + name(1)
+                  f.name = ChatColor.RED + name(0) + ChatColor.GRAY + name(1)
                 }
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               } else if (f.team == "blue") {
@@ -239,19 +239,19 @@ class Domination(override val id: String) extends Game {
               } else {
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               }
-            // 青ちーむ
+              // 青ちーむ
             } else if (f.count < 0) {
               // 青の勝ち
-              if(f.count <= -100 && f.team != "blue") {
+              if (f.count <= -100 && f.team != "blue") {
                 occupy(f, Material.BLUE_STAINED_GLASS)
               } else if (f.team == "neutral") {
                 // 中立から赤へ
-                if(f.name.startsWith("§7")) {
+                if (f.name.startsWith("§7")) {
                   sendActionBar("TEST => SUC R: A &' A &'")
                   scoreboard.resetScores(f.name)
                   val stripName = ChatColor.stripColor(f.name)
                   val name = Array(stripName.substring(0, stripName.length / 2), stripName.substring(stripName.length / 2, stripName.length))
-                  f.name =ChatColor.BLUE + name(0) + ChatColor.GRAY + name(1)
+                  f.name = ChatColor.BLUE + name(0) + ChatColor.GRAY + name(1)
                 }
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               } else if (f.team == "red") {
@@ -259,7 +259,7 @@ class Domination(override val id: String) extends Game {
               } else {
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               }
-            // 0なら!=>中立
+              // 0なら!=>中立
             } else if (f.team != "neutral") {
               occupy(f)
             }
@@ -267,7 +267,7 @@ class Domination(override val id: String) extends Game {
 
           TIME -= 1
           val splitTime = WarsCoreAPI.splitToComponentTimes(TIME)
-          bossbar.setProgress(((d: Double) => if(d < 0d) 0d else d)(TIME * 0.0016))
+          bossbar.setProgress(((d: Double) => if (d < 0d) 0d else d) (TIME * 0.0016))
           bossbar.setTitle(s"(DOM) ${mapInfo.mapName} §7|| §a${splitTime._2} 分 ${splitTime._3} 秒")
         }
       }
@@ -443,32 +443,48 @@ class Domination(override val id: String) extends Game {
   }
 
   /**
+   * プレイヤーがダメージを受けた時のイベント
+   *
+   * @param e イベント
+   */
+  override def onDamage(e: EntityDamageByEntityEvent): Unit = {
+    // ここで、ダメージを受けたエンティティはPlayerであることがわかっている
+    val victim = e.getEntity.asInstanceOf[Player]
+    val vData = data(victim)
+    val d = (attacker: Player) => data.get(attacker).foreach(aData => {
+      aData.damage += e.getFinalDamage
+      vData.damagedPlayer.add(attacker)
+    })
+    e.getDamager match {
+      case attacker: Player => d(attacker)
+      case arrow: Arrow =>
+        arrow.getShooter match {
+          case attacker: Player => d(attacker)
+          case _ =>
+        }
+      case _ =>
+    }
+    vData.damaged += e.getFinalDamage
+  }
+
+  /**
    * プレイヤーが死亡したときのイベント
    *
    * @param e イベント
    */
-  override def death(e: PlayerDeathEvent): Unit = {
-    e.setCancelled(true)
+  override def onDeath(e: PlayerDeathEvent): Unit = {
+    super.onDeath(e)
     val victim = e.getEntity
     // 試合中のみのできごと
     if (state == GameState.PLAY || state == GameState.PLAY2) {
-      val preEvent = (attacker: Player) => new GameDeathEvent(attacker=attacker, victim=victim, game=this)
+      val preEvent = (attacker: Player) => new GameDeathEvent(attacker = attacker, victim = victim, game = this)
       val vData: DOMData = data(victim)
       vData.death += 1
       Option(victim.getKiller) match {
         case Some(attacker) =>
           val aData = data(attacker)
           aData.kill += 1
-          // 同じIPアドレスなら報酬をスキップする
-          if (attacker.isOp || victim.getAddress != attacker.getAddress) {
-            // EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
-          }
-
           reward(attacker, GameRewardType.KILL)
-
-          e.setShouldPlayDeathSound(true)
-          e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
-          e.setDeathSoundVolume(2f)
           // 赤チーム用のメッセージ
           if (aData.team == GameTeam.RED) {
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
@@ -500,37 +516,13 @@ class Domination(override val id: String) extends Game {
     }
   }
 
-  /**
-   * プレイヤーがダメージを受けた時のイベント
-   *
-   * @param e イベント
-   */
-  override def damage(e: EntityDamageByEntityEvent): Unit = {
-    // ここで、ダメージを受けたエンティティはPlayerであることがわかっている
-    val victim = e.getEntity.asInstanceOf[Player]
-    val vData = data(victim)
-    val d = (attacker: Player) => data.get(attacker).foreach(aData => {
-      aData.damage += e.getFinalDamage
-      vData.damagedPlayer.add(attacker)
-    })
-    e.getDamager match {
-      case attacker: Player => d(attacker)
-      case arrow: Arrow =>
-        arrow.getShooter match {
-          case attacker: Player => d(attacker)
-          case _ =>
-        }
-      case _ =>
-    }
-    vData.damaged += e.getFinalDamage
-  }
 
   /**
    * ブロックを破壊するときに呼び出されるイベント
    *
    * @param e イベント
    */
-  override def break(e: BlockBreakEvent): Unit = {
+  override def onBreak(e: BlockBreakEvent): Unit = {
     if (!canBuild(e.getBlock.getLocation)) {
       e.getPlayer.sendActionBar(ChatColor.RED + "そのブロックを壊すことはできません！")
       e.setCancelled(true)
@@ -542,7 +534,7 @@ class Domination(override val id: String) extends Game {
    *
    * @param e イベント
    */
-  override def place(e: BlockPlaceEvent): Unit = {
+  override def onPlace(e: BlockPlaceEvent): Unit = {
     if (!canBuild(e.getBlock.getLocation)) {
       e.getPlayer.sendActionBar(ChatColor.RED + "その地点にブロックを置くことはできません！")
       e.setCancelled(true)
@@ -652,7 +644,7 @@ class Domination(override val id: String) extends Game {
     addEntryTeam(p.getName, d.team)
   }
 
-//TODO 報酬
+  //TODO 報酬
   // TODO なぜか負の値になる
   private def occupy(point: CapturePoint, flag: Material = Material.WHITE_STAINED_GLASS): Unit = {
     scoreboard.resetScores(point.name)
@@ -715,7 +707,7 @@ class Domination(override val id: String) extends Game {
       .append(data.death.toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
 
-    val kd = if(data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
+    val kd = if (data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
 
     comp.append("* ")
       .append("K/D: ").color(ChatColor.GRAY)
@@ -736,10 +728,11 @@ class Domination(override val id: String) extends Game {
     comp.create()
   }
 
-  class CapturePoint(var name: String , var team: String, var count: Int, var location: Location)
+  class CapturePoint(var name: String, var team: String, var count: Int, var location: Location)
 
   /**
    * Java用メソッド。Optionalではないためnullの可能性がある。
+   *
    * @param player データを持つプレイヤー。
    * @return 現時点のDOMのデータ。存在しないならnull
    */
@@ -764,4 +757,5 @@ class Domination(override val id: String) extends Game {
       kill * 5 + death + assist + (if (win) 100 else 0)
     }
   }
+
 }

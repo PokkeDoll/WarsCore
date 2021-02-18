@@ -10,6 +10,7 @@ import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.World
 
+import scala.collection.mutable
 import scala.util.Try
 
 /**
@@ -158,34 +159,38 @@ trait Game {
   def hub(p: Player): Unit = hub(WarsCoreAPI.getWPlayer(p))
 
   /**
-   * プレイヤーが死亡したときのイベント
-   *
-   * @param e イベント
-   */
-  def death(e: PlayerDeathEvent): Unit
-
-
-  /**
    * プレイヤーがダメージを受けた時のイベント
    *
    * @param e イベント
    */
-  def damage(e: EntityDamageByEntityEvent): Unit
+  def onDamage(e: EntityDamageByEntityEvent): Unit = {}
 
+  /**
+   * プレイヤーが死亡したときのイベント
+   *
+   * @param e イベント
+   */
+  def onDeath(e: PlayerDeathEvent): Unit = {
+    e.setCancelled(true)
+  }
 
   /**
    * ブロックを破壊するときに呼び出されるイベント
    *
    * @param e イベント
    */
-  def break(e: BlockBreakEvent): Unit
+  def onBreak(e: BlockBreakEvent): Unit = {
+    e.setCancelled(true)
+  }
 
   /**
    * ブロックを設置するときに呼び出されるイベント
    *
    * @param e イベント
    */
-  def place(e: BlockPlaceEvent): Unit
+  def onPlace(e: BlockPlaceEvent): Unit = {
+    e.setCancelled(true)
+  }
 
   /**
    * 報酬を与えるメソッド
