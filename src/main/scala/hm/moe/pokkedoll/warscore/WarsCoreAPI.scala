@@ -14,7 +14,7 @@ import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
 
 import scala.collection.mutable
 import scala.util.Random
-
+//TODO 実験結果より、immutableなMapよりmutable valなMapを使うべき
 /**
  * 便利なメソッドをまとめたオブジェクト
  *
@@ -452,7 +452,7 @@ object WarsCoreAPI {
     i
   }
 
-  private var cache = Map.empty[Player, Player]
+  private val cache = mutable.HashMap.empty[Player, Player]
 
   /**
    * 安全に(?)観戦するメソッド。<br>
@@ -462,13 +462,14 @@ object WarsCoreAPI {
    * @param spectator 観戦を行うプレイヤー
    * @param target    観戦されるプレイヤー
    */
+    // TODO バグあり、修正予定
   def spectate(spectator: Player, target: Player): Unit = {
-    cache.filter(pred => pred._2 == spectator).foreach(f => {
+    cache.filter(pred => pred._2.getGameMode == GameMode.SPECTATOR && pred._2 == spectator).foreach(f => {
       f._1.setSpectatorTarget(null)
-      cache -= f._1
+      cache.remove(f._1)
     })
     spectator.setSpectatorTarget(target)
-    cache += (spectator -> target)
+    cache.put(spectator, target)
   }
 
   //TODO val mutableをvar immutableに変更する。参照とオブジェクトを間違えてはいけない！
