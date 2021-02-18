@@ -238,6 +238,4 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       .forEach(_.sendMessage(
         ChatColor.translateAlternateColorCodes('&', s"&7[&3CMDESP&7]&3 ${e.getPlayer.getName}: ${e.getMessage}")))
   }
-
-
 }

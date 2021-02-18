@@ -225,29 +225,28 @@ class TeamDeathMatch(override val id: String) extends Game {
   override def end(): Unit = {
     state = GameState.END
     world.setPVP(false)
-    // ここで勝敗を決める
-    val winner = if (redPoint > bluePoint) "red" else if (redPoint < bluePoint) "blue" else "draw"
-
-    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
 
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("               Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
 
-    if (winner == "red") {
+    val winner = if(redPoint > bluePoint) {
       endMsg.append("              ")
         .append("Red Team").color(ChatColor.RED).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
-    } else if (winner == "blue") {
+      GameTeam.RED
+    } else if (redPoint < bluePoint) {
       endMsg.append("              ")
         .append("Blue Team").color(ChatColor.BLUE).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
+      GameTeam.BLUE
     } else {
       endMsg.append("                  ").reset()
         .append("Draw").underlined(true)
         .append("                \n").reset()
+      GameTeam.DEFAULT
     }
 
-    sendMessage(endMsg.create())
+    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
 
     // TODO Skriptに沿ってMVPを決定する
     members.foreach(wp => {
@@ -560,37 +559,48 @@ class TeamDeathMatch(override val id: String) extends Game {
     )
   }
 
+  /**
+   * 決定したチームを適用する
+   *
+   * @param name 参加させるプレイヤーの名前
+   * @param team 決定したチーム
+   */
+  private def addEntryTeam(name: String, team: GameTeam): Unit = {
+    team match {
+      case GameTeam.RED => redTeam.addEntry(name)
+      case GameTeam.BLUE => blueTeam.addEntry(name)
+      case _ =>
+    }
+  }
 
   private def setTeam(p: Player): Unit = {
+    val d = data(p)
     if (redTeam.getEntries.size() > blueTeam.getEntries.size()) {
-      blueTeam.addEntry(p.getName)
-      data(p).team = "blue"
+      d.team = GameTeam.BLUE
     } else if (redTeam.getEntries.size() < blueTeam.getEntries.size()) {
-      redTeam.addEntry(p.getName)
-      data(p).team = "red"
+      d.team = GameTeam.RED
     } else {
       WarsCoreAPI.random.nextInt(2) match {
         case 1 =>
-          blueTeam.addEntry(p.getName)
-          data(p).team = "blue"
+          d.team = GameTeam.BLUE
         case 0 =>
-          redTeam.addEntry(p.getName)
-          data(p).team = "red"
+          d.team = GameTeam.RED
       }
     }
+    addEntryTeam(p.getName, d.team)
   }
 
   private val helpTeamPoint = new ComponentBuilder("各チームの獲得ポイントです").color(ChatColor.GREEN).create()
 
 
-  private def createResult(data: TDMData, winner: String): Array[BaseComponent] = {
+  private def createResult(data: TDMData, winner: GameTeam): Array[BaseComponent] = {
     val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
       .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
       .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
       .append("* ").underlined(false).color(ChatColor.WHITE)
       .append("結果: ").color(ChatColor.GRAY)
 
-    if (winner == "draw") {
+    if (winner == GameTeam.DEFAULT) {
       comp.append("引き分け\n")
     } else if (winner == data.team) {
       comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
@@ -657,8 +667,10 @@ class TeamDeathMatch(override val id: String) extends Game {
     var damage, damaged: Double = 0d
     var win = false
     var damagedPlayer = mutable.Set.empty[Player]
-    var team = ""
+    protected[games] var team: GameTeam = GameTeam.DEFAULT
+    def getTeam: GameTeam = team
 
+    def setTeam(team: GameTeam): Unit = this.team = team
     def calcExp(): Int = {
       kill * 5 + death + assist + (if (win) 100 else 0)
     }

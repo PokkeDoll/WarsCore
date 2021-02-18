@@ -14,6 +14,7 @@ import scala.util.Try
 
 /**
  * ゲームのコア部分のトレイト
+ *
  * @author Emorard
  */
 trait Game {
@@ -73,6 +74,7 @@ trait Game {
 
   /**
    * Javaにやさしいメンバー取得メソッド
+   *
    * @return
    */
   def getMembersAsJava: java.util.List[WPlayer] = members.asJava
@@ -133,6 +135,7 @@ trait Game {
 
   /**
    * プレイヤーがゲームに参加するときのメソッド
+   *
    * @param wp プレイヤー
    * @return 参加できる場合
    */
@@ -140,12 +143,14 @@ trait Game {
 
   /**
    * Playerバージョン
+   *
    * @param p
    */
   def join(p: Player): Boolean = join(WarsCoreAPI.getWPlayer(p))
 
   /**
    * プレイヤーがゲームから抜けたときのメソッド
+   *
    * @param wp プレイヤー
    */
   def hub(wp: WPlayer): Unit
@@ -154,6 +159,7 @@ trait Game {
 
   /**
    * プレイヤーが死亡したときのイベント
+   *
    * @param e イベント
    */
   def death(e: PlayerDeathEvent): Unit
@@ -161,6 +167,7 @@ trait Game {
 
   /**
    * プレイヤーがダメージを受けた時のイベント
+   *
    * @param e イベント
    */
   def damage(e: EntityDamageByEntityEvent): Unit
@@ -168,19 +175,22 @@ trait Game {
 
   /**
    * ブロックを破壊するときに呼び出されるイベント
+   *
    * @param e イベント
    */
   def break(e: BlockBreakEvent): Unit
 
   /**
    * ブロックを設置するときに呼び出されるイベント
+   *
    * @param e イベント
    */
   def place(e: BlockPlaceEvent): Unit
 
   /**
    * 報酬を与えるメソッド
-   * @param p 報酬を与えるプレイヤー
+   *
+   * @param p          報酬を与えるプレイヤー
    * @param rewardType 報酬タイプ
    */
   def reward(p: Player, rewardType: GameRewardType): Unit = {
@@ -197,14 +207,15 @@ trait Game {
 
   /**
    * ゲームに参加しているプレイヤー全員にメッセージを送信する
-   * @param string
+   *
+   * @param string メッセージ
    */
   def sendMessage(string: String): Unit = {
     world.getPlayers.forEach(_.sendMessage(ChatColor.translateAlternateColorCodes('&', string)))
   }
 
   def sendMessage(components: Array[BaseComponent]): Unit = {
-    world.getPlayers.forEach(_.sendMessage(components:_*))
+    world.getPlayers.forEach(_.sendMessage(components: _*))
   }
 
   def sendActionBar(string: String): Unit = {

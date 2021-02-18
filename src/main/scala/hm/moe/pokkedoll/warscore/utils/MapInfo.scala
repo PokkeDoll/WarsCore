@@ -11,4 +11,11 @@ package hm.moe.pokkedoll.warscore.utils
  * @author Emorard
  * @version 2
  */
+//TODO MapInfo.ofの追加
 class MapInfo(val mapId: String = "Unknown", val mapName: String = "Unknown", val authors: String = "Unknown", val locations: Map[String, WeakLocation] = Map.empty[String, WeakLocation])
+
+object MapInfo {
+  def of(): MapInfo = {
+    null
+  }
+}

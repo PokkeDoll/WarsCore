@@ -156,7 +156,7 @@ class Tactics(override val id: String) extends Game {
     world.setPVP(false)
     // ここで勝敗を決める
     val winner = if (first > second) members.head.player.getName else members.last.player.getName
-    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
+    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, GameTeam.of(winner)))
     sendMessage(
       "§7==========================================\n" +
         "§7                Game Over!                \n" +

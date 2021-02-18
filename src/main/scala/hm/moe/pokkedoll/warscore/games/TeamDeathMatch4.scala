@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
+import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -13,6 +13,8 @@ import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
+
+import scala.collection.mutable
 
 /**
  * 4vs4で行うゲームモード <br>
@@ -90,9 +92,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
   // スポーン, 赤チーム, 青チーム, 中心
   var locationData: (Location, Location, Location, Location) = _
 
-  //val data = mutable.HashMap.empty[Player, TDMData]
-
-  var data = Map.empty[Player, TDMData]
+  val data = mutable.HashMap.empty[Player, TDMData]
 
   private val TIME = 600
 
@@ -118,9 +118,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
 
     setLocationData()
 
-    // data.clear()
-
-    data = Map.empty[Player, TDMData]
+    data.clear()
 
     members = Vector.empty[WPlayer]
 
@@ -148,7 +146,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
         } else if (count <= 0) {
           play()
           cancel()
-        } else if(members.map(_.player).forall(_.isSneaking)) {
+        } else if (members.map(_.player).forall(_.isSneaking)) {
           count = 0
           sendMessage(ChatColor.BLUE + "カウントをスキップします...")
         } else {
@@ -176,6 +174,9 @@ class TeamDeathMatch4(override val id: String) extends Game {
     state = GameState.PLAY
     world.setPVP(true)
     // チーム決め + 移動
+    members.map(_.player).foreach(setTeam)
+    Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, data))
+
     members.map(_.player).foreach(p => {
       setTeam(p)
       spawn(p)
@@ -228,27 +229,28 @@ class TeamDeathMatch4(override val id: String) extends Game {
   override def end(): Unit = {
     state = GameState.END
     world.setPVP(false)
-    // ここで勝敗を決める
-    val winner = if (redPoint > bluePoint) "red" else if (redPoint < bluePoint) "blue" else "draw"
-
-    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
 
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("               Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
 
-    if (winner == "red") {
+    val winner = if(redPoint > bluePoint) {
       endMsg.append("              ")
         .append("Red Team").color(ChatColor.RED).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
-    } else if (winner == "blue") {
+      GameTeam.RED
+    } else if (redPoint < bluePoint) {
       endMsg.append("              ")
         .append("Blue Team").color(ChatColor.BLUE).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
+      GameTeam.BLUE
     } else {
       endMsg.append("                  ").reset()
         .append("Draw").underlined(true)
         .append("                \n").reset()
+      GameTeam.DEFAULT
     }
+
+    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
 
     sendMessage(endMsg.create())
 
@@ -316,8 +318,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
       WarsCoreAPI.changeWeaponInventory(wp)
 
       wp.player.setScoreboard(scoreboard)
-      //data.put(wp.player, new TDMData)
-      data += wp.player -> new TDMData
+      data.put(wp.player, new TDMData)
       bossbar.addPlayer(wp.player)
       //members = members :+ wp
       members :+= wp
@@ -449,7 +450,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
       vData.damagedPlayer = Set.empty[Player]
       // 武器ドロップの処理
       val item = victim.getInventory.getItemInMainHand
-      if(item != null && item.getType != Material.AIR && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+      if (item != null && item.getType != Material.AIR && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
         val dropItem = world.dropItem(victim.getLocation(), item)
         // 30秒で消滅するように
         dropItem.setWillAge(true)
@@ -575,37 +576,48 @@ class TeamDeathMatch4(override val id: String) extends Game {
     )
   }
 
+  /**
+   * 決定したチームを適用する
+   *
+   * @param name 参加させるプレイヤーの名前
+   * @param team 決定したチーム
+   */
+  private def addEntryTeam(name: String, team: GameTeam): Unit = {
+    team match {
+      case GameTeam.RED => redTeam.addEntry(name)
+      case GameTeam.BLUE => blueTeam.addEntry(name)
+      case _ =>
+    }
+  }
 
   private def setTeam(p: Player): Unit = {
+    val d = data(p)
     if (redTeam.getEntries.size() > blueTeam.getEntries.size()) {
-      blueTeam.addEntry(p.getName)
-      data(p).team = "blue"
+      d.team = GameTeam.BLUE
     } else if (redTeam.getEntries.size() < blueTeam.getEntries.size()) {
-      redTeam.addEntry(p.getName)
-      data(p).team = "red"
+      d.team = GameTeam.RED
     } else {
       WarsCoreAPI.random.nextInt(2) match {
         case 1 =>
-          blueTeam.addEntry(p.getName)
-          data(p).team = "blue"
+          d.team = GameTeam.BLUE
         case 0 =>
-          redTeam.addEntry(p.getName)
-          data(p).team = "red"
+          d.team = GameTeam.RED
       }
     }
+    addEntryTeam(p.getName, d.team)
   }
 
   private val helpTeamPoint = new ComponentBuilder("各チームの獲得ポイントです").color(ChatColor.GREEN).create()
 
 
-  private def createResult(data: TDMData, winner: String): Array[BaseComponent] = {
+  private def createResult(data: TDMData, winner: GameTeam): Array[BaseComponent] = {
     val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
       .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
       .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
       .append("* ").underlined(false).color(ChatColor.WHITE)
       .append("結果: ").color(ChatColor.GRAY)
 
-    if (winner == "draw") {
+    if (winner == GameTeam.DEFAULT) {
       comp.append("引き分け\n")
     } else if (winner == data.team) {
       comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
@@ -631,7 +643,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
       .append(data.death.toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
 
-    val kd = if(data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
+    val kd = if (data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
 
     comp.append("* ")
       .append("K/D: ").color(ChatColor.GRAY)
@@ -658,6 +670,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
 
   /**
    * Java用メソッド。Optionalではないためnullの可能性がある。
+   *
    * @param player データを持つプレイヤー。
    * @return 現時点のTDMのデータ。存在しないならnull
    */
@@ -672,7 +685,11 @@ class TeamDeathMatch4(override val id: String) extends Game {
     var damage, damaged: Double = 0d
     var win = false
     var damagedPlayer = Set.empty[Player]
-    var team = ""
+    protected[games] var team: GameTeam = GameTeam.DEFAULT
+
+    def getTeam: GameTeam = team
+
+    def setTeam(team: GameTeam): Unit = this.team = team
 
     def calcExp(): Int = {
       kill * 5 + death + assist + (if (win) 100 else 0)

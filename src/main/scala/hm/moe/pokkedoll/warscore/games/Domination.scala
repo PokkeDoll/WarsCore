@@ -209,9 +209,9 @@ class Domination(override val id: String) extends Game {
             f.location.getNearbyPlayers(3d, 6d).forEach(p => {
               val d = data(p)
               // TODO 確かに連続して占領が行われることはないが、指を加えて見ないといけない！！
-              if(d.team != f.team) {
+              if(d.team != GameTeam.valueOf(f.team)) {
                 // データ上は 1 ~ 100: スコアボードでは 0 ~ 100
-                if (d.team == "red") {
+                if (d.team == GameTeam.RED) {
                   f.count += captureParam
                 } else {
                   f.count -= captureParam
@@ -288,11 +288,11 @@ class Domination(override val id: String) extends Game {
     // groupByでdraw: {}, red: {}, blue: {}となる
     val winner = captureData.groupBy(f => f.team).map(f => (f._1, f._2.length)) match {
       case f if f.getOrElse("red", 0) > f.getOrElse("blue", 0) =>
-        "red"
+        GameTeam.RED
       case f if f.getOrElse("blue", 0) > f.getOrElse("red", 0) =>
-        "blue"
+        GameTeam.BLUE
       case _ =>
-        "neutral"
+        GameTeam.DEFAULT
     }
 
     Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
@@ -300,11 +300,11 @@ class Domination(override val id: String) extends Game {
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("               Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
 
-    if (winner == "red") {
+    if (winner == GameTeam.RED) {
       endMsg.append("              ")
         .append("Red Team").color(ChatColor.RED).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
-    } else if (winner == "blue") {
+    } else if (winner == GameTeam.BLUE) {
       endMsg.append("              ")
         .append("Blue Team").color(ChatColor.BLUE).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
@@ -470,7 +470,7 @@ class Domination(override val id: String) extends Game {
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
           e.setDeathSoundVolume(2f)
           // 赤チーム用のメッセージ
-          if (aData.team == "red") {
+          if (aData.team == GameTeam.RED) {
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
@@ -562,7 +562,7 @@ class Domination(override val id: String) extends Game {
       override def run(): Unit = {
         if (!coolTime) {
           WarsCoreAPI.getWPlayer(player).changeInventory = true
-          if (d.team == "red") {
+          if (d.team == GameTeam.RED) {
             player.teleport(redPoint)
           } else {
             player.teleport(bluePoint)
@@ -577,7 +577,7 @@ class Domination(override val id: String) extends Game {
               if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
                   WarsCoreAPI.unfreeze(player)
-                  if (d.team == "red") {
+                  if (d.team == GameTeam.RED) {
                     player.teleport(redPoint)
                   } else {
                     player.teleport(bluePoint)
@@ -621,23 +621,35 @@ class Domination(override val id: String) extends Game {
     )
   }
 
+  /**
+   * 決定したチームを適用する
+   *
+   * @param name 参加させるプレイヤーの名前
+   * @param team 決定したチーム
+   */
+  private def addEntryTeam(name: String, team: GameTeam): Unit = {
+    team match {
+      case GameTeam.RED => redTeam.addEntry(name)
+      case GameTeam.BLUE => blueTeam.addEntry(name)
+      case _ =>
+    }
+  }
+
   private def setTeam(p: Player): Unit = {
+    val d = data(p)
     if (redTeam.getEntries.size() > blueTeam.getEntries.size()) {
-      blueTeam.addEntry(p.getName)
-      data(p).team = "blue"
+      d.team = GameTeam.BLUE
     } else if (redTeam.getEntries.size() < blueTeam.getEntries.size()) {
-      redTeam.addEntry(p.getName)
-      data(p).team = "red"
+      d.team = GameTeam.RED
     } else {
       WarsCoreAPI.random.nextInt(2) match {
         case 1 =>
-          blueTeam.addEntry(p.getName)
-          data(p).team = "blue"
+          d.team = GameTeam.BLUE
         case 0 =>
-          redTeam.addEntry(p.getName)
-          data(p).team = "red"
+          d.team = GameTeam.RED
       }
     }
+    addEntryTeam(p.getName, d.team)
   }
 
 //TODO 報酬
@@ -678,14 +690,14 @@ class Domination(override val id: String) extends Game {
       (location.getZ >= p.location.getZ - buildRange && location.getZ <= p.location.getZ + buildRange))
   }
 
-  private def createResult(data: DOMData, winner: String): Array[BaseComponent] = {
+  private def createResult(data: DOMData, winner: GameTeam): Array[BaseComponent] = {
     val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
       .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
       .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
       .append("* ").underlined(false).color(ChatColor.WHITE)
       .append("結果: ").color(ChatColor.GRAY)
 
-    if (winner == "draw") {
+    if (winner == GameTeam.DEFAULT) {
       comp.append("引き分け\n")
     } else if (winner == data.team) {
       comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
@@ -742,7 +754,11 @@ class Domination(override val id: String) extends Game {
     var damage, damaged: Double = 0d
     var win = false
     var damagedPlayer = mutable.Set.empty[Player]
-    var team = ""
+    protected[games] var team: GameTeam = GameTeam.DEFAULT
+
+    def getTeam: GameTeam = team
+
+    def setTeam(team: GameTeam): Unit = this.team = team
 
     def calcExp(): Int = {
       kill * 5 + death + assist + (if (win) 100 else 0)
