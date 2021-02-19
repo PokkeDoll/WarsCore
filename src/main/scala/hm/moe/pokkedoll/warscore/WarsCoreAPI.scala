@@ -101,8 +101,7 @@ object WarsCoreAPI {
     player.teleport(player.getLocation().add(0, 0.001, 0))
     player.setAllowFlight(true)
     player.setFlying(true)
-    player.setWalkSpeed(0.001f)
-    player.setFlySpeed(0.001f)
+    player.setFlySpeed(0.01f)
   }
 
   /**
@@ -452,6 +451,9 @@ object WarsCoreAPI {
     i
   }
 
+  /**
+   * つまり、観戦者 -> 非観戦者のマップ
+   */
   private val cache = mutable.HashMap.empty[Player, Player]
 
   /**
@@ -462,15 +464,69 @@ object WarsCoreAPI {
    * @param spectator 観戦を行うプレイヤー
    * @param target    観戦されるプレイヤー
    */
-    // TODO バグあり、修正予定
+  // TODO バグあり、修正予定
   def spectate(spectator: Player, target: Player): Unit = {
-    cache.filter(pred => pred._2.getGameMode == GameMode.SPECTATOR && pred._2 == spectator).foreach(f => {
+    cache.filter(pred => pred._1.getGameMode == GameMode.SPECTATOR && pred._2 == spectator).foreach(f => {
       f._1.setSpectatorTarget(null)
       cache.remove(f._1)
     })
     spectator.setSpectatorTarget(target)
     cache.put(spectator, target)
   }
+
+  /**
+   * プレイヤーが試合終了時の自動参加を行うかを返す
+   *
+   * @param player 対象のプレイヤー
+   * @return
+   */
+  def isContinue(player: Player): Boolean = {
+    val meta = player.getMetadata("wc-continue")
+    if(meta.isEmpty) true else meta.get(0).asBoolean()
+  }
+
+  def getGameMVP[T <: GamePlayerData](data: mutable.Map[Player, T]): Array[BaseComponent] = {
+    val kd = data.map(f => (f._1, f._2.kill, f._2.death, f._2.kill/f._2.death.toDouble)).toSeq.sortBy(f => f._4).take(5)
+    val dd = data.map(f => (f._1, f._2.damage)).toSeq.sortBy(f => f._2).take(5)
+
+    val comp = new ComponentBuilder()
+    comp.append(createHeader("MVP"))
+    comp.append(": K/D :==========>\n").color(ChatColor.YELLOW)
+    kd.indices.foreach(i => {
+      val v = kd(i)
+      i match {
+        case 1 =>
+          comp.append("1st").color(ChatColor.YELLOW).bold(true)
+        case 2 =>
+          comp.append("2nd").color(ChatColor.YELLOW)
+        case 3 =>
+          comp.append("3rd").color(ChatColor.GREEN)
+        case _ =>
+          comp.append(s"${i}th")
+      }
+      comp.append(".").color(ChatColor.GRAY).bold(false)
+        .append(s" ${v._1.getName} ${v._4}").color(ChatColor.YELLOW).append(s"(${v._2} / ${v._3})\n").color(ChatColor.GRAY).reset()
+    })
+    comp.append(": Damage :==========>\n").color(ChatColor.YELLOW)
+    dd.indices.foreach(i => {
+      val v = dd(i)
+      i match {
+        case 1 =>
+          comp.append("1st").color(ChatColor.YELLOW).bold(true)
+        case 2 =>
+          comp.append("2nd").color(ChatColor.YELLOW)
+        case 3 =>
+          comp.append("3rd").color(ChatColor.GREEN)
+        case _ =>
+          comp.append(s"${i}th")
+      }
+      comp.append(".").color(ChatColor.GRAY).bold(false)
+        .append(s" ${v._1.getName} ${v._2}\n").color(ChatColor.YELLOW).reset()
+    })
+    comp.create()
+  }
+
+
 
   //TODO val mutableをvar immutableに変更する。参照とオブジェクトを間違えてはいけない！
 
@@ -509,4 +565,5 @@ object WarsCoreAPI {
       i
     }
   }
+
 }

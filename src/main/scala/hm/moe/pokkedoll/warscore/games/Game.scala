@@ -203,6 +203,7 @@ trait Game {
       case GameRewardType.KILL => config.events.get("kill")
       case GameRewardType.LOSE => config.events.get("lose")
       case GameRewardType.WIN => config.events.get("win")
+      case GameRewardType.ASSIST => config.events.get("assist")
     }) match {
       case Some(v) =>
         WarsCore.instance.database.addItem(p.getUniqueId.toString, v._1)
@@ -232,8 +233,8 @@ trait Game {
   }
 
   def createResult(data: GamePlayerData, winner: GameTeam): Array[BaseComponent] = {
-    val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
-      .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
+    val comp = new ComponentBuilder("= - = - = - = - = -").color(ChatColor.GRAY).underlined(true)
+      .append(" 戦績 ").underlined(false).bold(true).color(ChatColor.AQUA)
       .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
       .append("* ").underlined(false).color(ChatColor.WHITE)
       .append("結果: ").color(ChatColor.GRAY)
@@ -256,7 +257,7 @@ trait Game {
       .append(data.death.toString).color(ChatColor.GREEN).bold(true)
       .append("\n").color(ChatColor.RESET).bold(false)
 
-    val kd = if (data.death == 0) data.kill.toDouble else BigDecimal.valueOf((data.kill / data.death).toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
+    val kd = if (data.death == 0) data.kill.toDouble else BigDecimal.valueOf(data.kill / data.death.toDouble).setScale(-2, BigDecimal.RoundingMode.FLOOR).doubleValue
 
     comp.append("* ")
       .append("K/D: ").color(ChatColor.GRAY)

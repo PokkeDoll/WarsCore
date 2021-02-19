@@ -14,25 +14,8 @@ class SortSpec extends AnyFlatSpec with Diagrams {
     })
   }
 
-  "速度をチェックする" should "trueを返す" in {
-    val mutableMap = scala.collection.mutable.HashMap.empty[String, String]
-    var immutableMap = scala.collection.immutable.HashMap.empty[String, String]
-    val mutableMapStart = System.currentTimeMillis()
-    0 to 10000000 foreach(f => {
-      mutableMap.put(s"Key is ${f}", s"Value is ${f}")
-    })
-    val mutableMapEnd = System.currentTimeMillis()
-
-    val immutableMapStart = System.currentTimeMillis()
-    0 to 10000000 foreach(f => {
-      immutableMap += s"Key is ${f}" -> s"Value is ${f}"
-    })
-    val immutableMapEnd = System.currentTimeMillis()
-    println(
-      "結果発表ぉぉぉぉぉぉぉぉぉぉぉぉぉ！\n" +
-        s"mutable.Map: ${mutableMapEnd - mutableMapStart}ms\n" +
-        s"immutable.Map: ${immutableMapEnd - immutableMapStart}ms\n"
-    )
+  "計算をする" should "trueを返す" in {
+    println(s"${(10/29.toDouble)}")
     true
   }
 }

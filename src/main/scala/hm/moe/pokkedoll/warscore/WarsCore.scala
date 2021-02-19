@@ -62,6 +62,8 @@ class WarsCore extends JavaPlugin {
     getCommand("shop").setExecutor(new ShopCommand)
     getCommand("sndchecker").setExecutor(new SndCheckerCommand)
     getCommand("money").setExecutor(new MoneyCommand)
+    getCommand("continue").setExecutor(new ContinueCommand)
+
     saveDefaultConfig()
 
     ItemUtil.reloadItem()

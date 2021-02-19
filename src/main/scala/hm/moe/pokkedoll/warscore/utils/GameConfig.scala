@@ -34,7 +34,8 @@ class GameConfig(cs: ConfigurationSection) {
   val events = Map(
     "kill" -> (cs.getStringList("event.kill.item").asScala.flatMap(Item.of).toArray, cs.getInt("event.kill.exp")),
     "win" -> (cs.getStringList("event.win.item").asScala.flatMap(Item.of).toArray, cs.getInt("event.win.exp", 0)),
-    "lose" -> (cs.getStringList("event.lose.item").asScala.flatMap(Item.of).toArray, cs.getInt("event.lose.exp", 0))
+    "lose" -> (cs.getStringList("event.lose.item").asScala.flatMap(Item.of).toArray, cs.getInt("event.lose.exp", 0)),
+    "assist" -> (cs.getStringList("event.assist.item").asScala.flatMap(Item.of).toArray, cs.getInt("event.assist.exp", 0))
   )
 }
 

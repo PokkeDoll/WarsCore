@@ -1,11 +1,13 @@
 package hm.moe.pokkedoll.warscore.games
 
 object GameRewardType {
-  object KILL extends GameRewardType
+  case object KILL extends GameRewardType
 
-  object WIN extends GameRewardType
+  case object WIN extends GameRewardType
 
-  object LOSE extends GameRewardType
+  case object LOSE extends GameRewardType
+
+  case object ASSIST extends GameRewardType
 }
 
 sealed abstract class GameRewardType
