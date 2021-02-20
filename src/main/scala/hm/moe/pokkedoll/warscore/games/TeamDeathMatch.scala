@@ -1,13 +1,13 @@
 package hm.moe.pokkedoll.warscore.games
 
-import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
+import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.ComponentBuilder
+import net.md_5.bungee.api.chat.{ClickEvent, ComponentBuilder}
 import org.bukkit._
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
-import org.bukkit.entity.{Arrow, Player}
+import org.bukkit.entity.{Arrow, Entity, Player}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
@@ -172,8 +172,11 @@ class TeamDeathMatch(override val id: String) extends Game {
     state = GameState.PLAY
     world.setPVP(true)
     // チーム決め + 移動
+    members.map(_.player).foreach(setTeam)
+    Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, members.map(_.player).toArray, data))
+
     members.map(_.player).foreach(p => {
-      setTeam(p)
+      addEntryTeam(p.getName, data(p).team)
       spawn(p)
       if (redTeam.hasEntry(p.getName)) {
         p.sendTitle("§7YOU ARE §cRED §7TEAM!", "- §6TDM §f- Kill §9Blue §fteam!", 30, 20, 20)
@@ -247,16 +250,26 @@ class TeamDeathMatch(override val id: String) extends Game {
 
     Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
 
-    // TODO Skriptに沿ってMVPを決定する
+    sendMessage(endMsg.create())
+    sendMessage(WarsCoreAPI.getGameMVP(data))
+
     members.foreach(wp => {
       data.get(wp.player) match {
         case Some(d) =>
           if (winner == d.team) {
-            //d.money += 500
-            // EconomyUtil.give(wp.player, EconomyUtil.COIN, 30)
             d.win = true
           }
           wp.sendMessage(createResult(d, winner): _*)
+
+          wp.sendMessage(
+            new ComponentBuilder("\n")
+              .append("自動参加するかどうかを設定できます。現在は" + (if(WarsCoreAPI.isContinue(wp.player)) ChatColor.GREEN + "有効" else ChatColor.RED + "無効") + ChatColor.RESET + "になっています\n")
+              .append("有効にする").color(ChatColor.GREEN).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/continue true"))
+              .reset().append("- - - - - -").color(ChatColor.WHITE)
+              .append("無効にする").color(ChatColor.RED).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/continue"))
+              .create(): _*
+          )
+
           // ゲーム情報のリセット
           wp.game = None
           // インベントリのリストア
@@ -269,15 +282,15 @@ class TeamDeathMatch(override val id: String) extends Game {
     })
     WarsCore.instance.database.updateTDMAsync(this)
     val beforeMembers = members.map(_.player)
-    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
     sendMessage(ChatColor.BLUE + "10秒後に自動で試合に参加します")
+    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
     bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
         WorldLoader.asyncUnloadWorld(id)
         new BukkitRunnable {
           override def run(): Unit = {
-            load(players = beforeMembers.filter(player => player.getWorld == world))
+            load(players = beforeMembers.filter(_.isOnline).filter(WarsCoreAPI.isContinue))
           }
         }.runTaskLater(WarsCore.instance, 190L)
       }
@@ -313,13 +326,17 @@ class TeamDeathMatch(override val id: String) extends Game {
       WarsCoreAPI.changeWeaponInventory(wp)
 
       wp.player.setScoreboard(scoreboard)
-      data.put(wp.player, new TDMData)
+      val d = new TDMData
+      data.put(wp.player, d)
       bossbar.addPlayer(wp.player)
-      members = members :+ wp
+      //members = members :+ wp
+      members :+= wp
       sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a$maxMember§f)")
       state match {
         case GameState.PLAY =>
           setTeam(wp.player)
+          Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, Array(wp.player), data))
+          addEntryTeam(wp.player.getName, d.team)
           new scheduler.BukkitRunnable {
             override def run(): Unit = {
               spawn(wp.player)
@@ -385,7 +402,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    * @param e イベント
    */
   override def onDeath(e: PlayerDeathEvent): Unit = {
-    e.setCancelled(true)
+    super.onDeath(e)
     val victim = e.getEntity
     // 試合中のみのできごと
     if (state == GameState.PLAY || state == GameState.PLAY2) {
@@ -394,6 +411,7 @@ class TeamDeathMatch(override val id: String) extends Game {
       vData.death += 1
       Option(victim.getKiller) match {
         case Some(attacker) =>
+          val assistFunc = assistMessage(vData, attacker.getName, victim.getName, _)
           val aData = data(attacker)
           aData.kill += 1
           reward(attacker, GameRewardType.KILL)
@@ -404,8 +422,10 @@ class TeamDeathMatch(override val id: String) extends Game {
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
+                assistFunc(name)
                 log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
               case None =>
+                assistFunc("")
                 sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
                 log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
             }
@@ -415,23 +435,44 @@ class TeamDeathMatch(override val id: String) extends Game {
             sidebar.getScore(ChatColor.BLUE + "青チーム キル数:").setScore(bluePoint)
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
+                assistFunc(name)
                 sendMessage(s"§f0X §9${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §c${victim.getName}")
                 log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
               case None =>
+                assistFunc("")
                 sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
                 log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
             }
           }
+
           Bukkit.getServer.getPluginManager.callEvent(preEvent(attacker))
         case None =>
           sendMessage(s"§f0X ${victim.getName} dead")
           Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
       }
+      // アシストの処理
+      vData.damagedPlayer.clear()
+
+      // 武器ドロップの処理
+      val item = victim.getInventory.getItemInMainHand
+      if (item != null && item.getType != Material.AIR && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+        val dropItem = world.dropItem(victim.getLocation(), item)
+        // 30秒で消滅するように
+        dropItem.setWillAge(true)
+        dropItem.asInstanceOf[Entity].setTicksLived(5400)
+      }
       // とにかく死んだのでリスポン処理
       spawn(victim, coolTime = true)
-    } else {
-
     }
+  }
+
+  private val assistMessage = (d: TDMData, attacker: String, victim: String, weapon: String) => {
+    d.damagedPlayer.filterNot(pred => pred.getName == attacker).filter(pred => pred.isOnline && data.contains(pred)).foreach(f => {
+      data(f).assist += 1
+      reward(f, GameRewardType.ASSIST)
+      val attackerString = if(weapon == "") attacker else s"$attacker §f[$weapon§f]"
+      f.sendMessage(s"$attackerString + §a${f.getName} §7-> §0Killed §7-> §f$victim")
+    })
   }
 
   /**
@@ -565,6 +606,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    * @param player データを持つプレイヤー。
    * @return 現時点のTDMのデータ。存在しないならnull
    */
+  @Deprecated
   def getDataUnsafe(player: Player): TDMData = data(player)
 
   /**

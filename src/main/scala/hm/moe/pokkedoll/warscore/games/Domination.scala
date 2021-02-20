@@ -4,10 +4,10 @@ import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinE
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, RankManager, WeakLocation, WorldLoader}
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
+import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder}
 import org.bukkit.{Bukkit, Color, FireworkEffect, GameMode, Location, Material, Sound, World, scheduler}
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
-import org.bukkit.entity.{Arrow, EntityType, Firework, Player}
+import org.bukkit.entity.{Arrow, Entity, EntityType, Firework, Player}
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.potion.PotionEffectType
@@ -325,8 +325,20 @@ class Domination(override val id: String) extends Game {
             d.win = true
           }
           wp.sendMessage(createResult(d, winner): _*)
+
+          wp.sendMessage(
+            new ComponentBuilder("\n")
+              .append("自動参加するかどうかを設定できます。現在は" + (if(WarsCoreAPI.isContinue(wp.player)) ChatColor.GREEN + "有効" else ChatColor.RED + "無効") + ChatColor.RESET + "になっています\n")
+              .append("有効にする").color(ChatColor.GREEN).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/continue true"))
+              .reset().append("- - - - - -").color(ChatColor.WHITE)
+              .append("無効にする").color(ChatColor.RED).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/continue"))
+              .create(): _*
+          )
+
           // ゲーム情報のリセット
           wp.game = None
+          // インベントリのリストア
+          WarsCoreAPI.restoreLobbyInventory(wp.player)
           // スコアボードのリセット
           wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
           RankManager.giveExp(wp, d.calcExp())
@@ -335,15 +347,15 @@ class Domination(override val id: String) extends Game {
     })
     //WarsCore.instance.database.updateTDMAsync(this)
     val beforeMembers = members.map(_.player)
-    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
     sendMessage(ChatColor.BLUE + "10秒後に自動で試合に参加します")
+    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
     bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
         WorldLoader.asyncUnloadWorld(id)
         new BukkitRunnable {
           override def run(): Unit = {
-            load(players = beforeMembers.filter(player => player.getWorld == world))
+            load(players = beforeMembers.filter(_.isOnline).filter(WarsCoreAPI.isContinue))
           }
         }.runTaskLater(WarsCore.instance, 190L)
       }
@@ -482,6 +494,7 @@ class Domination(override val id: String) extends Game {
       vData.death += 1
       Option(victim.getKiller) match {
         case Some(attacker) =>
+          val assistFunc = assistMessage(vData, attacker.getName, victim.getName, _)
           val aData = data(attacker)
           aData.kill += 1
           reward(attacker, GameRewardType.KILL)
@@ -490,9 +503,11 @@ class Domination(override val id: String) extends Game {
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
+                assistFunc(name)
                 log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
               case None =>
                 sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
+                assistFunc("")
                 log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
             }
             // 青チーム用のメッセージ
@@ -500,8 +515,12 @@ class Domination(override val id: String) extends Game {
             WarsCoreAPI.getAttackerWeaponName(attacker) match {
               case Some(name) =>
                 sendMessage(s"§f0X §9${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §c${victim.getName}")
+                assistFunc(name)
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
               case None =>
                 sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
+                assistFunc("")
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
             }
           }
           Bukkit.getServer.getPluginManager.callEvent(preEvent(attacker))
@@ -509,11 +528,29 @@ class Domination(override val id: String) extends Game {
           sendMessage(s"§f0X ${victim.getName} dead")
           Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
       }
+      // アシストの処理
+      vData.damagedPlayer.clear()
+
+      // 武器ドロップの処理
+      val item = victim.getInventory.getItemInMainHand
+      if (item != null && item.getType != Material.AIR && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+        val dropItem = world.dropItem(victim.getLocation(), item)
+        // 30秒で消滅するように
+        dropItem.setWillAge(true)
+        dropItem.asInstanceOf[Entity].setTicksLived(5400)
+      }
       // とにかく死んだのでリスポン処理
       spawn(victim, coolTime = true)
-    } else {
-
     }
+  }
+
+  private val assistMessage = (d: DOMData, attacker: String, victim: String, weapon: String) => {
+    d.damagedPlayer.filterNot(pred => pred.getName == attacker).filter(pred => pred.isOnline && data.contains(pred)).foreach(f => {
+      data(f).assist += 1
+      reward(f, GameRewardType.ASSIST)
+      val attackerString = if(weapon == "") attacker else s"$attacker §f[$weapon§f]"
+      f.sendMessage(s"$attackerString + §a${f.getName} §7-> §0Killed §7-> §f$victim")
+    })
   }
 
 

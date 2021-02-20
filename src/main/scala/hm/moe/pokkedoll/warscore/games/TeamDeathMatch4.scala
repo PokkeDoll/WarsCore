@@ -265,9 +265,8 @@ class TeamDeathMatch4(override val id: String) extends Game {
           wp.sendMessage(
             new ComponentBuilder("\n")
               .append("自動参加するかどうかを設定できます。現在は" + (if(WarsCoreAPI.isContinue(wp.player)) ChatColor.GREEN + "有効" else ChatColor.RED + "無効") + ChatColor.RESET + "になっています\n")
-              .append("\n")
               .append("有効にする").color(ChatColor.GREEN).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/continue true"))
-              .reset().append("- - - - - -")
+              .reset().append("- - - - - -").color(ChatColor.WHITE)
               .append("無効にする").color(ChatColor.RED).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/continue"))
               .create(): _*
           )
@@ -282,7 +281,6 @@ class TeamDeathMatch4(override val id: String) extends Game {
         case _ =>
       }
     })
-    //WarsCore.instance.database.updateTDMAsync(this)
     val beforeMembers = members.map(_.player)
     sendMessage(ChatColor.BLUE + "10秒後に自動で試合に参加します")
     world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
@@ -292,7 +290,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
         WorldLoader.asyncUnloadWorld(id)
         new BukkitRunnable {
           override def run(): Unit = {
-            load(players = beforeMembers.filter(WarsCoreAPI.isContinue))
+            load(players = beforeMembers.filter(_.isOnline).filter(WarsCoreAPI.isContinue))
           }
         }.runTaskLater(WarsCore.instance, 190L)
       }
@@ -546,7 +544,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
   }
 
   private val assistMessage = (d: TDMData, attacker: String, victim: String, weapon: String) => {
-    d.damagedPlayer.filter(pred => pred.isOnline && data.contains(pred)).foreach(f => {
+    d.damagedPlayer.filterNot(pred => pred.getName == attacker).filter(pred => pred.isOnline && data.contains(pred)).foreach(f => {
       data(f).assist += 1
       reward(f, GameRewardType.ASSIST)
       val attackerString = if(weapon == "") attacker else s"$attacker §f[$weapon§f]"
