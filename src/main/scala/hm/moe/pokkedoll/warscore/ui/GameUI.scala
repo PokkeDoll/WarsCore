@@ -2,13 +2,14 @@ package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.{games, getWPlayer}
 import hm.moe.pokkedoll.warscore.games.{Game, GameState}
-import org.bukkit.{Bukkit, ChatColor, Material}
+import net.md_5.bungee.api.ChatColor
+import org.bukkit.{Bukkit, Material}
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.inventory.{ItemFlag, ItemStack}
 
 object GameUI {
 
-  val GAME_INVENTORY_TITLE = "§aゲーム一覧！"
+  val GAME_INVENTORY_TITLE: String = ChatColor.GREEN + "ゲーム一覧！"
 
   private val openGameInventoryIcon: ItemStack = {
     val i = new ItemStack(Material.ARROW, 1)
@@ -23,6 +24,7 @@ object GameUI {
     val m = i.getItemMeta
     if(game.state == GameState.PLAY || game.state == GameState.WAIT || game.state == GameState.READY) {
       i.setType(Material.LIME_DYE)
+      i.setAmount(if(game.members.isEmpty) 1 else game.members.size)
       m.setDisplayName(ChatColor.GREEN + game.id)
       m.setLore(java.util.Arrays.asList(
         ChatColor.LIGHT_PURPLE + game.title,
