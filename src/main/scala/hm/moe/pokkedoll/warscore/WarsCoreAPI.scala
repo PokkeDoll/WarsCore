@@ -126,21 +126,21 @@ object WarsCoreAPI {
   def reloadGame(cs: ConfigurationSection): Unit = {
     games.clear()
 
-    (1 to 4) foreach (id => {
-      games.put(s"tdm-$id", new TeamDeathMatch(s"tdm-$id"))
-      WorldLoader.asyncUnloadWorld(s"tdm-$id-0")
+    games.put("tdm-1", new TeamDeathMatch("tdm-1"))
+    WorldLoader.asyncUnloadWorld("tdm-1")
+
+    games.put(s"dom-1", new Domination(s"dom-1"))
+    WorldLoader.asyncUnloadWorld(s"dom-1")
+
+    (1 until 2) foreach(i => {
+      games.put(s"tactics-$i", new Tactics(s"tactics-$i"))
+      WorldLoader.asyncUnloadWorld(s"tactics-$i")
     })
 
-    (1 to 2) foreach (id => {
-      games.put(s"dom-$id", new Domination(s"dom-$id"))
-      WorldLoader.asyncUnloadWorld(s"dom-$id-0")
+    (1 until 4) foreach(i => {
+      games.put(s"tdm4-$i", new TeamDeathMatch4(s"tdm4-$i"))
+      WorldLoader.asyncUnloadWorld(s"tdm4-$i")
     })
-
-    games.put("tactics-1", new Tactics("tactics-1"))
-    WorldLoader.asyncUnloadWorld("tactics-1-0")
-
-    games.put("tdm4-1", new TeamDeathMatch4("tdm4-1"))
-    WorldLoader.asyncUnloadWorld("tdm4-1-0")
   }
 
   /**
@@ -166,7 +166,6 @@ object WarsCoreAPI {
    */
   @Deprecated
   def updateScoreboard(player: Player, scoreboard: Scoreboard): Unit = {
-    val test = new Test("updateScoreboard")
     new BukkitRunnable {
       override def run(): Unit = {
         val uuid = player.getUniqueId.toString
@@ -179,6 +178,7 @@ object WarsCoreAPI {
         // RankManager.updateSidebar(scoreboard, data = rankData)
 
         // タグ
+        /*
         val tag = Option(scoreboard.getObjective("tag")) match {
           case Some(tag) =>
             //println("tag is some!")
@@ -192,6 +192,7 @@ object WarsCoreAPI {
             tag.setDisplaySlot(DisplaySlot.BELOW_NAME)
             tag
         }
+         */
 
         // ランク
         Option(scoreboard.getTeam(player.getName)) match {
@@ -212,11 +213,13 @@ object WarsCoreAPI {
           {
             WarsCore.instance.getLogger.info(s"WarsCoreAPI.addScoreboard(${player.getName})")
             /* タグの問題 */
+            /*
             val oTag = f._2.getObjective("tag")
             if (oTag != null)
               oTag.getScore(player.getName).setScore(0)
             else
               WarsCore.instance.getLogger.info(s"oTag is null! ${f._2}")
+             */
             /* 他プレイヤーに対して */
             //val oTeam = f._2.registerNewTeam(player.getName)
             val oTeam = Option(f._2.getTeam(player.getName)).getOrElse(f._2.registerNewTeam(player.getName))
@@ -225,7 +228,9 @@ object WarsCoreAPI {
             oTeam.addEntry(player.getName)
 
             /* 自分に対して */
+            /*
             tag.getScore(f._1.getName).setScore(0)
+             */
 
             val mTeam = Option(scoreboard.getTeam(f._1.getName)).getOrElse(scoreboard.registerNewTeam(f._1.getName))
             mTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r "))
@@ -235,7 +240,6 @@ object WarsCoreAPI {
         })
       }
     }.runTask(WarsCore.instance)
-    test.log(20L)
   }
 
   def addScoreBoard(player: Player): Unit = {
