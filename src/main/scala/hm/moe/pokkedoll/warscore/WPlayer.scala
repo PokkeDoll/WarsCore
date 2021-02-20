@@ -44,8 +44,5 @@ class WPlayer(val player: Player) {
     player.sendMessage(components: _*)
   }
 
-  @Deprecated
-  var weapons: Option[Array[ItemStack]] = None
-
   var disconnect: Boolean = false
 }

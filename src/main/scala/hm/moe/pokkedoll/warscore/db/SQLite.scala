@@ -12,7 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable
 
 import java.sql.{ResultSet, SQLException}
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try, Using}
+import scala.util.{Try, Using}
 
 /**
  * SQLite3でのDatabase実装
@@ -268,16 +268,14 @@ class SQLite(private val plugin: WarsCore) extends Database {
           val rs = ps.executeQuery()
 
           if (rs.next()) {
-            //println("true!")
             wp.rank = rs.getInt("id")
             wp.exp = rs.getInt("exp")
             wp.tag = rs.getString("tagId")
-            wp.disconnect = ((i: Int) => (if (i == 1) true else false)) (rs.getInt("disconnect"))
+            wp.disconnect = ((i: Int) => if (i == 1) true else false) (rs.getInt("disconnect"))
           } else {
-            // println("false!!!")
-            wp.rank = -9999
-            wp.exp = -9999
-            wp.tag = "Unknown"
+            wp.rank = -1
+            wp.exp = -1
+            wp.tag = ""
             wp.disconnect = false
           }
           new BukkitRunnable {
