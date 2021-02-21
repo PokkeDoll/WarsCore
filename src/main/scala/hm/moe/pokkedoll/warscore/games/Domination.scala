@@ -597,7 +597,7 @@ class Domination(override val id: String) extends Game {
             player.teleport(bluePoint)
           }
         } else if (player.getKiller != null) {
-          WarsCoreAPI.spectate(player, player.getKiller)
+          // WarsCoreAPI.spectate(player, player.getKiller)
         }
         if (coolTime) {
           WarsCoreAPI.freeze(player)
