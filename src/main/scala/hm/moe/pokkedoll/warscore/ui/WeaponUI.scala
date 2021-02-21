@@ -2,16 +2,16 @@ package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil}
-import hm.moe.pokkedoll.warscore.{Registry, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{Registry, WarsCore}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.entity.{HumanEntity, Player}
+import org.bukkit.entity.HumanEntity
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
 import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{Bukkit, Material, NamespacedKey}
+import org.bukkit.{Bukkit, Material}
 
 import java.util
 
@@ -100,12 +100,10 @@ object WeaponUI {
   val MAIN_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
 
   def openMainUI(player: HumanEntity): Unit = {
-    val inv = Bukkit.createInventory(null, 27, MAIN_UI_TITLE)
-    inv.setContents(Array.fill(27)(PANEL))
+    val inv = Bukkit.createInventory(null, 9, MAIN_UI_TITLE)
+    inv.setContents(Array.fill(9)(PANEL))
 
-    inv.setItem(15, OPEN_CHEST_ICON)
-    inv.setItem(16, OPEN_MY_SET_ICON)
-    inv.setItem(17, CLOSE_INVENTORY_ICON)
+    inv.setItem(8, CLOSE_INVENTORY_ICON)
 
     player.openInventory(inv)
 
@@ -121,11 +119,11 @@ object WeaponUI {
           i.setItemMeta(m)
           i
         }
-        inv.setItem(10, weaponIcon(ItemUtil.getItem(weapons._1).getOrElse(EMPTY)))
-        inv.setItem(11, weaponIcon(ItemUtil.getItem(weapons._2).getOrElse(EMPTY)))
-        inv.setItem(12, weaponIcon(ItemUtil.getItem(weapons._3).getOrElse(EMPTY)))
-        inv.setItem(13, weaponIcon(ItemUtil.getItem(weapons._4).getOrElse(EMPTY)))
-        inv.setItem(14, weaponIcon(ItemUtil.getItem(weapons._5).getOrElse(EMPTY)))
+        inv.setItem(1, weaponIcon(ItemUtil.getItem(weapons._1).getOrElse(EMPTY)))
+        inv.setItem(2, weaponIcon(ItemUtil.getItem(weapons._2).getOrElse(EMPTY)))
+        inv.setItem(3, weaponIcon(ItemUtil.getItem(weapons._3).getOrElse(EMPTY)))
+        inv.setItem(4, weaponIcon(ItemUtil.getItem(weapons._4).getOrElse(EMPTY)))
+        inv.setItem(5, weaponIcon(ItemUtil.getItem(weapons._5).getOrElse(EMPTY)))
       }
     }.runTask(WarsCore.instance)
   }
@@ -145,14 +143,14 @@ object WeaponUI {
       metadata.get(0).asInt()
     }
     e.getSlot match {
-      case 10 => openSettingUI(player, 1, WeaponDB.PRIMARY, sortType)
-      case 11 => openSettingUI(player, 1, WeaponDB.SECONDARY, sortType)
-      case 12 => openSettingUI(player, 1, WeaponDB.MELEE, sortType)
-      case 13 => openSettingUI(player, 1, WeaponDB.GRENADE, sortType)
-      case 14 => openSettingUI(player, 1, WeaponDB.HEAD, sortType)
+      case 1 => openSettingUI(player, 1, WeaponDB.PRIMARY, sortType)
+      case 2 => openSettingUI(player, 1, WeaponDB.SECONDARY, sortType)
+      case 3 => openSettingUI(player, 1, WeaponDB.MELEE, sortType)
+      case 4 => openSettingUI(player, 1, WeaponDB.GRENADE, sortType)
+      case 5 => openSettingUI(player, 1, WeaponDB.HEAD, sortType)
       //case 15 => openWeaponStorageUI(player)
       //case 16 => openMySetUI(player)
-      case 17 => player.closeInventory()
+      case 8 => player.closeInventory()
       case _ =>
     }
   }
