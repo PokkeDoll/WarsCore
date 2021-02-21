@@ -490,23 +490,23 @@ object WarsCoreAPI {
   }
 
   def getGameMVP[T <: GamePlayerData](data: mutable.Map[Player, T]): Array[BaseComponent] = {
-    val kd = data.map(f => (f._1, f._2.kill, f._2.death, f._2.kill/f._2.death.toDouble)).toSeq.sortBy(f => f._4).take(5)
-    val dd = data.map(f => (f._1, f._2.damage)).toSeq.sortBy(f => f._2).take(5)
+    val kd = data.filterNot(f => f._2.kill == 0 && f._2.death == 0).map(f => (f._1, f._2.kill, f._2.death, f._2.kill/f._2.death.toDouble)).toSeq.sortBy(f => f._4).reverse.take(5)
+    val dd = data.map(f => (f._1, f._2.damage)).toSeq.sortBy(f => f._2).reverse.take(5)
 
     val comp = new ComponentBuilder()
     comp.append(createHeader("MVP"))
     comp.append(": K/D :==========>\n").color(ChatColor.YELLOW)
     kd.indices.foreach(i => {
       val v = kd(i)
-      i match {
+      i + 1 match {
         case 1 =>
-          comp.append("1st").color(ChatColor.YELLOW).bold(true)
+          comp.append("1st").color(ChatColor.YELLOW).bold(true).reset()
         case 2 =>
-          comp.append("2nd").color(ChatColor.YELLOW)
+          comp.append("2nd").color(ChatColor.YELLOW).reset()
         case 3 =>
-          comp.append("3rd").color(ChatColor.GREEN)
+          comp.append("3rd").color(ChatColor.GREEN).reset()
         case _ =>
-          comp.append(s"${i}th")
+          comp.append(s"${i + 1}th").reset()
       }
       comp.append(".").color(ChatColor.GRAY).bold(false)
         .append(s" ${v._1.getName} ${v._4}").color(ChatColor.YELLOW).append(s"(${v._2} / ${v._3})\n").color(ChatColor.GRAY).reset()
@@ -514,7 +514,7 @@ object WarsCoreAPI {
     comp.append(": Damage :==========>\n").color(ChatColor.YELLOW)
     dd.indices.foreach(i => {
       val v = dd(i)
-      i match {
+      i + 1 match {
         case 1 =>
           comp.append("1st").color(ChatColor.YELLOW).bold(true)
         case 2 =>
@@ -522,7 +522,7 @@ object WarsCoreAPI {
         case 3 =>
           comp.append("3rd").color(ChatColor.GREEN)
         case _ =>
-          comp.append(s"${i}th")
+          comp.append(s"${i + 1}th")
       }
       comp.append(".").color(ChatColor.GRAY).bold(false)
         .append(s" ${v._1.getName} ${v._2}\n").color(ChatColor.YELLOW).reset()
