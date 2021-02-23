@@ -91,7 +91,7 @@ class TeamDeathMatch4(override val id: String) extends Game {
   // スポーン, 赤チーム, 青チーム, 中心
   var locationData: (Location, Location, Location, Location) = _
 
-  val data = mutable.HashMap.empty[Player, TDMData]
+  var data: mutable.Map[Player, TDMData] = mutable.HashMap.empty[Player, TDMData]
 
   private val TIME = 600
 
@@ -174,7 +174,9 @@ class TeamDeathMatch4(override val id: String) extends Game {
     world.setPVP(true)
     // チーム決め + 移動
     members.map(_.player).foreach(setTeam)
-    Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, members.map(_.player).toArray, data))
+    val event = new GameAssignmentTeamEvent(this, members.map(_.player).toArray, data.map(f => (f._1, f._2.team)))
+    Bukkit.getPluginManager.callEvent(event)
+    data.foreach(f => {f._2.team = event.getData(f._1)})
 
     members.map(_.player).foreach(p => {
       addEntryTeam(p.getName, data(p).team)
@@ -334,7 +336,12 @@ class TeamDeathMatch4(override val id: String) extends Game {
       state match {
         case GameState.PLAY =>
           setTeam(wp.player)
-          Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, Array(wp.player), data))
+
+          //TODO このクソコード修正しておく
+          val event = new GameAssignmentTeamEvent(this, Array(wp.player), mutable.Map(wp.player -> data(wp.player).team))
+          Bukkit.getPluginManager.callEvent(event)
+          data.foreach(f => {f._2.team = event.getData(f._1)})
+
           addEntryTeam(wp.player.getName, d.team)
           new scheduler.BukkitRunnable {
             override def run(): Unit = {

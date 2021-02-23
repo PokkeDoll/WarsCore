@@ -173,7 +173,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     world.setPVP(true)
     // チーム決め + 移動
     members.map(_.player).foreach(setTeam)
-    Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, members.map(_.player).toArray, data))
+    // Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, members.map(_.player).toArray, data))
 
     members.map(_.player).foreach(p => {
       addEntryTeam(p.getName, data(p).team)
@@ -335,7 +335,7 @@ class TeamDeathMatch(override val id: String) extends Game {
       state match {
         case GameState.PLAY =>
           setTeam(wp.player)
-          Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, Array(wp.player), data))
+          // Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, Array(wp.player), data))
           addEntryTeam(wp.player.getName, d.team)
           new scheduler.BukkitRunnable {
             override def run(): Unit = {
