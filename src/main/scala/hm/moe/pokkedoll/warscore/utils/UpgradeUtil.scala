@@ -13,6 +13,7 @@ import org.bukkit.{ChatColor, Material, Sound}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.{Failure, Success, Try}
 
+@Deprecated
 object UpgradeUtil {
   private lazy val plugin = WarsCore.instance
 
