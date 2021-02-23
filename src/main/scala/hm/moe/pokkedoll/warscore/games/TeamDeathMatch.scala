@@ -99,17 +99,19 @@ class TeamDeathMatch(override val id: String) extends Game {
    * ゲームを初期化する
    */
   override def init(): Unit = {
-    if (state != GameState.INIT) state = GameState.INIT
+    state = GameState.INIT
 
     bossbar.removeAll()
     bossbar.setProgress(1d)
-    bossbar.setTitle(s"(TDM) ${mapInfo.mapName} §7|| §a-1")
+    bossbar.setTitle(s"${mapInfo.mapName} §7|| §a-1")
 
     redTeam.getEntries.forEach(f => redTeam.removeEntry(f))
     blueTeam.getEntries.forEach(f => blueTeam.removeEntry(f))
     redPoint = 0
     bluePoint = 0
 
+    sidebar.getScore(ChatColor.WHITE + "Room: " + ChatColor.GOLD + id).setScore(99)
+    sidebar.getScore("").setScore(98)
     sidebar.getScore(ChatColor.RED + "赤チーム キル数:").setScore(0)
     sidebar.getScore(ChatColor.BLUE + "青チーム キル数:").setScore(0)
 
@@ -168,12 +170,13 @@ class TeamDeathMatch(override val id: String) extends Game {
    * ゲームを開始する
    */
   override def play(): Unit = {
-    WarsCoreAPI.noticeStartGame(this)
     state = GameState.PLAY
     world.setPVP(true)
     // チーム決め + 移動
     members.map(_.player).foreach(setTeam)
-    // Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, members.map(_.player).toArray, data))
+    val event = new GameAssignmentTeamEvent(this, members.map(_.player).toArray, data.map(f => (f._1, f._2.team)))
+    Bukkit.getPluginManager.callEvent(event)
+    data.foreach(f => {event.getData.get(f._1).foreach(team => f._2.team = team)})
 
     members.map(_.player).foreach(p => {
       addEntryTeam(p.getName, data(p).team)
@@ -213,7 +216,7 @@ class TeamDeathMatch(override val id: String) extends Game {
           time -= 1
           val splitTime = WarsCoreAPI.splitToComponentTimes(time)
           bossbar.setProgress(time * 0.0016)
-          bossbar.setTitle(s"(TDM) ${mapInfo.mapName} §7|| §a${splitTime._2} 分 ${splitTime._3} 秒")
+          bossbar.setTitle(s"${mapInfo.mapName} §7|| §a${splitTime._2} 分 ${splitTime._3} 秒")
         }
       }
     }.runTaskTimer(WarsCore.instance, 0, 20L)
@@ -335,7 +338,11 @@ class TeamDeathMatch(override val id: String) extends Game {
       state match {
         case GameState.PLAY =>
           setTeam(wp.player)
-          // Bukkit.getPluginManager.callEvent(new GameAssignmentTeamEvent(this, Array(wp.player), data))
+
+          val event = new GameAssignmentTeamEvent(this, Array(wp.player), mutable.Map(wp.player -> data(wp.player).team))
+          Bukkit.getPluginManager.callEvent(event)
+          data.foreach(f => {f._2.team = event.getData(f._1)})
+
           addEntryTeam(wp.player.getName, d.team)
           new scheduler.BukkitRunnable {
             override def run(): Unit = {
@@ -463,6 +470,11 @@ class TeamDeathMatch(override val id: String) extends Game {
       }
       // とにかく死んだのでリスポン処理
       spawn(victim, coolTime = true)
+      val rp = redTeam.getSize * 10
+      val bp = blueTeam.getSize * 10
+      if((rp < redPoint && rp/2 > bluePoint) || (bp < bluePoint && bp/2 > redPoint)) {
+        disable = true
+      }
     }
   }
 
