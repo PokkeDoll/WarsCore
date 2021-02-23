@@ -24,7 +24,11 @@ object WarsCoreAPI {
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
+  // プレイヤー個人が持つ唯一のスコアボード
   lazy val scoreboard: Scoreboard = scoreboardManager.getNewScoreboard
+
+  // スコアボードのキャッシュ
+  val scoreboards = mutable.HashMap.empty[Player, Scoreboard]
 
   lazy val random = new Random()
 
@@ -41,10 +45,9 @@ object WarsCoreAPI {
   /** プレイヤーのキャッシュ */
   val wplayers = new mutable.HashMap[Player, WPlayer](50, 1.0)
 
-  /**
-   * スコアボードたち
-   */
-  val scoreboards = mutable.HashMap.empty[Player, Scoreboard]
+  /** カラーコード */
+  val colorCode: String => String = (string: String) => ChatColor.translateAlternateColorCodes('&', string)
+
 
   /**
    * チームの設定をまとめたもの
@@ -132,12 +135,12 @@ object WarsCoreAPI {
     games.put(s"dom-1", new Domination(s"dom-1"))
     WorldLoader.asyncUnloadWorld(s"dom-1")
 
-    (1 until 2) foreach(i => {
+    (1 until 2) foreach (i => {
       games.put(s"tactics-$i", new Tactics(s"tactics-$i"))
       WorldLoader.asyncUnloadWorld(s"tactics-$i")
     })
 
-    (1 until 4) foreach(i => {
+    (1 until 4) foreach (i => {
       games.put(s"tdm4-$i", new TeamDeathMatch4(s"tdm4-$i"))
       WorldLoader.asyncUnloadWorld(s"tdm4-$i")
     })
@@ -159,91 +162,74 @@ object WarsCoreAPI {
   }
 
   /**
-   * スコアボードを更新する
-   * スコアボードはscoreboardsにすでに存在するものとする
+   * スコアボード(主にネームタグ)を更新する
    *
    * @param player Player
    */
-  @Deprecated
-  def updateScoreboard(player: Player, scoreboard: Scoreboard): Unit = {
-    new BukkitRunnable {
-      override def run(): Unit = {
-        val uuid = player.getUniqueId.toString
-        val wp = WarsCoreAPI.wplayers(player)
-        // ランクを取得する
-        val rankData = (wp.rank, wp.exp)
-        val tagData = TagUtil.cache.getOrElse(wp.tag, "-")
+  def updateNameTag(player: Player, scoreboard: Scoreboard): Unit = {
+    wplayers.get(player).foreach(wp => {
+      val name = player.getName
+      val team = Option(scoreboard.getTeam(name)).getOrElse( {
+        val team = scoreboard.registerNewTeam(name)
+        team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+        team.addEntry(name)
+        team
+      })
+      val prefix = colorCode(s"&7[&a${wp.rank}&7]&r ")
+      val suffix = colorCode(" &eここにR")
+      team.setPrefix(prefix)
+      team.setSuffix(suffix)
+      player.setScoreboard(scoreboard)
+      // スコアボードの更新
+      scoreboards.filterNot(_._1 == player).foreach(other => {
+        WarsCore.instance.getLogger.info(s"WarsCore.updateNameTag(${name})")
 
-        wp.rank = rankData._1
-        // RankManager.updateSidebar(scoreboard, data = rankData)
+        /* 相手 -> 自分の更新 */
+        val otherTeam = Option(other._2.getTeam(name)).getOrElse(other._2.registerNewTeam(name))
+        otherTeam.setPrefix(prefix)
+        otherTeam.setSuffix(suffix)
+        otherTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+        otherTeam.addEntry(name)
 
-        // タグ
-        /*
-        val tag = Option(scoreboard.getObjective("tag")) match {
-          case Some(tag) =>
-            //println("tag is some!")
-            tag.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"$tagData &f0"))
-            tag
-          case None =>
-            //println("tag is none!")
-            val tag = scoreboard.registerNewObjective("tag", "dummy")
-            tag.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"$tagData &f0"))
-            tag.getScore(player.getName).setScore(0)
-            tag.setDisplaySlot(DisplaySlot.BELOW_NAME)
-            tag
-        }
-         */
-
-        // ランク
-        Option(scoreboard.getTeam(player.getName)) match {
-          case Some(rank) =>
-            rank.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r "))
-            player.setPlayerListName(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r ${player.getName}"))
-          case None =>
-            val rank = scoreboard.registerNewTeam(player.getName)
-            rank.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r "))
-            rank.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-            rank.addEntry(player.getName)
-        }
-
-        player.setScoreboard(scoreboard)
-
-        // スコアボードをリフレッシュする
-        scoreboards.filterNot(_._1 == player).foreach(f => {
-          {
-            WarsCore.instance.getLogger.info(s"WarsCoreAPI.addScoreboard(${player.getName})")
-            /* タグの問題 */
-            /*
-            val oTag = f._2.getObjective("tag")
-            if (oTag != null)
-              oTag.getScore(player.getName).setScore(0)
-            else
-              WarsCore.instance.getLogger.info(s"oTag is null! ${f._2}")
-             */
-            /* 他プレイヤーに対して */
-            //val oTeam = f._2.registerNewTeam(player.getName)
-            val oTeam = Option(f._2.getTeam(player.getName)).getOrElse(f._2.registerNewTeam(player.getName))
-            oTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r "))
-            oTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-            oTeam.addEntry(player.getName)
-
-            /* 自分に対して */
-            /*
-            tag.getScore(f._1.getName).setScore(0)
-             */
-
-            val mTeam = Option(scoreboard.getTeam(f._1.getName)).getOrElse(scoreboard.registerNewTeam(f._1.getName))
-            mTeam.setPrefix(ChatColor.translateAlternateColorCodes('&', s"&7[&a${rankData._1}&7]&r "))
-            mTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
-            mTeam.addEntry(f._1.getName)
-          }
-        })
-      }
-    }.runTask(WarsCore.instance)
+        /* 自分 => 相手の更新 */
+        val myTeam = Option(scoreboard.getTeam(other._1.getName)).getOrElse(scoreboard.registerNewTeam(other._1.getName))
+        myTeam.setPrefix(prefix)
+        myTeam.setSuffix(suffix)
+        myTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+        myTeam.addEntry(other._1.getName)
+      })
+    })
   }
 
+  /*
+  def updateSidebar(player: Player, scoreboard: Scoreboard): Unit = {
+    wplayers.get(player).foreach(wp => {
+      if(scoreboard.getObjective(DisplaySlot.SIDEBAR) != null) scoreboard.getObjective(DisplaySlot.SIDEBAR).unregister()
+      val obj = scoreboard.registerNewObjective("sidebar", "dummy")
+      obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWelcome to &dWars &eBuild 1.8.x"))
+      obj.setDisplaySlot(DisplaySlot.SIDEBAR)
+
+      val scores = List(
+        obj.getScore(colorCode(s"&9Rank: &b${data._1}")),
+        obj.getScore(colorCode(s"&9EXP: &a${data._2} &7/ &a${getNextExp(data._1)}")),
+        obj.getScore(" "),
+        obj.getScore(colorCode("&6/game&f: 試合に参加")),
+        obj.getScore(colorCode("&6/spawn&f: スポーン地点に戻る")),
+        obj.getScore(colorCode("&6/sf&f: ステータスを設定")),
+        obj.getScore(colorCode("&6/pp&f: コマンド一覧を表示")),
+        obj.getScore(colorCode("&6&m/vote&f: 投票ページを開く"))
+      )
+      var sc = scores.length
+      scores.foreach(s => {
+        s.setScore(sc)
+        sc -= 1
+      })
+    })
+  }
+  */
+
   def addScoreBoard(player: Player): Unit = {
-    updateScoreboard(player, scoreboards.getOrElseUpdate(player, scoreboardManager.getNewScoreboard))
+    updateNameTag(player, scoreboards.getOrElseUpdate(player, scoreboardManager.getNewScoreboard))
   }
 
   def removeScoreboard(player: Player): Unit = {
@@ -486,11 +472,11 @@ object WarsCoreAPI {
    */
   def isContinue(player: Player): Boolean = {
     val meta = player.getMetadata("wc-continue")
-    if(meta.isEmpty) true else meta.get(0).asBoolean()
+    if (meta.isEmpty) true else meta.get(0).asBoolean()
   }
 
   def getGameMVP[T <: GamePlayerData](data: mutable.Map[Player, T]): Array[BaseComponent] = {
-    val kd = data.filterNot(f => f._2.kill == 0 && f._2.death == 0).map(f => (f._1, f._2.kill, f._2.death, f._2.kill/f._2.death.toDouble)).toSeq.sortBy(f => f._4).reverse.take(5)
+    val kd = data.filterNot(f => f._2.kill == 0 && f._2.death == 0).map(f => (f._1, f._2.kill, f._2.death, f._2.kill / f._2.death.toDouble)).toSeq.sortBy(f => f._4).reverse.take(5)
     val dd = data.map(f => (f._1, f._2.damage)).toSeq.sortBy(f => f._2).reverse.take(5)
 
     val comp = new ComponentBuilder()
@@ -529,7 +515,6 @@ object WarsCoreAPI {
     })
     comp.create()
   }
-
 
 
   //TODO val mutableをvar immutableに変更する。参照とオブジェクトを間違えてはいけない！
