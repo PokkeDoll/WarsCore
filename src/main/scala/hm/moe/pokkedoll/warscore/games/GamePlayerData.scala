@@ -15,8 +15,4 @@ trait GamePlayerData {
   var damagedPlayer = mutable.Set.empty[Player]
 
   var team: GameTeam = GameTeam.DEFAULT
-
-  def calcExp(): Int = {
-    kill * 5 + death + assist + (if (win) 100 else 0)
-  }
 }
