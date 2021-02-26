@@ -176,7 +176,7 @@ object WarsCoreAPI {
         team
       })
       val prefix = colorCode(s"&7[&a${wp.rank}&7]&r ")
-      val suffix = colorCode(" &eここにR")
+      val suffix = colorCode(s" ${wp.tag}")
       team.setPrefix(prefix)
       team.setSuffix(suffix)
       player.setScoreboard(scoreboard)
@@ -201,14 +201,20 @@ object WarsCoreAPI {
     })
   }
 
-  /*
+
   def updateSidebar(player: Player, scoreboard: Scoreboard): Unit = {
     wplayers.get(player).foreach(wp => {
       if(scoreboard.getObjective(DisplaySlot.SIDEBAR) != null) scoreboard.getObjective(DisplaySlot.SIDEBAR).unregister()
       val obj = scoreboard.registerNewObjective("sidebar", "dummy")
-      obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWelcome to &dWars &eBuild 1.8.x"))
+      obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWars &e1.11.9-RC5"))
       obj.setDisplaySlot(DisplaySlot.SIDEBAR)
-
+      val scores = List(
+        obj.getScore(colorCode(s"&e参加中のゲーム&f: &7-")),
+        obj.getScore(colorCode("&dここにｒ")),
+        obj.getScore(colorCode("&a設定など")),
+        obj.getScore(colorCode("&aコマンド早見表など"))
+      )
+/*
       val scores = List(
         obj.getScore(colorCode(s"&9Rank: &b${data._1}")),
         obj.getScore(colorCode(s"&9EXP: &a${data._2} &7/ &a${getNextExp(data._1)}")),
@@ -219,6 +225,7 @@ object WarsCoreAPI {
         obj.getScore(colorCode("&6/pp&f: コマンド一覧を表示")),
         obj.getScore(colorCode("&6&m/vote&f: 投票ページを開く"))
       )
+ */
       var sc = scores.length
       scores.foreach(s => {
         s.setScore(sc)
@@ -226,10 +233,12 @@ object WarsCoreAPI {
       })
     })
   }
-  */
+
 
   def addScoreBoard(player: Player): Unit = {
-    updateNameTag(player, scoreboards.getOrElseUpdate(player, scoreboardManager.getNewScoreboard))
+    val s = scoreboards.getOrElseUpdate(player, scoreboardManager.getNewScoreboard)
+    updateNameTag(player, s)
+    updateSidebar(player, s)
   }
 
   def removeScoreboard(player: Player): Unit = {
@@ -516,6 +525,22 @@ object WarsCoreAPI {
     comp.create()
   }
 
+  def getWeaponTypeFromLore(item: ItemStack): String = {
+    if(item.hasItemMeta && item.getItemMeta.hasLore) {
+      item.getItemMeta.getLore.forEach(lore => {
+        if(lore.contains(colorCode("&e&lPrimary"))) {
+          return "primary"
+        } else if (lore.contains(colorCode("&e&lSecondary"))) {
+          return "secondary"
+        } else if (lore.contains(colorCode("&e&lMelee"))) {
+          return "melee"
+        } else if (lore.contains(colorCode("&e&lItem")) || lore.contains(colorCode("&e&lGrenade"))) {
+          return "grenade"
+        }
+      })
+    }
+    ""
+  }
 
   //TODO val mutableをvar immutableに変更する。参照とオブジェクトを間違えてはいけない！
 

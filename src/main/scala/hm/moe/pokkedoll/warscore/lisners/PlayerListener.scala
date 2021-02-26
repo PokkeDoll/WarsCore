@@ -77,12 +77,23 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         case Some(_) =>
           e.setCancelled(true)
           if (player.isSneaking) {
+            val pickUpItem = e.getItem.getItemStack
             val item = player.getInventory.getItemInMainHand
-            if (WarsCore.instance.getCSUtility.getWeaponTitle(e.getItem.getItemStack) != null) {
-              player.getInventory.setItemInMainHand(e.getItem.getItemStack)
-              e.getItem.remove()
-              player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
-              WarsCoreAPI.info(player, "武器を拾った！")
+            if (WarsCore.instance.getCSUtility.getWeaponTitle(pickUpItem) != null) {
+              val weaponType = WarsCoreAPI.getWeaponTypeFromLore(pickUpItem)
+              val contents = player.getInventory.getContents
+              contents.indices.filterNot(i => contents(i) == null || contents(i).getType == Material.AIR).find(i => WarsCoreAPI.getWeaponTypeFromLore(contents(i)) == weaponType) match {
+                case Some(i) =>
+                  player.getInventory.setItem(i, pickUpItem)
+                  e.getItem.remove()
+                  player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
+                  player.sendActionBar(ChatColor.BLUE + "武器を持ち替えた！")
+                case None =>
+                  player.getInventory.addItem(pickUpItem)
+                  e.getItem.remove()
+                  player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
+                  player.sendActionBar(ChatColor.BLUE + "武器を拾った！")
+              }
             } else {
               player.sendActionBar(ChatColor.BLUE + "手に武器を持っていません！")
             }
