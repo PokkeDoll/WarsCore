@@ -56,7 +56,6 @@ class WarsCore extends JavaPlugin {
     getCommand("warscore").setExecutor(new WarsCoreCommand)
     getCommand("item").setExecutor(new ItemCommand)
     getCommand("upgrade").setExecutor(new UpgradeCommand)
-    // getCommand("merchant").setExecutor(new MerchantCommand)
     getCommand("tag").setExecutor(new TagCommand)
     getCommand("spawn").setExecutor(new SpawnCommand)
     getCommand("wp").setExecutor(new WeaponCommand)
