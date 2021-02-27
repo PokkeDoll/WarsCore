@@ -36,6 +36,8 @@ class WPlayer(val player: Player) {
 
   var tag = ""
 
+  var isShowTag = false
+
   def sendMessage(string: String): Unit = {
     player.sendMessage(ChatColor.translateAlternateColorCodes('&', string))
   }
