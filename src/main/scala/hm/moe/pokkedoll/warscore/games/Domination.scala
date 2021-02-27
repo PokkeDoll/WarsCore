@@ -341,7 +341,6 @@ class Domination(override val id: String) extends Game {
           WarsCoreAPI.restoreLobbyInventory(wp.player)
           // スコアボードのリセット
           wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
-          RankManager.giveExp(wp, d.calcExp())
         case _ =>
       }
     })

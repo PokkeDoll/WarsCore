@@ -9,6 +9,7 @@ import org.bukkit._
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{Arrow, Entity, Player}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
+import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
@@ -275,11 +276,12 @@ class TeamDeathMatch(override val id: String) extends Game {
 
           // ゲーム情報のリセット
           wp.game = None
+          // チェストプレートをクリア
+          wp.player.getInventory.setChestplate(new ItemStack(Material.AIR))
           // インベントリのリストア
           WarsCoreAPI.restoreLobbyInventory(wp.player)
           // スコアボードのリセット
           wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
-          RankManager.giveExp(wp, d.calcExp())
         case _ =>
       }
     })
@@ -341,7 +343,8 @@ class TeamDeathMatch(override val id: String) extends Game {
 
           val event = new GameAssignmentTeamEvent(this, Array(wp.player), mutable.Map(wp.player -> data(wp.player).team))
           Bukkit.getPluginManager.callEvent(event)
-          data.foreach(f => {f._2.team = event.getData(f._1)})
+          data.foreach(f => {event.getData.get(f._1).foreach(team => f._2.team = team)})
+          // data.foreach(f => {event.getData.get(f._1).foreach(team => f._2.team = team)})
 
           addEntryTeam(wp.player.getName, d.team)
           new scheduler.BukkitRunnable {
@@ -537,7 +540,9 @@ class TeamDeathMatch(override val id: String) extends Game {
           WarsCoreAPI.freeze(player)
           new BukkitRunnable {
             override def run(): Unit = {
-              if (state == GameState.PLAY || state == GameState.PLAY2) {
+              if (!player.isOnline || WarsCoreAPI.getWPlayer(player).game.isEmpty) {
+                cancel()
+              } else if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
                   WarsCoreAPI.unfreeze(player)
                   WarsCoreAPI.setActiveWeapons(player)
@@ -558,6 +563,13 @@ class TeamDeathMatch(override val id: String) extends Game {
                 WarsCoreAPI.unfreeze(player)
                 WarsCoreAPI.setActiveWeapons(player)
                 player.setGameMode(GameMode.SURVIVAL)
+                data.get(player).map(f => f.team).getOrElse(GameTeam.DEFAULT) match {
+                  case GameTeam.RED =>
+                    player.getInventory.setChestplate(WarsCoreAPI.RED_CHESTPLATE)
+                  case GameTeam.BLUE =>
+                    player.getInventory.setChestplate(WarsCoreAPI.BLUE_CHESTPLATE)
+                  case _ =>
+                }
                 cancel()
               }
             }
