@@ -108,7 +108,6 @@ trait Game {
       }
 
       override def failure(error: Exception): Unit = {
-        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
         state = GameState.ERROR
       }
     })
