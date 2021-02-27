@@ -16,6 +16,36 @@ object RankManager {
 
   private lazy val chatColor = ChatColor.translateAlternateColorCodes('&', _)
 
+
+
+  val rankMap = Map(
+    0 -> "&fぽっけ市民",
+    1 -> "&f二等兵",
+    2 -> "&f一等兵",
+    3 -> "&f上等兵",
+    4 -> "&f特技兵",
+    5 -> "&f兵長",
+    6 -> "&f伍長",
+    7 -> "&f軍曹",
+    8 -> "&f曹長",
+    9 -> "&f准尉",
+    10 -> "&f少尉",
+    11 -> "&f中尉",
+    12 -> "&f大尉",
+    13 -> "&f少佐",
+    14 -> "&f中佐",
+    15 -> "&f大佐",
+    16 -> "&f准将",
+    17 -> "&f少将",
+    18 -> "&f中将",
+    19 -> "&f大将",
+    20 -> "&f元帥",
+    21 -> "&f大元帥",
+    22 -> "?"
+  )
+
+  val getClassName: Int => String = (rank: Int) => rankMap.getOrElse(rank % 3, "-")
+
   /**
    * 次に必要な経験値を返す
    *

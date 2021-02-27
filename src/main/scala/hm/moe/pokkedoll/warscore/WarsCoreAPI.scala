@@ -172,14 +172,14 @@ object WarsCoreAPI {
   def updateNameTag(player: Player, scoreboard: Scoreboard): Unit = {
     wplayers.get(player).foreach(wp => {
       val name = player.getName
-      val team = Option(scoreboard.getTeam(name)).getOrElse( {
+      val team = Option(scoreboard.getTeam(name)).getOrElse({
         val team = scoreboard.registerNewTeam(name)
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
         team.addEntry(name)
         team
       })
       val prefix = colorCode(s"&7[&a${wp.rank}&7]&r ")
-      val suffix = colorCode(s" ${wp.tag}")
+      val suffix = colorCode(s" &7[${RankManager.getClassName(wp.rank)}&7]")
       team.setPrefix(prefix)
       team.setSuffix(suffix)
       player.setScoreboard(scoreboard)
@@ -205,27 +205,27 @@ object WarsCoreAPI {
   }
 
 
-
   def updateSidebar(player: Player, scoreboard: Scoreboard): Unit = {
     wplayers.get(player).foreach(wp => {
-      if(scoreboard.getObjective(DisplaySlot.SIDEBAR) != null) scoreboard.getObjective(DisplaySlot.SIDEBAR).unregister()
+      if (scoreboard.getObjective(DisplaySlot.SIDEBAR) != null) scoreboard.getObjective(DisplaySlot.SIDEBAR).unregister()
       val obj = scoreboard.registerNewObjective("sidebar", "dummy")
       obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&aWars &ev$CYCLE_VERSION"))
       obj.setDisplaySlot(DisplaySlot.SIDEBAR)
 
-      setSidebarContents(obj, List(s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する", "&e/game &fゲームをする").map(colorCode))
-/*
-      val scores = List(
-        obj.getScore(colorCode(s"&9Rank: &b${data._1}")),
-        obj.getScore(colorCode(s"&9EXP: &a${data._2} &7/ &a${getNextExp(data._1)}")),
-        obj.getScore(" "),
-        obj.getScore(colorCode("&6/game&f: 試合に参加")),
-        obj.getScore(colorCode("&6/spawn&f: スポーン地点に戻る")),
-        obj.getScore(colorCode("&6/sf&f: ステータスを設定")),
-        obj.getScore(colorCode("&6/pp&f: コマンド一覧を表示")),
-        obj.getScore(colorCode("&6&m/vote&f: 投票ページを開く"))
-      )
- */
+      val rank = wp.rank
+      setSidebarContents(obj, List(s"&9ランク: &a$rank &|| &a${RankManager.getClassName(rank)}", s"&9経験値: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}", " ", s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する", "&e/game &fゲームをする").map(colorCode))
+      /*
+            val scores = List(
+              obj.getScore(colorCode(s"&9Rank: &b${data._1}")),
+              obj.getScore(colorCode(s"&9EXP: &a${data._2} &7/ &a${getNextExp(data._1)}")),
+              obj.getScore(" "),
+              obj.getScore(colorCode("&6/game&f: 試合に参加")),
+              obj.getScore(colorCode("&6/spawn&f: スポーン地点に戻る")),
+              obj.getScore(colorCode("&6/sf&f: ステータスを設定")),
+              obj.getScore(colorCode("&6/pp&f: コマンド一覧を表示")),
+              obj.getScore(colorCode("&6&m/vote&f: 投票ページを開く"))
+            )
+       */
     })
   }
 
@@ -500,7 +500,7 @@ object WarsCoreAPI {
   }
 
   def getGameMVP[T <: GamePlayerData](data: mutable.Map[Player, T]): Array[BaseComponent] = {
-    val kd = data.filterNot(f => f._2.kill == 0 && f._2.death == 0).map(f => (f._1, f._2.kill, f._2.death, if(f._2.death == 0) f._2.kill.toDouble else f._2.kill / f._2.death.toDouble)).toSeq.sortBy(f => f._4).reverse.take(5)
+    val kd = data.filterNot(f => f._2.kill == 0 && f._2.death == 0).map(f => (f._1, f._2.kill, f._2.death, if (f._2.death == 0) f._2.kill.toDouble else f._2.kill / f._2.death.toDouble)).toSeq.sortBy(f => f._4).reverse.take(5)
     val dd = data.map(f => (f._1, f._2.damage)).toSeq.sortBy(f => f._2).reverse.take(5)
 
     val comp = new ComponentBuilder()
@@ -543,9 +543,9 @@ object WarsCoreAPI {
   }
 
   def getWeaponTypeFromLore(item: ItemStack): String = {
-    if(item.hasItemMeta && item.getItemMeta.hasLore) {
+    if (item.hasItemMeta && item.getItemMeta.hasLore) {
       item.getItemMeta.getLore.forEach(lore => {
-        if(lore.contains(colorCode("&e&lPrimary"))) {
+        if (lore.contains(colorCode("&e&lPrimary"))) {
           return "primary"
         } else if (lore.contains(colorCode("&e&lSecondary"))) {
           return "secondary"
