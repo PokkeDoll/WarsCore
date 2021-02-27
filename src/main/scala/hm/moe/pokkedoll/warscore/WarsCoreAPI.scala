@@ -10,8 +10,7 @@ import org.bukkit.entity.{EntityType, Firework, Player}
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
-import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.scoreboard.{DisplaySlot, Objective, Scoreboard, ScoreboardManager, Team}
+import org.bukkit.scoreboard._
 
 import scala.collection.mutable
 import scala.util.Random
@@ -185,7 +184,7 @@ object WarsCoreAPI {
       player.setScoreboard(scoreboard)
       // スコアボードの更新
       scoreboards.filterNot(_._1 == player).foreach(other => {
-        WarsCore.instance.getLogger.info(s"WarsCore.updateNameTag(${name})")
+        WarsCore.instance.getLogger.info(s"WarsCore.updateNameTag($name)")
 
         /* 相手 -> 自分の更新 */
         val otherTeam = Option(other._2.getTeam(name)).getOrElse(other._2.registerNewTeam(name))
@@ -208,12 +207,11 @@ object WarsCoreAPI {
   def updateSidebar(player: Player, scoreboard: Scoreboard): Unit = {
     wplayers.get(player).foreach(wp => {
       if (scoreboard.getObjective(DisplaySlot.SIDEBAR) != null) scoreboard.getObjective(DisplaySlot.SIDEBAR).unregister()
-      val obj = scoreboard.registerNewObjective("sidebar", "dummy")
-      obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&aWars &ev$CYCLE_VERSION"))
+      val obj = scoreboard.registerNewObjective("sidebar", "dummy", colorCode(s"&aWars &ev$CYCLE_VERSION"))
       obj.setDisplaySlot(DisplaySlot.SIDEBAR)
 
       val rank = wp.rank
-      setSidebarContents(obj, List(s"&9ランク: &a$rank &|| &a${RankManager.getClassName(rank)}", s"&9経験値: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}", " ", s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する", "&e/game &fゲームをする").map(colorCode))
+      setSidebarContents(obj, List(s"&9Rank&7/&9Class: &a$rank &7/ &r${RankManager.getClassName(rank)}", s"&9EXP: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}", " ", s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する", "&e/game &fゲームをする").map(colorCode))
       /*
             val scores = List(
               obj.getScore(colorCode(s"&9Rank: &b${data._1}")),
@@ -449,7 +447,7 @@ object WarsCoreAPI {
     i
   }
 
-  val BLUE_CHESTPLATE = {
+  val BLUE_CHESTPLATE: ItemStack = {
     val armor = new ItemStack(Material.LEATHER_CHESTPLATE)
     val meta = armor.getItemMeta.asInstanceOf[LeatherArmorMeta]
     meta.setColor(Color.BLUE)
@@ -457,7 +455,7 @@ object WarsCoreAPI {
     armor
   }
 
-  val RED_CHESTPLATE = {
+  val RED_CHESTPLATE: ItemStack = {
     val armor = new ItemStack(Material.LEATHER_CHESTPLATE)
     val meta = armor.getItemMeta.asInstanceOf[LeatherArmorMeta]
     meta.setColor(Color.RED)
