@@ -37,7 +37,7 @@ class WarsCoreCommand extends CommandExecutor {
                   case "item" =>
                     ItemUtil.reloadItem()
                   case "tag" =>
-                    TagUtil.reloadConfig()
+                    TagUtil.init()
                   case "default" =>
                     WarsCore.instance.reloadConfig()
                     // WarsCoreAPI.reloadMapInfo(WarsCore.instance.getConfig.getConfigurationSection("mapinfo"))
