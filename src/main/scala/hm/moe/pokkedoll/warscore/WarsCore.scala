@@ -11,6 +11,7 @@ import hm.moe.pokkedoll.warscore.utils.{GameConfig, ItemUtil, ShopUtil, TagUtil,
 import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitRunnable
 
 import scala.jdk.CollectionConverters._
 /**
@@ -70,7 +71,7 @@ class WarsCore extends JavaPlugin {
     // MerchantUtil.reload()
     ShopUtil.reload()
     UpgradeUtil.reloadConfig()
-    TagUtil.reloadConfig()
+    TagUtil.init()
     GameConfig.reload()
 
     WarsCoreAPI.DEFAULT_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.default", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
@@ -100,6 +101,12 @@ class WarsCore extends JavaPlugin {
       getServer.sendPluginMessage(this, MODERN_TORUS_CHANNEL, out2.toByteArray)
     }
 
+    new BukkitRunnable {
+      override def run(): Unit = {
+        Bukkit.getOnlinePlayers.forEach(_.setArrowsInBody(0))
+      }
+    }.runTaskTimer(this, 0L, 5L)
+
     Registry.init()
   }
 
@@ -118,6 +125,10 @@ class WarsCore extends JavaPlugin {
    * @return
    */
   def getDatabase: Database = database
+
+  def info(string: String): Unit = {
+    getLogger.info(string)
+  }
 }
 
 object WarsCore {
