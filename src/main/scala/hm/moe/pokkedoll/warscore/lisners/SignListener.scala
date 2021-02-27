@@ -1,10 +1,9 @@
 package hm.moe.pokkedoll.warscore.lisners
 
 import com.google.common.io.ByteStreams
-import hm.moe.pokkedoll.warscore.ui.WeaponUI
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.ChatColor
-import org.bukkit.block.{EnderChest, Sign}
+import org.bukkit.block.Sign
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.{EventHandler, Listener}

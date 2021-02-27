@@ -2,14 +2,8 @@ package hm.moe.pokkedoll.warscore.commands
 
 import hm.moe.pokkedoll.warscore.WarsCore
 import hm.moe.pokkedoll.warscore.ui.TagUI
-import hm.moe.pokkedoll.warscore.utils.TagUtil
-import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.{ClickEvent, ComponentBuilder}
-import org.bukkit.Material
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
-import org.bukkit.scheduler.BukkitRunnable
 
 /**
  * タグを設定するコマンド

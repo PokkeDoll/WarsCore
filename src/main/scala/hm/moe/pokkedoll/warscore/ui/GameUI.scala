@@ -1,11 +1,11 @@
 package hm.moe.pokkedoll.warscore.ui
 
-import hm.moe.pokkedoll.warscore.WarsCoreAPI.{games, getWPlayer}
+import hm.moe.pokkedoll.warscore.WarsCoreAPI.games
 import hm.moe.pokkedoll.warscore.games.{Game, GameState}
 import net.md_5.bungee.api.ChatColor
+import org.bukkit.entity.HumanEntity
+import org.bukkit.inventory.ItemStack
 import org.bukkit.{Bukkit, Material}
-import org.bukkit.entity.{HumanEntity, Player}
-import org.bukkit.inventory.{ItemFlag, ItemStack}
 
 object GameUI {
 

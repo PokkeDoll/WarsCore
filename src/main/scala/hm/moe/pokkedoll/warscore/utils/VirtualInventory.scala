@@ -6,7 +6,6 @@ import org.bukkit.inventory.ItemStack
 /**
  * PlayerInventoryが普通に使えないことに怒ったインベントリ
  */
-@Deprecated
 class VirtualInventory {
   // 多分 36
   var storage: Array[ItemStack] = _
@@ -20,9 +19,9 @@ object VirtualInventory {
   def to(inv: VirtualInventory): String = {
     if(inv == null) " " else {
       val yaml = new YamlConfiguration
-      inv.storage.indices.foreach(i => yaml.set(s"storage.${i}", inv.storage(i)))
-      inv.armor.indices.foreach(i => yaml.set(s"armor.${i}", inv.armor(i)))
-      inv.extra.indices.foreach(i => yaml.set(s"extra.${i}", inv.extra(i)))
+      inv.storage.indices.foreach(i => yaml.set(s"storage.$i", inv.storage(i)))
+      inv.armor.indices.foreach(i => yaml.set(s"armor.$i", inv.armor(i)))
+      inv.extra.indices.foreach(i => yaml.set(s"extra.$i", inv.extra(i)))
       yaml.saveToString()
     }
   }

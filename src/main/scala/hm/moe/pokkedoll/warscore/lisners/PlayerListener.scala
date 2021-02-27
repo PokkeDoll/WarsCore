@@ -1,9 +1,7 @@
 package hm.moe.pokkedoll.warscore.lisners
 
-import java.util
-
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.info
-import hm.moe.pokkedoll.warscore.ui.{EnderChestUI, GameUI, ShopUI, SndCheckerUI, TagUI, WeaponUI}
+import hm.moe.pokkedoll.warscore.ui._
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
@@ -15,7 +13,7 @@ import org.bukkit.event.player._
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.persistence.PersistentDataType
-import org.bukkit.{Bukkit, ChatColor, GameMode, Material, Sound}
+import org.bukkit._
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
 
@@ -113,13 +111,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
 
     val title = e.getView.getTitle
 
-    if (inv.getType == InventoryType.ANVIL && e.getSlot == 2 && e.getClick == ClickType.LEFT) {
-      if (!UpgradeUtil.onUpgrade(inv, p)) {
-        e.setCancelled(true)
-      }
-    }
     // クラフトはできない
-    else if (inv.getType == InventoryType.PLAYER && e.getSlotType == SlotType.CRAFTING) {
+    if (inv.getType == InventoryType.PLAYER && e.getSlotType == SlotType.CRAFTING) {
       e.setCancelled(true)
       // ゲームインベントリ
     } else if (title == GameUI.GAME_INVENTORY_TITLE) {

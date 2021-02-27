@@ -392,7 +392,7 @@ object WeaponUI {
           case 1 =>
             openMainUI(player)
           case 6 if sortType != 0 =>
-            openSettingUI(player, 1, weaponType, 0)
+            openSettingUI(player, 1, weaponType)
             player.setMetadata("sortType", new FixedMetadataValue(WarsCore.instance, 0))
           case 7 if sortType != 1 =>
             openSettingUI(player, 1, weaponType, 1)

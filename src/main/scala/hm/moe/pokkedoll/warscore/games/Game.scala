@@ -70,7 +70,7 @@ trait Game {
    */
   var members: Vector[WPlayer] = Vector.empty[WPlayer]
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   /**
    * Javaにやさしいメンバー取得メソッド
@@ -144,7 +144,7 @@ trait Game {
   /**
    * Playerバージョン
    *
-   * @param p
+   * @param p プレイヤー
    */
   def join(p: Player): Boolean = join(WarsCoreAPI.getWPlayer(p))
 

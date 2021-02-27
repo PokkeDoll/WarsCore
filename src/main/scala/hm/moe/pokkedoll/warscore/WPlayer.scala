@@ -1,13 +1,9 @@
 package hm.moe.pokkedoll.warscore
 
-import java.awt.ItemSelectable
-
 import hm.moe.pokkedoll.warscore.games.Game
-import hm.moe.pokkedoll.warscore.utils.VirtualInventory
 import net.md_5.bungee.api.chat.BaseComponent
 import org.bukkit.ChatColor
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
 
 /**
  * WarsCoreのキャッシュを保存するクラス

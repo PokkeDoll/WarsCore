@@ -2,14 +2,12 @@ package hm.moe.pokkedoll.warscore
 
 import com.google.common.io.ByteStreams
 import com.shampaggon.crackshot.CSUtility
-import hm.moe.pokkedoll.cspp.CrackShotPP
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands._
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
-import hm.moe.pokkedoll.warscore.utils.{GameConfig, ItemUtil, ShopUtil, TagUtil, UpgradeUtil}
+import hm.moe.pokkedoll.warscore.utils._
 import org.bukkit.Bukkit
-import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitRunnable
 
@@ -55,7 +53,6 @@ class WarsCore extends JavaPlugin {
     getCommand("invite").setExecutor(new InviteCommand)
     getCommand("warscore").setExecutor(new WarsCoreCommand)
     getCommand("item").setExecutor(new ItemCommand)
-    getCommand("upgrade").setExecutor(new UpgradeCommand)
     getCommand("tag").setExecutor(new TagCommand)
     getCommand("spawn").setExecutor(new SpawnCommand)
     getCommand("wp").setExecutor(new WeaponCommand)
@@ -69,7 +66,6 @@ class WarsCore extends JavaPlugin {
     ItemUtil.reloadItem()
     // MerchantUtil.reload()
     ShopUtil.reload()
-    UpgradeUtil.reloadConfig()
     TagUtil.init()
     GameConfig.reload()
 
