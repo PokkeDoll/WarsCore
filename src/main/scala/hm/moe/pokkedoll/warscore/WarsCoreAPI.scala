@@ -7,10 +7,11 @@ import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, Ho
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{EntityType, Firework, Player}
+import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.scoreboard.{DisplaySlot, Scoreboard, ScoreboardManager, Team}
+import org.bukkit.scoreboard.{DisplaySlot, Objective, Scoreboard, ScoreboardManager, Team}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -21,6 +22,8 @@ import scala.util.Random
  * @author Emorard
  */
 object WarsCoreAPI {
+
+  val CYCLE_VERSION = "0.3"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -202,18 +205,15 @@ object WarsCoreAPI {
   }
 
 
+
   def updateSidebar(player: Player, scoreboard: Scoreboard): Unit = {
     wplayers.get(player).foreach(wp => {
       if(scoreboard.getObjective(DisplaySlot.SIDEBAR) != null) scoreboard.getObjective(DisplaySlot.SIDEBAR).unregister()
       val obj = scoreboard.registerNewObjective("sidebar", "dummy")
-      obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aWars &e1.11.9-RC5"))
+      obj.setDisplayName(ChatColor.translateAlternateColorCodes('&', s"&aWars &ev$CYCLE_VERSION"))
       obj.setDisplaySlot(DisplaySlot.SIDEBAR)
-      val scores = List(
-        obj.getScore(colorCode(s"&e参加中のゲーム&f: &7-")),
-        obj.getScore(colorCode("&dここにｒ")),
-        obj.getScore(colorCode("&a設定など")),
-        obj.getScore(colorCode("&aコマンド早見表など"))
-      )
+
+      setSidebarContents(obj, List(s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する", "&e/game &fゲームをする").map(colorCode))
 /*
       val scores = List(
         obj.getScore(colorCode(s"&9Rank: &b${data._1}")),
@@ -226,12 +226,11 @@ object WarsCoreAPI {
         obj.getScore(colorCode("&6&m/vote&f: 投票ページを開く"))
       )
  */
-      var sc = scores.length
-      scores.foreach(s => {
-        s.setScore(sc)
-        sc -= 1
-      })
     })
+  }
+
+  def setSidebarContents(obj: Objective, list: List[String]): Unit = {
+    list.indices.reverse.foreach(i => obj.getScore(list(i)).setScore(list.length - i))
   }
 
 
@@ -450,6 +449,22 @@ object WarsCoreAPI {
     i
   }
 
+  val BLUE_CHESTPLATE = {
+    val armor = new ItemStack(Material.LEATHER_CHESTPLATE)
+    val meta = armor.getItemMeta.asInstanceOf[LeatherArmorMeta]
+    meta.setColor(Color.BLUE)
+    armor.setItemMeta(meta)
+    armor
+  }
+
+  val RED_CHESTPLATE = {
+    val armor = new ItemStack(Material.LEATHER_CHESTPLATE)
+    val meta = armor.getItemMeta.asInstanceOf[LeatherArmorMeta]
+    meta.setColor(Color.RED)
+    armor.setItemMeta(meta)
+    armor
+  }
+
   /**
    * つまり、観戦者 -> 非観戦者のマップ
    */
@@ -485,11 +500,12 @@ object WarsCoreAPI {
   }
 
   def getGameMVP[T <: GamePlayerData](data: mutable.Map[Player, T]): Array[BaseComponent] = {
-    val kd = data.filterNot(f => f._2.kill == 0 && f._2.death == 0).map(f => (f._1, f._2.kill, f._2.death, f._2.kill / f._2.death.toDouble)).toSeq.sortBy(f => f._4).reverse.take(5)
+    val kd = data.filterNot(f => f._2.kill == 0 && f._2.death == 0).map(f => (f._1, f._2.kill, f._2.death, if(f._2.death == 0) f._2.kill.toDouble else f._2.kill / f._2.death.toDouble)).toSeq.sortBy(f => f._4).reverse.take(5)
     val dd = data.map(f => (f._1, f._2.damage)).toSeq.sortBy(f => f._2).reverse.take(5)
 
     val comp = new ComponentBuilder()
     comp.append(createHeader("MVP"))
+    comp.append("\n").reset()
     comp.append(": K/D :==========>\n").color(ChatColor.YELLOW)
     kd.indices.foreach(i => {
       val v = kd(i)
@@ -506,6 +522,7 @@ object WarsCoreAPI {
       comp.append(".").color(ChatColor.GRAY).bold(false)
         .append(s" ${v._1.getName} ${v._4}").color(ChatColor.YELLOW).append(s"(${v._2} / ${v._3})\n").color(ChatColor.GRAY).reset()
     })
+    comp.append("\n").reset()
     comp.append(": Damage :==========>\n").color(ChatColor.YELLOW)
     dd.indices.foreach(i => {
       val v = dd(i)
