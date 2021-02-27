@@ -1,12 +1,11 @@
 package hm.moe.pokkedoll.warscore.commands
 
 import java.util
-
 import hm.moe.pokkedoll.warscore.WarsCoreAPI
 import hm.moe.pokkedoll.warscore.games.GameState
 import hm.moe.pokkedoll.warscore.ui.GameUI
 import net.md_5.bungee.api.chat.ComponentBuilder
-import org.bukkit.ChatColor
+import org.bukkit.{ChatColor, GameMode}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender, ConsoleCommandSender, TabCompleter}
 import org.bukkit.entity.Player
 
@@ -27,10 +26,10 @@ class GameCommand extends CommandExecutor with TabCompleter {
             sb.append(s"§a${game.id}§7: §f${game.title}§7: §f${game.mapInfo.mapName}§7: §f${game.members.size} / ${game.maxMember}\n")
           })
           player.sendMessage(sb.toString())
-        } else if (args(0).length >= 1 && (args(0) == "leave" || args(0) == "quit")) {
+        } else if (args(0).nonEmpty && (args(0) == "leave" || args(0) == "quit")) {
           val wp = WarsCoreAPI.getWPlayer(player)
           wp.game match {
-            case Some(game) =>
+            case Some(game) if player.getGameMode != GameMode.SPECTATOR =>
               game.hub(wp)
             case None =>
               WarsCoreAPI.games.values.find(p => p.world == player.getWorld) match {
@@ -39,6 +38,8 @@ class GameCommand extends CommandExecutor with TabCompleter {
                 case _ =>
                   player.sendMessage("§cゲームに参加していません！")
               }
+            case _ =>
+              player.sendMessage("§c現在使用できません")
           }
         } else if (args(0).length >= 2 && (args(0) == "delete" || args(0) == "d") && player.hasPermission("pokkedoll.game.admin")) {
           val wp = WarsCoreAPI.getWPlayer(player)
