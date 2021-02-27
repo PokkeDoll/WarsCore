@@ -1,16 +1,12 @@
 package hm.moe.pokkedoll.warscore.ui
 
-import hm.moe.pokkedoll.warscore.utils.TagUtil
-import hm.moe.pokkedoll.warscore.utils.TagUtil.{UserTagInfo, cache}
-import hm.moe.pokkedoll.warscore.{Callback, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.{ClickType, InventoryClickEvent, InventoryType}
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.{Bukkit, Material, NamespacedKey}
-
-import scala.collection.mutable
 
 object TagUI {
   /**
@@ -51,6 +47,7 @@ object TagUI {
     val p = WarsCoreAPI.UI.PAGE_ICON(page)
     val baseSlot = (page - 1) * 45
     player.openInventory(inv)
+    /*
     WarsCore.instance.database.getTags(player.getUniqueId.toString, new Callback[Vector[UserTagInfo]] {
       override def success(value: Vector[UserTagInfo]): Unit = {
         inv.setItem(4, p)
@@ -109,6 +106,7 @@ object TagUI {
         player.sendMessage("エラー！")
       }
     })
+    */
   }
 
   def onClick(e: InventoryClickEvent): Unit = {
