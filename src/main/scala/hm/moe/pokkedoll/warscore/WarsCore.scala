@@ -1,7 +1,8 @@
 package hm.moe.pokkedoll.warscore
 
 import com.google.common.io.ByteStreams
-import com.shampaggon.crackshot.CSUtility
+import com.shampaggon.crackshot.{CSDirector, CSUtility}
+import hm.moe.pokkedoll.crackshot.WeaponLoader
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands._
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
@@ -24,6 +25,8 @@ class WarsCore extends JavaPlugin {
   private val develop = true
 
   var cs: CSUtility = _
+
+  var wl: WeaponLoader = _
 
   override def onEnable(): Unit = {
     WarsCore.instance = this
@@ -60,6 +63,7 @@ class WarsCore extends JavaPlugin {
     getCommand("sndchecker").setExecutor(new SndCheckerCommand)
     getCommand("money").setExecutor(new MoneyCommand)
     getCommand("continue").setExecutor(new ContinueCommand)
+    getCommand("cse").setExecutor(new CSECommand)
 
     saveDefaultConfig()
 
@@ -103,6 +107,11 @@ class WarsCore extends JavaPlugin {
     }.runTaskTimer(this, 0L, 5L)
 
     Registry.init()
+
+    if(Bukkit.getPluginManager.isPluginEnabled("CrackShot")) {
+      val cd = Bukkit.getPluginManager.getPlugin("CrackShot").asInstanceOf[CSDirector]
+      wl = new WeaponLoader(cd)
+    }
   }
 
   override def onDisable(): Unit = {
