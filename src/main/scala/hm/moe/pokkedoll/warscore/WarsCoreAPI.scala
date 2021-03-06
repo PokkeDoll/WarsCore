@@ -7,8 +7,9 @@ import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, Ho
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{EntityType, Firework, Player}
-import org.bukkit.inventory.meta.LeatherArmorMeta
+import org.bukkit.inventory.meta.{LeatherArmorMeta, MapMeta}
 import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.map.MapView.Scale
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scoreboard._
 
@@ -22,7 +23,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
 
-  val CYCLE_VERSION = "0.3"
+  val CYCLE_VERSION = "0.3a"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -211,7 +212,7 @@ object WarsCoreAPI {
       obj.setDisplaySlot(DisplaySlot.SIDEBAR)
 
       val rank = wp.rank
-      setSidebarContents(obj, List(s"&9Rank&7/&9Class: &a$rank &7/ &r${RankManager.getClassName(rank)}", s"&9EXP: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}", " ", s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する", "&e/game &fゲームをする").map(colorCode))
+      setSidebarContents(obj, List(s"&9Rank&7: &a$rank", s"&9Class&7: &r${RankManager.getClassName(rank)}",s"&9EXP&7: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}", " ", s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する", "&e/game &fゲームをする").map(colorCode))
       /*
             val scores = List(
               obj.getScore(colorCode(s"&9Rank: &b${data._1}")),
