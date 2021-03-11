@@ -1,3 +1,4 @@
+package hm.moe.pokkedoll.crackshot
 /**
  * MIT License
  *
@@ -21,7 +22,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package hm.moe.pokkedoll.crackshot
 
 import com.shampaggon.crackshot.{CSDirector, CSMinion}
 import org.bukkit.configuration.ConfigurationSection
@@ -31,11 +31,9 @@ import java.io.File
 import scala.util.{Failure, Success, Try}
 
 /**
- * CrackShotに継承モジュールを追加するクラス
- * CS作者に倣ってすべてパブリック関数
  * @author Emorard
  * @version 1.0
- * @param csDirector 読み込まれているCrackShotのインスタンス
+ * @param csDirector Active CrackShot instance
  */
 class WeaponLoader(private val csDirector: CSDirector) {
   private val csMinion: CSMinion = csDirector.csminion
@@ -43,8 +41,7 @@ class WeaponLoader(private val csDirector: CSDirector) {
   private var weaponConfig = new YamlConfiguration
 
   /**
-   * CSのファイルを読み込む
-   * @return ./weapons以下の銃ファイルのリスト
+   * Load "CrackShot" file
    */
   def loadCSWeapons(): Seq[YamlConfiguration] = {
     val tag = new File(csDirector.getDataFolder, "/weapons")
@@ -61,23 +58,21 @@ class WeaponLoader(private val csDirector: CSDirector) {
   }
 
   /**
-   * 例外処理がめんどくさいが、念のため
+   * For flatMap
    */
   val loadCSConfig: File => Option[YamlConfiguration] = (file: File) => {
     val config = new YamlConfiguration()
     Try(config.load(file)) match {
       case Success(_) =>
-        println("Success to load config!")
         Some(config)
       case Failure(e) =>
         e.printStackTrace()
-        println("Fail to load config!")
         None
     }
   }
 
   /**
-   * 継承武器を読み込む。複製して置換するだけ
+   * Load extended weapon. copy-and-replace
    */
   def loadWeapons(): Unit = {
     val tag = new File(csDirector.getDataFolder, "/weapons/extended")
@@ -89,9 +84,9 @@ class WeaponLoader(private val csDirector: CSDirector) {
         .filter(_.getName.endsWith(".yml"))
         .flatMap(loadCSConfig)
         .foreach(config => {
-          // CSのファイルをも持ってくる
+          // take cs file
           val cs = loadCSWeapons()
-          // ファイルを合成させる
+          // mixed file
           config.getKeys(false).forEach(key => {
             val extend = config.getString(key + ".extend")
             val data = config.getConfigurationSection(key + ".data")
@@ -102,7 +97,7 @@ class WeaponLoader(private val csDirector: CSDirector) {
                   weaponConfig = copyConfigurationSection(data, key)
                   csDirector.fillHashMaps(weaponConfig)
                 case None =>
-                  println(s"$extend not found")
+                  println(s"[(Extended)CrackShot] $extend is not found")
               }
             }
           })
@@ -112,10 +107,7 @@ class WeaponLoader(private val csDirector: CSDirector) {
   }
 
   /**
-   * コンフィグのセクションを複製する。getValues(true)は悪夢
-   * @param cs コピーしたいコンフィグのセクション
-   * @param parent セクションまでの親
-   * @return weaponConfig
+   * Copy configuration section
    */
   def copyConfigurationSection(cs: ConfigurationSection, parent: String = ""): YamlConfiguration = {
     cs.getValues(false).forEach((k, v) => {
