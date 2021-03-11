@@ -7,9 +7,8 @@ import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, Ho
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.{EntityType, Firework, Player}
-import org.bukkit.inventory.meta.{LeatherArmorMeta, MapMeta}
+import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.inventory.{ItemFlag, ItemStack}
-import org.bukkit.map.MapView.Scale
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scoreboard._
 

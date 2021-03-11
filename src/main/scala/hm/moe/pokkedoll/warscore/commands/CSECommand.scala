@@ -9,7 +9,9 @@ class CSECommand extends CommandExecutor {
     sender match {
       case player: Player =>
         player.performCommand("/shot config reload")
+        player.sendMessage("# 継承武器をリセット...")
         WarsCore.instance.wl.loadWeapons()
+        player.sendMessage("# 継承武器を読み込みました")
       case _ =>
     }
     true
