@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.lisners
 
+import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.info
 import hm.moe.pokkedoll.warscore.ui._
 import hm.moe.pokkedoll.warscore.utils._
@@ -14,20 +15,39 @@ import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit._
+import org.bukkit.scheduler.BukkitRunnable
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onDeath(e: PlayerDeathEvent): Unit = {
-    WarsCoreAPI.getWPlayer(e.getEntity).game match {
-      case Some(game) =>
-        game.onDeath(e)
-      case _ =>
-        e.setCancelled(true)
-        if (e.getEntity.getWorld == Bukkit.getWorlds.get(0)) {
-          e.getEntity.teleport(e.getEntity.getWorld.getSpawnLocation)
+    e.getEntity match {
+      case player: Player =>
+        WarsCoreAPI.getWPlayer(player).game match {
+          case Some(game) =>
+            game.onDeath(e)
+          case _ =>
         }
+        new BukkitRunnable {
+          override def run(): Unit = {
+            player.spigot().respawn()
+          }
+        }.runTaskLater(plugin, 1L)
     }
+  }
+
+  @EventHandler
+  def onRespawn(e: PlayerRespawnEvent): Unit = {
+    WarsCoreAPI.getWPlayer(e.getPlayer).game.foreach(game => {
+      game.onRespawn(e)
+    })
+  }
+
+  @EventHandler
+  def onPostRespawn(e: PlayerPostRespawnEvent): Unit = {
+    WarsCoreAPI.getWPlayer(e.getPlayer).game.foreach(game => {
+      game.onPostRespawn(e)
+    })
   }
 
   @EventHandler

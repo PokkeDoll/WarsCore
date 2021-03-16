@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
+import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
@@ -9,11 +10,13 @@ import org.bukkit._
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{Arrow, Entity, Player}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
 
+import java.util.UUID
 import scala.collection.mutable
 
 /**
@@ -66,6 +69,10 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   override val time: Int = 600
 
+  override var maxTime: Int = 600
+
+  protected [warscore] var isToggleColdGame: Boolean = true
+
   private val scoreboard = Bukkit.getScoreboardManager.getNewScoreboard
 
   val sidebar: Objective = scoreboard.registerNewObjective("sidebar", "dummy")
@@ -95,6 +102,9 @@ class TeamDeathMatch(override val id: String) extends Game {
   val data = mutable.HashMap.empty[Player, TDMData]
 
   private val TIME = 600
+
+
+
 
   /**
    * ゲームを初期化する
@@ -390,6 +400,8 @@ class TeamDeathMatch(override val id: String) extends Game {
     bossbar.removePlayer(wp.player)
     // ゲーム情報をリセット
     wp.game = None
+    // スポーン情報をリセット
+    wp.player.setBedSpawnLocation(Bukkit.getWorlds.get(0).getSpawnLocation)
     sendMessage(s"${wp.player.getName} が退出しました")
     new BukkitRunnable {
       override def run(): Unit = {
@@ -412,7 +424,6 @@ class TeamDeathMatch(override val id: String) extends Game {
    * @param e イベント
    */
   override def onDeath(e: PlayerDeathEvent): Unit = {
-    super.onDeath(e)
     val victim = e.getEntity
     // 試合中のみのできごと
     if (state == GameState.PLAY || state == GameState.PLAY2) {
@@ -472,7 +483,7 @@ class TeamDeathMatch(override val id: String) extends Game {
         dropItem.asInstanceOf[Entity].setTicksLived(5400)
       }
       // とにかく死んだのでリスポン処理
-      spawn(victim, coolTime = true)
+      // spawn(victim, coolTime = true)
       val rp = redTeam.getSize * 10
       val bp = blueTeam.getSize * 10
       if((rp < redPoint && rp/2 > bluePoint) || (bp < bluePoint && bp/2 > redPoint)) {
@@ -488,6 +499,27 @@ class TeamDeathMatch(override val id: String) extends Game {
       val attackerString = if(weapon == "") attacker else s"$attacker §f[$weapon§f]"
       f.sendMessage(s"$attackerString + §a${f.getName} §7-> §0Killed §7-> §f$victim")
     })
+  }
+
+  override def onRespawn(e: PlayerRespawnEvent): Unit = {
+    val player = e.getPlayer
+    data.get(player).foreach(d => {
+      d.team match {
+        case GameTeam.RED =>
+          e.setRespawnLocation(locationData._2)
+        case GameTeam.BLUE =>
+          e.setRespawnLocation(locationData._3)
+        case _ =>
+          e.setRespawnLocation(locationData._4)
+          player.sendMessage(ChatColor.RED + "不正なチームです！")
+      }
+    })
+  }
+
+  override def onPostRespawn(e: PlayerPostRespawnEvent): Unit = {
+    val player = e.getPlayer
+    WarsCoreAPI.setActiveWeapons(player)
+    player.setGameMode(GameMode.SURVIVAL)
   }
 
   /**
@@ -601,8 +633,10 @@ class TeamDeathMatch(override val id: String) extends Game {
    */
   private def addEntryTeam(name: String, team: GameTeam): Unit = {
     team match {
-      case GameTeam.RED => redTeam.addEntry(name)
-      case GameTeam.BLUE => blueTeam.addEntry(name)
+      case GameTeam.RED =>
+        redTeam.addEntry(name)
+      case GameTeam.BLUE =>
+        blueTeam.addEntry(name)
       case _ =>
     }
   }

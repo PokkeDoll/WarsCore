@@ -111,6 +111,8 @@ class WarsCore extends JavaPlugin {
     if(Bukkit.getPluginManager.isPluginEnabled("CrackShot")) {
       val cd = Bukkit.getPluginManager.getPlugin("CrackShot").asInstanceOf[CSDirector]
       wl = new WeaponLoader(cd)
+      Bukkit.dispatchCommand(Bukkit.getConsoleSender, "/shot config reload")
+      wl.loadWeapons()
     }
   }
 

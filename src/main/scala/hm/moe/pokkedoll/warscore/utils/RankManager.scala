@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.utils
 
-import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore}
+import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.Sound
 import org.bukkit.scheduler.BukkitRunnable
@@ -44,7 +44,7 @@ object RankManager {
     22 -> "?"
   )
 
-  val getClassName: Int => String = (rank: Int) => rankMap.getOrElse(rank % 3, "-")
+  val getClassName: Int => String = (rank: Int) => rankMap.getOrElse(rank / 3, "-")
 
   /**
    * 次に必要な経験値を返す
@@ -70,6 +70,11 @@ object RankManager {
     }
     new BukkitRunnable {
       override def run(): Unit = {
+        WarsCoreAPI.scoreboards.get(wp.player) match {
+          case Some(scoreboard) =>
+            WarsCoreAPI.updateSidebar(wp.player, scoreboard)
+          case _ =>
+        }
         plugin.database.setRankData(wp.player.getUniqueId.toString, (wp.rank, wp.exp))
       }
     }.runTaskLaterAsynchronously(plugin, 1L)

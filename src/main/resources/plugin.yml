@@ -1,9 +1,9 @@
 name: 'WarsCore'
-version: '1.11.13-RC1'
+version: '1.11.13-RC5'
 api-version: '1.16'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
-softdepend: [Vault]
+softdepend: [Vault, CrackShot]
 
 commands:
   game:

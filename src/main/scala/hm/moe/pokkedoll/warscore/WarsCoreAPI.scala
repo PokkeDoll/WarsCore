@@ -14,7 +14,7 @@ import org.bukkit.scoreboard._
 
 import scala.collection.mutable
 import scala.util.Random
-//TODO 実験結果より、immutableなMapよりmutable valなMapを使うべき
+
 /**
  * 便利なメソッドをまとめたオブジェクト
  *
@@ -22,7 +22,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
 
-  val CYCLE_VERSION = "0.3a"
+  val CYCLE_VERSION = "0.4-RC4"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -211,19 +211,15 @@ object WarsCoreAPI {
       obj.setDisplaySlot(DisplaySlot.SIDEBAR)
 
       val rank = wp.rank
-      setSidebarContents(obj, List(s"&9Rank&7: &a$rank", s"&9Class&7: &r${RankManager.getClassName(rank)}",s"&9EXP&7: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}", " ", s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する", "&e/game &fゲームをする").map(colorCode))
-      /*
-            val scores = List(
-              obj.getScore(colorCode(s"&9Rank: &b${data._1}")),
-              obj.getScore(colorCode(s"&9EXP: &a${data._2} &7/ &a${getNextExp(data._1)}")),
-              obj.getScore(" "),
-              obj.getScore(colorCode("&6/game&f: 試合に参加")),
-              obj.getScore(colorCode("&6/spawn&f: スポーン地点に戻る")),
-              obj.getScore(colorCode("&6/sf&f: ステータスを設定")),
-              obj.getScore(colorCode("&6/pp&f: コマンド一覧を表示")),
-              obj.getScore(colorCode("&6&m/vote&f: 投票ページを開く"))
-            )
-       */
+      setSidebarContents(obj,
+        List(
+          s"&9Rank&7: &a$rank",
+          s"&9Class&7: &r${RankManager.getClassName(rank)}",
+          s"&9EXP&7: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}",
+          " ",
+          s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する",
+          "&e/game &fゲームをする")
+          .map(colorCode))
     })
   }
 

@@ -1,5 +1,6 @@
 package hm.moe.pokkedoll.warscore.games
 
+import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -9,7 +10,9 @@ import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
+import org.bukkit.event.player.PlayerRespawnEvent
 
+import java.util.UUID
 import scala.util.Try
 
 /**
@@ -90,8 +93,19 @@ trait Game {
   /**
    * 試合時間
    */
+  @Deprecated
   val time: Int
 
+  /**
+   * 最大試合時間
+   */
+  var maxTime: Int
+
+
+  /**
+   * 設定の独立性を保つために使用される変数。使用中ならtrue
+   */
+  protected [warscore] var isSetting: Boolean = false
   /**
    * ゲームを開始するためのワールドを読み込むメソッド。
    */
@@ -169,9 +183,19 @@ trait Game {
    *
    * @param e イベント
    */
-  def onDeath(e: PlayerDeathEvent): Unit = {
-    e.setCancelled(true)
-  }
+  def onDeath(e: PlayerDeathEvent): Unit = {}
+
+  /**
+   * プレイヤーがリスポーン**する時**に呼ばれるイベント
+   * @param e イベント
+   */
+  def onRespawn(e: PlayerRespawnEvent): Unit = {}
+
+  /**
+   * プレイヤーがリスポーン**した後**に呼ばれるイベント
+   * @param e イベント
+   */
+  def onPostRespawn(e: PlayerPostRespawnEvent): Unit = {}
 
   /**
    * ブロックを破壊するときに呼び出されるイベント
