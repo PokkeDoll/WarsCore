@@ -28,8 +28,7 @@ class SignListener(plugin: WarsCore) extends Listener {
             // [<ゲームのID>]
             WarsCoreAPI.games.get(lines(0).substring(1, lines(0).length - 1)) match {
               case Some(game) =>
-                if (game.join(e.getPlayer)) {
-                }
+                game.join(e.getPlayer)
               case None =>
             }
             if (lines(0).contains("[Vote Point]")) {

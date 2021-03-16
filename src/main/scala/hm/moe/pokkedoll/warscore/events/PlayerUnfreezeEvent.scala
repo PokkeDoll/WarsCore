@@ -10,6 +10,7 @@ import org.bukkit.event.{Event, HandlerList}
  * @param walkSpeed 移動速度.  初期値は0.2(デフォルト)
  * @param flySpeed 飛行速度.  初期値は0.1(デフォルト)
  */
+@Deprecated
 class PlayerUnfreezeEvent(val player: Player, var walkSpeed: Float = 0.2f, var flySpeed: Float = 0.1f) extends Event {
 
   def getPlayer: Player = player

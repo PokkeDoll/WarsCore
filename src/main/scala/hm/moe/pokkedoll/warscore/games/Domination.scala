@@ -367,7 +367,7 @@ class Domination(override val id: String) extends Game {
    * @param wp プレイヤー
    * @return 参加できる場合
    */
-  override def join(wp: WPlayer): Boolean = {
+  override def join(wp: WPlayer): Unit = {
     val event = new GameJoinEvent(this, wp)
     if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
@@ -414,7 +414,6 @@ class Domination(override val id: String) extends Game {
             ready()
           }
         case _ =>
-          return false
       }
     }
     Bukkit.getPluginManager.callEvent(event)
@@ -732,4 +731,9 @@ class Domination(override val id: String) extends Game {
    * 試合中の一時的なデータを管理するクラス
    */
   class DOMData extends GamePlayerData
+
+  /**
+   * 最大試合時間
+   */
+  override var maxTime: Int = _
 }

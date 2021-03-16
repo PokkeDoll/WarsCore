@@ -190,19 +190,15 @@ class Tactics(override val id: String) extends Game {
     }.runTaskLater(WarsCore.instance, 10L)
   }
 
-  override def join(wp: WPlayer): Boolean = {
+  override def join(wp: WPlayer): Unit = {
     if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
-      false
     } else if (!loaded && state == GameState.DISABLE) {
       load(Vector(wp.player))
-      false
     } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
-      false
     } else if (members.length >= maxMember) {
       wp.player.sendMessage("§c人数が満員なので参加できません！")
-      false
     } else {
       wp.sendMessage(
         s"マップ名: §a${mapInfo.mapName}\n" +
@@ -225,9 +221,7 @@ class Tactics(override val id: String) extends Game {
             ready()
           }
         case _ =>
-          return false
       }
-      true
     }
   }
 
@@ -346,4 +340,9 @@ class Tactics(override val id: String) extends Game {
       }
     }.runTaskLater(WarsCore.instance, 1L)
   }
+
+  /**
+   * 最大試合時間
+   */
+  override var maxTime: Int = _
 }

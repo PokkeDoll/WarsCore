@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.games
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
-import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GameStartEvent}
+import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GamePostRespawnEvent, GameRespawnEvent, GameStartEvent}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -318,68 +318,69 @@ class TeamDeathMatch(override val id: String) extends Game {
    * @param wp プレイヤー
    * @return 参加できる場合
    */
-  override def join(wp: WPlayer): Boolean = {
-    val event = new GameJoinEvent(this, wp)
+  override def join(wp: WPlayer): Unit = {
     if (wp.game.isDefined) {
-      wp.sendMessage("ほかのゲームに参加しています!")
+      wp.sendMessage("&c他のゲームに参加しています!")
     } else if (!loaded && state == GameState.DISABLE) {
       load(Vector(wp.player))
     } else if (!state.join) {
-      wp.player.sendMessage("§cゲームに参加できません!")
+      wp.sendMessage("&cゲームに参加できません!")
     } else if (members.length >= maxMember) {
-      wp.player.sendMessage("§c人数が満員なので参加できません！")
+      wp.sendMessage("&c人数が満員なので参加できません！")
     } else {
-      event.setAccept(true)
-      wp.sendMessage(
-        s"マップ名: &a${mapInfo.mapName}\n" +
-          s"製作者: &a${mapInfo.authors}\n" +
-          s"退出する場合は&a/game quit&7もしくは&a/game leave\n" +
-          "&a/invite <player>&fで他プレイヤーを招待することができます!"
-      )
-      wp.game = Some(this)
-      // インベントリを変更
-      WarsCoreAPI.changeWeaponInventory(wp)
+      val event = new GameJoinEvent(this, wp)
+      Bukkit.getPluginManager.callEvent(event)
+      if(event.getCancelReason != "") {
+        wp.sendMessage(event.getCancelReason)
+      } else {
+        wp.sendMessage(
+          s"マップ名: &a${mapInfo.mapName}\n" +
+            s"製作者: &a${mapInfo.authors}\n" +
+            s"退出する場合は&a/game quit&7もしくは&a/game leave\n" +
+            "&a/invite <player>&fで他プレイヤーを招待することができます!"
+        )
+        wp.game = Some(this)
+        // インベントリを変更
+        WarsCoreAPI.changeWeaponInventory(wp)
 
-      wp.player.setScoreboard(scoreboard)
-      val d = new TDMData
-      data.put(wp.player, d)
-      bossbar.addPlayer(wp.player)
-      //members = members :+ wp
-      members :+= wp
-      sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a$maxMember§f)")
-      state match {
-        case GameState.PLAY =>
-          setTeam(wp.player)
+        wp.player.setScoreboard(scoreboard)
+        val d = new TDMData
+        data.put(wp.player, d)
+        bossbar.addPlayer(wp.player)
+        //members = members :+ wp
+        members :+= wp
+        sendMessage(s"§a${wp.player.getName}§fが参加しました (§a${members.length} §f/§a$maxMember§f)")
+        state match {
+          case GameState.PLAY =>
+            setTeam(wp.player)
 
-          val event = new GameAssignmentTeamEvent(this, Array(wp.player), mutable.Map(wp.player -> data(wp.player).team))
-          Bukkit.getPluginManager.callEvent(event)
-          data.foreach(f => {event.getData.get(f._1).foreach(team => f._2.team = team)})
-          // data.foreach(f => {event.getData.get(f._1).foreach(team => f._2.team = team)})
+            val event = new GameAssignmentTeamEvent(this, Array(wp.player), mutable.Map(wp.player -> data(wp.player).team))
+            Bukkit.getPluginManager.callEvent(event)
+            data.foreach(f => {event.getData.get(f._1).foreach(team => f._2.team = team)})
+            // data.foreach(f => {event.getData.get(f._1).foreach(team => f._2.team = team)})
 
-          addEntryTeam(wp.player.getName, d.team)
-          new scheduler.BukkitRunnable {
-            override def run(): Unit = {
-              spawn(wp.player)
-              if (redTeam.hasEntry(wp.player.getName)) {
-                sendMessage(s"${wp.player.getName}が§cRED§fチームに参加しました")
-              } else {
-                sendMessage(s"${wp.player.getName}が§9BLUE§fチームに参加しました")
+            addEntryTeam(wp.player.getName, d.team)
+            new scheduler.BukkitRunnable {
+              override def run(): Unit = {
+                spawn(wp.player)
+                if (redTeam.hasEntry(wp.player.getName)) {
+                  sendMessage(s"${wp.player.getName}が§cRED§fチームに参加しました")
+                } else {
+                  sendMessage(s"${wp.player.getName}が§9BLUE§fチームに参加しました")
+                }
               }
+            }.runTaskLater(WarsCore.instance, 2L)
+          case GameState.READY =>
+            wp.player.teleport(locationData._1)
+          case GameState.WAIT =>
+            wp.player.teleport(locationData._1)
+            if (members.length >= 2) {
+              ready()
             }
-          }.runTaskLater(WarsCore.instance, 2L)
-        case GameState.READY =>
-          wp.player.teleport(locationData._1)
-        case GameState.WAIT =>
-          wp.player.teleport(locationData._1)
-          if (members.length >= 2) {
-            ready()
-          }
-        case _ =>
-          return false
+          case _ =>
+        }
       }
     }
-    Bukkit.getPluginManager.callEvent(event)
-    event.isAccept
   }
 
 
@@ -503,23 +504,21 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   override def onRespawn(e: PlayerRespawnEvent): Unit = {
     val player = e.getPlayer
-    data.get(player).foreach(d => {
-      d.team match {
-        case GameTeam.RED =>
-          e.setRespawnLocation(locationData._2)
-        case GameTeam.BLUE =>
-          e.setRespawnLocation(locationData._3)
-        case _ =>
-          e.setRespawnLocation(locationData._4)
-          player.sendMessage(ChatColor.RED + "不正なチームです！")
-      }
-    })
+    val loc = data.get(player).map(d => d.team).map {
+      case GameTeam.RED => locationData._2
+      case GameTeam.BLUE => locationData._3
+      case _ => locationData._4
+    }.getOrElse(locationData._4)
+    val event = new GameRespawnEvent(this, player, loc)
+    Bukkit.getServer.getPluginManager.callEvent(event)
+    e.setRespawnLocation(event.getRespawnLocation)
   }
 
   override def onPostRespawn(e: PlayerPostRespawnEvent): Unit = {
     val player = e.getPlayer
     WarsCoreAPI.setActiveWeapons(player)
     player.setGameMode(GameMode.SURVIVAL)
+    Bukkit.getServer.getPluginManager.callEvent(new GamePostRespawnEvent(this, player))
   }
 
   /**

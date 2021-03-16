@@ -153,14 +153,14 @@ trait Game {
    * @param wp プレイヤー
    * @return 参加できる場合
    */
-  def join(wp: WPlayer): Boolean
+  def join(wp: WPlayer): Unit
 
   /**
    * Playerバージョン
    *
    * @param p プレイヤー
    */
-  def join(p: Player): Boolean = join(WarsCoreAPI.getWPlayer(p))
+  def join(p: Player): Unit = join(WarsCoreAPI.getWPlayer(p))
 
   /**
    * プレイヤーがゲームから抜けたときのメソッド
