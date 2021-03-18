@@ -183,7 +183,10 @@ trait Game {
    *
    * @param e イベント
    */
-  def onDeath(e: PlayerDeathEvent): Unit = {}
+  def onDeath(e: PlayerDeathEvent): Unit = {
+    e.setKeepLevel(true)
+    e.setKeepInventory(true)
+  }
 
   /**
    * プレイヤーがリスポーン**する時**に呼ばれるイベント

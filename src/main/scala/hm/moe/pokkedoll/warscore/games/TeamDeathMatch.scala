@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.games
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
-import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GamePostRespawnEvent, GameRespawnEvent, GameStartEvent}
+import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GamePostRespawnEvent, GameRespawnEvent, GameStartEvent, GameWeaponDropEvent}
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -425,6 +425,7 @@ class TeamDeathMatch(override val id: String) extends Game {
    * @param e イベント
    */
   override def onDeath(e: PlayerDeathEvent): Unit = {
+    super.onDeath(e)
     val victim = e.getEntity
     // 試合中のみのできごと
     if (state == GameState.PLAY || state == GameState.PLAY2) {
@@ -478,10 +479,14 @@ class TeamDeathMatch(override val id: String) extends Game {
       // 武器ドロップの処理
       val item = victim.getInventory.getItemInMainHand
       if (item != null && item.getType != Material.AIR && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
-        val dropItem = world.dropItem(victim.getLocation(), item)
-        // 30秒で消滅するように
-        dropItem.setWillAge(true)
-        dropItem.asInstanceOf[Entity].setTicksLived(5400)
+        val event = new GameWeaponDropEvent(this, victim, item, 30.0)
+        Bukkit.getPluginManager.callEvent(event)
+        if(WarsCoreAPI.randomChance(event.getChance)) {
+          val dropItem = world.dropItem(victim.getLocation(), event.getWeapon)
+          // 30秒で消滅するように
+          dropItem.setWillAge(true)
+          dropItem.asInstanceOf[Entity].setTicksLived(5400)
+        }
       }
       // とにかく死んだのでリスポン処理
       // spawn(victim, coolTime = true)
