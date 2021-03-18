@@ -1,15 +1,15 @@
 package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.{Registry, WarsCoreAPI}
-import hm.moe.pokkedoll.warscore.WarsCoreAPI.{colorCode, games}
+import hm.moe.pokkedoll.warscore.WarsCoreAPI.{colorCode, games, splitToComponentTimes}
 import hm.moe.pokkedoll.warscore.games.{Game, GameState, TeamDeathMatch}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{ClickType, InventoryAction, InventoryClickEvent, InventoryCloseEvent}
-import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
-import org.bukkit.{Bukkit, Material}
+import org.bukkit.{Bukkit, Material, Sound}
 
 import java.util.UUID
 import scala.collection.mutable
@@ -189,46 +189,42 @@ object GameUI {
     player.openInventory(inv)
   }
 
-  def clickGameSettingUI(e: InventoryClickEvent): Unit = {
-    val player = e.getWhoClicked
-    val inv = e.getClickedInventory
+  val TIME_INVENTORY_TITLE: String = colorCode("&c試合時間を変更します")
 
-    val close = inv.getItem(0).getItemMeta.getPersistentDataContainer
-    val gameId = close.get(Registry.GAME_ID, PersistentDataType.STRING)
-    WarsCoreAPI.games.get(gameId) match {
-      case Some(game) =>
-        game match {
-          case tdm: TeamDeathMatch =>
-            e.getSlot match {
-              case 0 =>
-                game.isSetting = false
-                player.closeInventory()
-              case 1 =>
-                e.getClick match {
-                  case ClickType.LEFT =>
-                    game.maxTime = Math.min(180, game.maxTime - 60)
-                  case ClickType.RIGHT =>
-                    game.maxTime = Math.max(900, game.maxTime + 60)
-                  case _ =>
-                }
-                inv.setItem(1, maxTimeIcon(game.maxTime))
-              case 2 =>
-                tdm.isToggleColdGame = !tdm.isToggleColdGame
-                inv.setItem(2, coldGameIcon(tdm.isToggleColdGame))
-            }
-        }
-      case None =>
-        player.sendMessage(ChatColor.RED + "エラーが発生しました: 無効なゲームID")
+  private val currentTimeIcon = (game: Game) => {
+      val item = new ItemStack(Material.FILLED_MAP)
+      val meta = item.getItemMeta
+      meta.setDisplayName(colorCode(s"&a現在の試合時間: ${WarsCoreAPI.splitToComponentTimes(game.maxTime)._2}分"))
+      meta.getPersistentDataContainer.set(Registry.GAME_ID, PersistentDataType.STRING, game.id)
+      item.setItemMeta(meta)
+      item
     }
+
+
+  val timeInventory: Game => Inventory = (game: Game) => {
+    val inv = Bukkit.createInventory(null, 9, TIME_INVENTORY_TITLE)
+    inv.setItem(0, currentTimeIcon(game))
+    (1 to 9).foreach(i => {
+      val item = new ItemStack(Material.PAPER, i)
+      val meta = item.getItemMeta
+      val timeComponent = WarsCoreAPI.splitToComponentTimes(60 + (i * 60))
+      meta.setDisplayName(colorCode(s"&a${timeComponent._2}分"))
+      meta.setLore(java.util.Arrays.asList(colorCode("&cクリックして変更！")))
+      item.setItemMeta(meta)
+      inv.setItem(i, item)
+    })
+    inv
   }
 
-  def closeGameSettingUI(e: InventoryCloseEvent): Unit = {
-    val close = e.getInventory.getItem(0)
-    if(close != null) {
-      val gameId = close.getItemMeta.getPersistentDataContainer.get(Registry.GAME_ID, PersistentDataType.STRING)
-      WarsCoreAPI.games.get(gameId) match {
-        case Some(game) => game.isSetting = false
-        case None =>
+  def onClickTimeInventory(inv: Inventory, slot: Int, player: Player): Unit = {
+    val item = inv.getItem(0)
+    if(item != null && item.getType != Material.AIR && item.hasItemMeta) {
+      WarsCoreAPI.games.get(item.getItemMeta.getPersistentDataContainer.get(Registry.GAME_ID, PersistentDataType.STRING)) match {
+        case Some(game) if slot > 0 && slot < 9 =>
+          game.maxTime = 60 + slot * 60
+          player.playSound(player.getLocation, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
+          inv.setItem(0, currentTimeIcon(game))
+        case _ =>
       }
     }
   }

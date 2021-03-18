@@ -102,6 +102,7 @@ object WarsCoreAPI {
    *
    * @param player Player
    */
+  @Deprecated
   def freeze(player: Player): Unit = {
     player.teleport(player.getLocation().add(0, 0.001, 0))
     player.setAllowFlight(true)
@@ -114,6 +115,7 @@ object WarsCoreAPI {
    *
    * @see freeze(Player)
    */
+  @Deprecated
   def unfreeze(player: Player): Unit = {
     val event = new PlayerUnfreezeEvent(player)
     Bukkit.getServer.getPluginManager.callEvent(event)

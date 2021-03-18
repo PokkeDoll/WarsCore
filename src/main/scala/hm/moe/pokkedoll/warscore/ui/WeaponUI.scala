@@ -7,7 +7,7 @@ import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.HumanEntity
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
-import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
@@ -133,16 +133,14 @@ object WeaponUI {
    *
    * @param e イベント
    */
-  def onClickMainUI(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    val player = e.getWhoClicked
+  def onClickMainUI(player: HumanEntity, slot: Int): Unit = {
     val metadata = player.getMetadata("sortType")
     val sortType = if(metadata.isEmpty) {
       0
     } else {
       metadata.get(0).asInt()
     }
-    e.getSlot match {
+    slot match {
       case 1 => openSettingUI(player, 1, WeaponDB.PRIMARY, sortType)
       case 2 => openSettingUI(player, 1, WeaponDB.SECONDARY, sortType)
       case 3 => openSettingUI(player, 1, WeaponDB.MELEE, sortType)
@@ -264,18 +262,15 @@ object WeaponUI {
    *
    * @param e InventoryClickEvent
    */
-  def onClickStorageUI(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    val player = e.getWhoClicked
-    e.getSlot match {
+  def onClickStorageUI(player: HumanEntity, i: ItemStack, slot: Int, isLeftClick: Boolean, isRightClick: Boolean): Unit = {
+    slot match {
       case 0 => player.closeInventory()
       case 1 => openMainUI(player)
       case 4 =>
-        val i = e.getCurrentItem
         val page = i.getItemMeta.getPersistentDataContainer.get(Registry.PAGE_KEY, PersistentDataType.INTEGER)
-        if (e.isLeftClick) {
+        if (isLeftClick) {
           if (page != 1) openStorageUI(player, page - 1)
-        } else if (e.isRightClick) {
+        } else if (isRightClick) {
           openStorageUI(player, page + 1)
         }
       case _ =>
@@ -370,21 +365,16 @@ object WeaponUI {
   /**
    * openSettingUIに対して呼ばれる
    *
-   * @param e InventoryClickEvent
    */
-  def onClickSettingUI(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    val player = e.getWhoClicked
-    val inv = e.getClickedInventory
+  def onClickSettingUI(player: HumanEntity, inv: Inventory,  i: ItemStack, slot: Int): Unit = {
     inv.getType match {
       case InventoryType.CHEST =>
-        val i = e.getCurrentItem
         // val pageItem = inv.getItem(4)
         // val usedSlotItem = inv.getItem(0)
         val index0 = inv.getItem(0).getItemMeta.getPersistentDataContainer
         val weaponType = index0.get(Registry.WEAPON_TYPE_KEY, PersistentDataType.STRING)
         val sortType = index0.get(Registry.SORT_TYPE_KEY, PersistentDataType.INTEGER)
-        e.getSlot match {
+        slot match {
           // バリアブロック。インベントリを閉じる
           case 0 =>
             player.closeInventory()

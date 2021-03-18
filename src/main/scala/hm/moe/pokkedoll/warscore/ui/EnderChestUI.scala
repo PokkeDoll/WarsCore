@@ -34,12 +34,9 @@ object EnderChestUI {
    * インベントリをクリックしたとき
    * clickedInventoryは存在する！
    *
-   * @param e InventoryClickEvent
    */
-  def onClick(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    val player = e.getWhoClicked
-    e.getSlot match {
+  def onClick(player: HumanEntity, slot: Int): Unit = {
+    slot match {
       case 1 =>
         WeaponUI.openSettingUI(player, 1, "primary")
       case 2 =>
@@ -55,5 +52,4 @@ object EnderChestUI {
       case _ =>
     }
   }
-
 }
