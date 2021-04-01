@@ -106,9 +106,8 @@ object ShopUI {
           List(
             "§7§l|",
             "§7§l| §7達成条件 §7§l: §7必要値 §8/ §7現在値",
-            // "§fテスト条件: §c0 / 1"
           ) ++
-          (if (shop.rank != -1) {
+          (if (shop.rank != -1 && shop.rank != 0) {
             List({
               val rank = WarsCoreAPI.getWPlayer(player).rank
               "§fランク: " + (if (rank >= shop.rank) {

@@ -151,6 +151,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         TagUI.onClick(e)
       }
     } else if (title == WeaponUI.MAIN_UI_TITLE && e.getClickedInventory.getType == InventoryType.CHEST) {
+      e.setCancelled(true)
       WeaponUI.onClickMainUI(e.getWhoClicked, e.getSlot)
     } else if (title == WeaponUI.SETTING_TITLE) {
       e.setCancelled(true)
@@ -159,7 +160,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       e.setCancelled(true)
       ShopUI.onClick(e.getWhoClicked.asInstanceOf[Player], e.getClickedInventory, e.getSlot, e.getCurrentItem, e.getView)
     } else if (title == SndCheckerUI.TITLE) {
-      // SndCheckerUI.onClick(e)
+      SndCheckerUI.onClick(e)
     } else if (title == WeaponUI.STORAGE_TITLE) {
       e.setCancelled(true)
       WeaponUI.onClickStorageUI(e.getWhoClicked, e.getCurrentItem, e.getSlot, e.isLeftClick, e.isRightClick)

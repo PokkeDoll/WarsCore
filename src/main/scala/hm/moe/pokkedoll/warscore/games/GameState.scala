@@ -14,6 +14,17 @@ object GameState {
   case object END extends GameState("end", "終了", false)
 
   case object ERROR extends GameState("error", "読み込み失敗", false)
+
+  def valueOf(name: String): GameState = name.toLowerCase match {
+    case "init" => INIT
+    case "wait" => WAIT
+    case "ready" => READY
+    case "play" => PLAY
+    case "play2" => PLAY2
+    case "end" => END
+    case "error" => ERROR
+    case _ => DISABLE
+  }
 }
 
 protected sealed abstract class GameState(val name: String, val title: String, val join: Boolean)

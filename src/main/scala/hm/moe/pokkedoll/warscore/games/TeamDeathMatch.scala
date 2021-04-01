@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.games
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
-import hm.moe.pokkedoll.warscore.events.{GameAssignmentTeamEvent, GameDeathEvent, GameEndEvent, GameJoinEvent, GamePostRespawnEvent, GameRespawnEvent, GameStartEvent, GameWeaponDropEvent}
+import hm.moe.pokkedoll.warscore.events._
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -13,10 +13,9 @@ import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
 
-import java.util.UUID
 import scala.collection.mutable
 
 /**
@@ -103,8 +102,9 @@ class TeamDeathMatch(override val id: String) extends Game {
 
   private val TIME = 600
 
-
-
+  // リスポーンからの無敵時間
+  var protectionTime = 5
+  val protectionPlayers = mutable.HashMap.empty[Player, BukkitTask]
 
   /**
    * ゲームを初期化する
@@ -131,6 +131,9 @@ class TeamDeathMatch(override val id: String) extends Game {
     data.clear()
 
     members = Vector.empty[WPlayer]
+
+    protectionTime = mapInfo.metadata.getOrElse("protectionTime", 5).asInstanceOf[Int]
+    protectionPlayers.clear()
 
     world.setPVP(false)
 
@@ -524,6 +527,27 @@ class TeamDeathMatch(override val id: String) extends Game {
     WarsCoreAPI.setActiveWeapons(player)
     player.setGameMode(GameMode.SURVIVAL)
     Bukkit.getServer.getPluginManager.callEvent(new GamePostRespawnEvent(this, player))
+    protectionPlayers.put(player, new BukkitRunnable {
+      var pt: Int = protectionTime
+      override def run(): Unit = {
+        if(pt > 0) {
+          player.sendMessage(ChatColor.BLUE + s"$pt")
+          pt -= 1
+        } else {
+          player.sendMessage(ChatColor.BLUE + "無敵時間が終了！？")
+          cancel()
+        }
+      }
+    }.runTaskTimer(WarsCore.instance, 0, 20L))
+  }
+
+  val getAttacker = (entity: Entity) => entity match {
+    case player: Player => Some(player)
+    case arrow: Arrow => arrow.getShooter match {
+      case player: Player => Some(player)
+      case _ => None
+    }
+    case _ => None
   }
 
   /**
@@ -534,19 +558,21 @@ class TeamDeathMatch(override val id: String) extends Game {
   override def onDamage(e: EntityDamageByEntityEvent): Unit = {
     // ここで、ダメージを受けたエンティティはPlayerであることがわかっている
     val victim = e.getEntity.asInstanceOf[Player]
+    if(protectionPlayers.contains(victim)) {
+      e.setCancelled(true)
+      getAttacker(e.getDamager).foreach(_.sendMessage(ChatColor.RED + "リスポーンしてすぐは攻撃できません！！！"))
+    }
     val vData = data(victim)
-    val d = (attacker: Player) => data.get(attacker).foreach(aData => {
-      aData.damage += e.getFinalDamage
-      vData.damagedPlayer.add(attacker)
-    })
-    e.getDamager match {
-      case attacker: Player => d(attacker)
-      case arrow: Arrow =>
-        arrow.getShooter match {
-          case attacker: Player => d(attacker)
-          case _ =>
+    getAttacker(e.getDamager) match {
+      case Some(attacker) =>
+        if(protectionPlayers.contains(attacker)) {
+          protectionPlayers.remove(attacker)
+          attacker.sendMessage(ChatColor.RED + "無敵時間中に攻撃したため解除しました")
         }
-      case _ =>
+        val aData = data(attacker)
+        aData.damage += e.getFinalDamage
+        vData.damagedPlayer.add(attacker)
+      case None =>
     }
     vData.damaged += e.getFinalDamage
   }

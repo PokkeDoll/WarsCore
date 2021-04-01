@@ -5,7 +5,7 @@ import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil}
 import hm.moe.pokkedoll.warscore.{Registry, WarsCore}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.entity.HumanEntity
+import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
 import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.metadata.FixedMetadataValue
@@ -107,6 +107,22 @@ object WeaponUI {
 
     player.openInventory(inv)
 
+    inv.setItem(0, {
+      val i = new ItemStack(Material.BOOK)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.RED + "メニューに戻る")
+      i.setItemMeta(m)
+      i
+    })
+
+    inv.setItem(7, {
+      val i = new ItemStack(Material.FLINT_AND_STEEL)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.RED + "アイテムを表示する(回覧用)")
+      i.setItemMeta(m)
+      i
+    })
+
     new BukkitRunnable {
       override def run(): Unit = {
         val weapons = db.getActiveWeapon(player.getUniqueId.toString)
@@ -141,6 +157,7 @@ object WeaponUI {
       metadata.get(0).asInt()
     }
     slot match {
+      case 0 => player.asInstanceOf[Player].performCommand("pp")
       case 1 => openSettingUI(player, 1, WeaponDB.PRIMARY, sortType)
       case 2 => openSettingUI(player, 1, WeaponDB.SECONDARY, sortType)
       case 3 => openSettingUI(player, 1, WeaponDB.MELEE, sortType)
@@ -148,6 +165,7 @@ object WeaponUI {
       case 5 => openSettingUI(player, 1, WeaponDB.HEAD, sortType)
       //case 15 => openWeaponStorageUI(player)
       //case 16 => openMySetUI(player)
+      case 7 => openStorageUI(player, 1, "item")
       case 8 => player.closeInventory()
       case _ =>
     }

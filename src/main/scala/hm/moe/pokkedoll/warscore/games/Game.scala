@@ -12,7 +12,6 @@ import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.player.PlayerRespawnEvent
 
-import java.util.UUID
 import scala.util.Try
 
 /**
