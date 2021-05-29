@@ -1,12 +1,12 @@
 package hm.moe.pokkedoll.warscore.db
 
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore}
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 
 import scala.collection.mutable
+import scala.util.Try
 
 /**
  * データベースとのデータをやり取りするトレイト <br>
@@ -17,7 +17,7 @@ import scala.collection.mutable
  * @author Emorard
  * @version 3.0
  */
-trait Database extends WeaponDB with ItemDB {
+trait Database extends WeaponDB with ItemDB with TagDB {
   /**
    * データベースに自分のデータがあるか確認するメソッド
    *
@@ -58,44 +58,6 @@ trait Database extends WeaponDB with ItemDB {
       override def run(): Unit = updateTDM(game)
     }.runTaskAsynchronously(WarsCore.instance)
   }
-
-  /**
-   * タグを取得する
-   *
-   * @param uuid     UUIDを指定
-   * @param callback 非同期で返される
-   * @version 2
-   * @since v1.3
-   */
-  def getTags(uuid: String, callback: Callback[Vector[UserTagInfo]])
-
-  /**
-   * 設定しているタグを返す
-   *
-   * @param uuid     UUIDを指定
-   * @param callback 非同期で返される
-   * @version 2
-   * @since v1.3
-   */
-  def getTag(uuid: String, callback: Callback[String])
-
-  /**
-   * タグをセットする
-   *
-   * @param uuid UUID
-   * @param id   タグID
-   */
-  def setTag(uuid: String, id: String)
-
-  /**
-   * タグコンテナにタグを追加する
-   *
-   * @param uuid UUID
-   * @param id   タグID
-   */
-  def addTag(uuid: String, id: String)
-
-  def gameLog(gameid: String, level: String, message: String)
 
   /**
    * 仮想インベントリを読み込む
@@ -148,6 +110,14 @@ trait Database extends WeaponDB with ItemDB {
    * @param uuid 対象のUUID
    */
   def setDisconnect(uuid: String, disconnect: Boolean)
+
+  /**
+   * ゲームのログを設定する
+   * @param game ゲームID
+   * @param reason 記録される理由
+   * @param message 内容
+   */
+  def gameLog(game: String, reason: String, message: String): Try[Unit]
 
   def close(): Unit
 }

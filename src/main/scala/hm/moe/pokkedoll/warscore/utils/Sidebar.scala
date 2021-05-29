@@ -10,6 +10,7 @@ import org.bukkit.scoreboard.{DisplaySlot, Scoreboard}
 /**
  * @param player
  */
+@Deprecated
 class Sidebar(val player: Player) {
   val scoreboard: Scoreboard = Bukkit.getScoreboardManager.getNewScoreboard
 

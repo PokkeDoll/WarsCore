@@ -13,4 +13,9 @@ class SortSpec extends AnyFlatSpec with Diagrams {
       true
     })
   }
+
+  "計算をする" should "trueを返す" in {
+    println(s"${(10/29.toDouble)}")
+    true
+  }
 }

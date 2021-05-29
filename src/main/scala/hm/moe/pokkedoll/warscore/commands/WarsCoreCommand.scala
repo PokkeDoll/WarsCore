@@ -6,13 +6,14 @@ import hm.moe.pokkedoll.warscore.ui.{SndCheckerUI, WeaponUI}
 import hm.moe.pokkedoll.warscore.utils.{ItemUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.chat.ComponentBuilder
-import org.bukkit.ChatColor
+import org.bukkit.{ChatColor, Location}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
-import org.bukkit.entity.{EntityType, Player}
+import org.bukkit.entity.{ArmorStand, EntityType, Player}
 import org.bukkit.inventory.{Inventory, ItemStack}
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.persistence.PersistentDataType
 import hm.moe.pokkedoll.warscore.utils.Item
+import org.bukkit.scheduler.BukkitRunnable
 
 class WarsCoreCommand extends CommandExecutor {
 
@@ -37,7 +38,7 @@ class WarsCoreCommand extends CommandExecutor {
                   case "item" =>
                     ItemUtil.reloadItem()
                   case "tag" =>
-                    TagUtil.reloadConfig()
+                    TagUtil.init()
                   case "default" =>
                     WarsCore.instance.reloadConfig()
                     // WarsCoreAPI.reloadMapInfo(WarsCore.instance.getConfig.getConfigurationSection("mapinfo"))

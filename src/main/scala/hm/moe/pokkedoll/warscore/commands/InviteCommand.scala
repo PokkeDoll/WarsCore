@@ -1,13 +1,11 @@
 package hm.moe.pokkedoll.warscore.commands
 
-import java.util.UUID
-
-import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.WarsCoreAPI
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{ClickEvent, ComponentBuilder}
-import org.bukkit.{Bukkit, NamespacedKey, Sound}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
+import org.bukkit.{Bukkit, Sound}
 
 /**
  * 他プレイヤーを招待するためのコマンド

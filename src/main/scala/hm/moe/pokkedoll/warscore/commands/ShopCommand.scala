@@ -15,7 +15,7 @@ class ShopCommand extends CommandExecutor {
         } else if(args(0) == "list") {
           val sb = new StringBuilder("Shop list\n")
           ShopUtil.config.getKeys(false).forEach(f => {
-            sb.append(s"* ${f}\n")
+            sb.append(s"* $f\n")
           })
           player.sendMessage(sb.toString())
         } else if(args(0) == "add") {

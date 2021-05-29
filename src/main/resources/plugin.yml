@@ -1,9 +1,9 @@
 name: 'WarsCore'
-version: '1.10.9-SNAPSHOT'
+version: '1.11.19'
 api-version: '1.16'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
-softdepend: [Vault]
+softdepend: [Vault, CrackShot]
 
 commands:
   game:
@@ -19,12 +19,6 @@ commands:
     permission: pokkedoll.command.whelp
   tag:
     permission: pokkedoll.command.tag
-  killsound:
-    aliases: [ks]
-    permission: pokkedoll.command.killsound
-  killeffect:
-    aliases: [ke]
-    permission: pokkedoll.command.killeffect
   warscore:
     aliases: [wc, wars]
     permission: pokkedoll.command.warscore
@@ -47,6 +41,10 @@ commands:
     permission: sndchecker.use
   money:
     permission: pokkedoll.command.money
+  continue:
+    permission: pokkedoll.command.continue
+  cse:
+    permission: pokkedoll.command.cse
 permissions:
   pokkedoll.command.game:
     default: true
@@ -68,10 +66,15 @@ permissions:
     default: op
   pokkedoll.command.shop:
     default: op
+  pokkedoll.command.cse:
+    default: op
   pokkedoll.command.weapon:
     default: true
   pokkedoll.command.money:
     default: true
+  pokkedoll.command.continue:
+    default: true
+
   pokkedoll.user:
     default: true
     children:
@@ -81,6 +84,7 @@ permissions:
       pokkedoll.command.spawn: true
       pokkedoll.command.weapon: true
       pokkedoll.command.money: true
+      pokkedoll.command.continue: true
   pokkedoll.admin:
     default: op
     children:
@@ -88,5 +92,6 @@ permissions:
       pokkedoll.command.item: true
       pokkedoll.command.upgrade: true
       pokkedoll.command.merchant: true
+      pokkedoll.command.cse: true
   sndchecker.use:
     default: op

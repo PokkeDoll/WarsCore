@@ -4,10 +4,10 @@ import hm.moe.pokkedoll.warscore.events.{GameDeathEvent, GameEndEvent, GameJoinE
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, RankManager, WeakLocation, WorldLoader}
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
+import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder}
 import org.bukkit.{Bukkit, Color, FireworkEffect, GameMode, Location, Material, Sound, World, scheduler}
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
-import org.bukkit.entity.{Arrow, EntityType, Firework, Player}
+import org.bukkit.entity.{Arrow, Entity, EntityType, Firework, Player}
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.potion.PotionEffectType
@@ -92,28 +92,6 @@ class Domination(override val id: String) extends Game {
   val data = mutable.HashMap.empty[Player, DOMData]
 
   val buildRange = 6
-
-  /**
-   * ゲームを読み込む
-   */
-  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
-    state = GameState.INIT
-    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
-    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
-      override def success(value: World): Unit = {
-        world = value
-        loaded = true
-        disable = false
-        init()
-        players.foreach(join)
-      }
-
-      override def failure(error: Exception): Unit = {
-        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
-        state = GameState.ERROR
-      }
-    })
-  }
 
   /**
    * ゲームを初期化する
@@ -206,7 +184,7 @@ class Domination(override val id: String) extends Game {
     Bukkit.getServer.getPluginManager.callEvent(new GameStartEvent(this))
     WarsCoreAPI.playBattleSound(this)
 
-    val captureParam = if(members.length >= 10) 1 else 3
+    val captureParam = if (members.length >= 10) 1 else 3
 
     new BukkitRunnable {
       var TIME: Int = time
@@ -231,9 +209,9 @@ class Domination(override val id: String) extends Game {
             f.location.getNearbyPlayers(3d, 6d).forEach(p => {
               val d = data(p)
               // TODO 確かに連続して占領が行われることはないが、指を加えて見ないといけない！！
-              if(d.team != f.team) {
+              if (d.team != GameTeam.valueOf(f.team)) {
                 // データ上は 1 ~ 100: スコアボードでは 0 ~ 100
-                if (d.team == "red") {
+                if (d.team == GameTeam.RED) {
                   f.count += captureParam
                 } else {
                   f.count -= captureParam
@@ -242,18 +220,18 @@ class Domination(override val id: String) extends Game {
             })
             // TODO ゴミみたいなコードの修正
             // 赤ちーむ
-            if(f.count > 0) {
+            if (f.count > 0) {
               // 赤の勝ち
-              if(f.count >= 100 && f.team != "red") {
+              if (f.count >= 100 && f.team != "red") {
                 occupy(f, Material.RED_STAINED_GLASS)
               } else if (f.team == "neutral") {
                 // 中立から赤へ
-                if(f.name.startsWith("§7")) {
+                if (f.name.startsWith("§7")) {
                   sendActionBar("TEST => SUC R: A &' A &'")
                   scoreboard.resetScores(f.name)
                   val stripName = ChatColor.stripColor(f.name)
                   val name = Array(stripName.substring(0, stripName.length / 2), stripName.substring(stripName.length / 2, stripName.length))
-                  f.name =ChatColor.RED + name(0) + ChatColor.GRAY + name(1)
+                  f.name = ChatColor.RED + name(0) + ChatColor.GRAY + name(1)
                 }
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               } else if (f.team == "blue") {
@@ -261,19 +239,19 @@ class Domination(override val id: String) extends Game {
               } else {
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               }
-            // 青ちーむ
+              // 青ちーむ
             } else if (f.count < 0) {
               // 青の勝ち
-              if(f.count <= -100 && f.team != "blue") {
+              if (f.count <= -100 && f.team != "blue") {
                 occupy(f, Material.BLUE_STAINED_GLASS)
               } else if (f.team == "neutral") {
                 // 中立から赤へ
-                if(f.name.startsWith("§7")) {
+                if (f.name.startsWith("§7")) {
                   sendActionBar("TEST => SUC R: A &' A &'")
                   scoreboard.resetScores(f.name)
                   val stripName = ChatColor.stripColor(f.name)
                   val name = Array(stripName.substring(0, stripName.length / 2), stripName.substring(stripName.length / 2, stripName.length))
-                  f.name =ChatColor.BLUE + name(0) + ChatColor.GRAY + name(1)
+                  f.name = ChatColor.BLUE + name(0) + ChatColor.GRAY + name(1)
                 }
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               } else if (f.team == "red") {
@@ -281,7 +259,7 @@ class Domination(override val id: String) extends Game {
               } else {
                 sidebar.getScore(f.name).setScore(calcScore(f.count))
               }
-            // 0なら!=>中立
+              // 0なら!=>中立
             } else if (f.team != "neutral") {
               occupy(f)
             }
@@ -289,7 +267,7 @@ class Domination(override val id: String) extends Game {
 
           TIME -= 1
           val splitTime = WarsCoreAPI.splitToComponentTimes(TIME)
-          bossbar.setProgress(((d: Double) => if(d < 0d) 0d else d)(TIME * 0.0016))
+          bossbar.setProgress(((d: Double) => if (d < 0d) 0d else d) (TIME * 0.0016))
           bossbar.setTitle(s"(DOM) ${mapInfo.mapName} §7|| §a${splitTime._2} 分 ${splitTime._3} 秒")
         }
       }
@@ -310,11 +288,11 @@ class Domination(override val id: String) extends Game {
     // groupByでdraw: {}, red: {}, blue: {}となる
     val winner = captureData.groupBy(f => f.team).map(f => (f._1, f._2.length)) match {
       case f if f.getOrElse("red", 0) > f.getOrElse("blue", 0) =>
-        "red"
+        GameTeam.RED
       case f if f.getOrElse("blue", 0) > f.getOrElse("red", 0) =>
-        "blue"
+        GameTeam.BLUE
       case _ =>
-        "neutral"
+        GameTeam.DEFAULT
     }
 
     Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
@@ -322,11 +300,11 @@ class Domination(override val id: String) extends Game {
     val endMsg = new ComponentBuilder("- = - = - = - = - = - = - = - = - = - = - = -\n\n").color(ChatColor.GRAY).underlined(true)
       .append("               Game Over!\n").bold(true).underlined(false).color(ChatColor.WHITE)
 
-    if (winner == "red") {
+    if (winner == GameTeam.RED) {
       endMsg.append("              ")
         .append("Red Team").color(ChatColor.RED).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
-    } else if (winner == "blue") {
+    } else if (winner == GameTeam.BLUE) {
       endMsg.append("              ")
         .append("Blue Team").color(ChatColor.BLUE).bold(false).underlined(true)
         .append(" won!                \n").color(ChatColor.WHITE).underlined(false)
@@ -347,25 +325,36 @@ class Domination(override val id: String) extends Game {
             d.win = true
           }
           wp.sendMessage(createResult(d, winner): _*)
+
+          wp.sendMessage(
+            new ComponentBuilder("\n")
+              .append("自動参加するかどうかを設定できます。現在は" + (if(WarsCoreAPI.isContinue(wp.player)) ChatColor.GREEN + "有効" else ChatColor.RED + "無効") + ChatColor.RESET + "になっています\n")
+              .append("有効にする").color(ChatColor.GREEN).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/continue true"))
+              .reset().append("- - - - - -").color(ChatColor.WHITE)
+              .append("無効にする").color(ChatColor.RED).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/continue"))
+              .create(): _*
+          )
+
           // ゲーム情報のリセット
           wp.game = None
+          // インベントリのリストア
+          WarsCoreAPI.restoreLobbyInventory(wp.player)
           // スコアボードのリセット
           wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
-          RankManager.giveExp(wp, d.calcExp())
         case _ =>
       }
     })
     //WarsCore.instance.database.updateTDMAsync(this)
     val beforeMembers = members.map(_.player)
-    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
     sendMessage(ChatColor.BLUE + "10秒後に自動で試合に参加します")
+    world.getPlayers.forEach(p => p.teleport(Bukkit.getWorlds.get(0).getSpawnLocation))
     bossbar.removeAll()
     new BukkitRunnable {
       override def run(): Unit = {
         WorldLoader.asyncUnloadWorld(id)
         new BukkitRunnable {
           override def run(): Unit = {
-            load(players = beforeMembers.filter(player => player.getWorld == world))
+            load(players = beforeMembers.filter(_.isOnline).filter(WarsCoreAPI.isContinue))
           }
         }.runTaskLater(WarsCore.instance, 190L)
       }
@@ -378,7 +367,7 @@ class Domination(override val id: String) extends Game {
    * @param wp プレイヤー
    * @return 参加できる場合
    */
-  override def join(wp: WPlayer): Boolean = {
+  override def join(wp: WPlayer): Unit = {
     val event = new GameJoinEvent(this, wp)
     if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
@@ -425,7 +414,6 @@ class Domination(override val id: String) extends Game {
             ready()
           }
         case _ =>
-          return false
       }
     }
     Bukkit.getPluginManager.callEvent(event)
@@ -465,68 +453,11 @@ class Domination(override val id: String) extends Game {
   }
 
   /**
-   * プレイヤーが死亡したときのイベント
-   *
-   * @param e イベント
-   */
-  override def death(e: PlayerDeathEvent): Unit = {
-    e.setCancelled(true)
-    val victim = e.getEntity
-    // 試合中のみのできごと
-    if (state == GameState.PLAY || state == GameState.PLAY2) {
-      val preEvent = (attacker: Player) => new GameDeathEvent(attacker=attacker, victim=victim, game=this)
-      val vData: DOMData = data(victim)
-      vData.death += 1
-      Option(victim.getKiller) match {
-        case Some(attacker) =>
-          val aData = data(attacker)
-          aData.kill += 1
-          // 同じIPアドレスなら報酬をスキップする
-          if (attacker.isOp || victim.getAddress != attacker.getAddress) {
-            // EconomyUtil.give(attacker, EconomyUtil.COIN, 3)
-          }
-          WarsCore.instance.database.addItem(
-            attacker.getUniqueId.toString,
-            config.onKillItem
-          )
-          e.setShouldPlayDeathSound(true)
-          e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
-          e.setDeathSoundVolume(2f)
-          // 赤チーム用のメッセージ
-          if (aData.team == "red") {
-            WarsCoreAPI.getAttackerWeaponName(attacker) match {
-              case Some(name) =>
-                sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
-              case None =>
-                sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
-            }
-            // 青チーム用のメッセージ
-          } else {
-            WarsCoreAPI.getAttackerWeaponName(attacker) match {
-              case Some(name) =>
-                sendMessage(s"§f0X §9${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §c${victim.getName}")
-              case None =>
-                sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
-            }
-          }
-          Bukkit.getServer.getPluginManager.callEvent(preEvent(attacker))
-        case None =>
-          sendMessage(s"§f0X ${victim.getName} dead")
-          Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
-      }
-      // とにかく死んだのでリスポン処理
-      spawn(victim, coolTime = true)
-    } else {
-
-    }
-  }
-
-  /**
    * プレイヤーがダメージを受けた時のイベント
    *
    * @param e イベント
    */
-  override def damage(e: EntityDamageByEntityEvent): Unit = {
+  override def onDamage(e: EntityDamageByEntityEvent): Unit = {
     // ここで、ダメージを受けたエンティティはPlayerであることがわかっている
     val victim = e.getEntity.asInstanceOf[Player]
     val vData = data(victim)
@@ -547,11 +478,86 @@ class Domination(override val id: String) extends Game {
   }
 
   /**
+   * プレイヤーが死亡したときのイベント
+   *
+   * @param e イベント
+   */
+  override def onDeath(e: PlayerDeathEvent): Unit = {
+    super.onDeath(e)
+    val victim = e.getEntity
+    // 試合中のみのできごと
+    if (state == GameState.PLAY || state == GameState.PLAY2) {
+      val preEvent = (attacker: Player) => new GameDeathEvent(attacker = attacker, victim = victim, game = this)
+      val vData: DOMData = data(victim)
+      vData.death += 1
+      Option(victim.getKiller) match {
+        case Some(attacker) =>
+          val assistFunc = assistMessage(vData, attacker.getName, victim.getName, _)
+          val aData = data(attacker)
+          aData.kill += 1
+          reward(attacker, GameRewardType.KILL)
+          // 赤チーム用のメッセージ
+          if (aData.team == GameTeam.RED) {
+            WarsCoreAPI.getAttackerWeaponName(attacker) match {
+              case Some(name) =>
+                sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
+                assistFunc(name)
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
+              case None =>
+                sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
+                assistFunc("")
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
+            }
+            // 青チーム用のメッセージ
+          } else {
+            WarsCoreAPI.getAttackerWeaponName(attacker) match {
+              case Some(name) =>
+                sendMessage(s"§f0X §9${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §c${victim.getName}")
+                assistFunc(name)
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
+              case None =>
+                sendMessage(s"§f0X §9${attacker.getName} §7-> §0Killed §7-> §c${victim.getName}")
+                assistFunc("")
+                log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
+            }
+          }
+          Bukkit.getServer.getPluginManager.callEvent(preEvent(attacker))
+        case None =>
+          sendMessage(s"§f0X ${victim.getName} dead")
+          Bukkit.getServer.getPluginManager.callEvent(preEvent(null))
+      }
+      // アシストの処理
+      vData.damagedPlayer.clear()
+
+      // 武器ドロップの処理
+      val item = victim.getInventory.getItemInMainHand
+      if (item != null && item.getType != Material.AIR && WarsCore.instance.getCSUtility.getWeaponTitle(item) != null) {
+        val dropItem = world.dropItem(victim.getLocation(), item)
+        // 30秒で消滅するように
+        dropItem.setWillAge(true)
+        dropItem.asInstanceOf[Entity].setTicksLived(5400)
+      }
+      // とにかく死んだのでリスポン処理
+      spawn(victim, coolTime = true)
+    }
+  }
+
+  private val assistMessage = (d: DOMData, attacker: String, victim: String, weapon: String) => {
+    d.damagedPlayer.filterNot(pred => pred.getName == attacker).filter(pred => pred.isOnline && data.contains(pred)).foreach(f => {
+      data(f).assist += 1
+      reward(f, GameRewardType.ASSIST)
+      val attackerString = if(weapon == "") attacker else s"$attacker §f[$weapon§f]"
+      f.sendMessage(s"$attackerString + §a${f.getName} §7-> §0Killed §7-> §f$victim")
+    })
+  }
+
+
+  /**
    * ブロックを破壊するときに呼び出されるイベント
    *
    * @param e イベント
    */
-  override def break(e: BlockBreakEvent): Unit = {
+  override def onBreak(e: BlockBreakEvent): Unit = {
     if (!canBuild(e.getBlock.getLocation)) {
       e.getPlayer.sendActionBar(ChatColor.RED + "そのブロックを壊すことはできません！")
       e.setCancelled(true)
@@ -563,7 +569,7 @@ class Domination(override val id: String) extends Game {
    *
    * @param e イベント
    */
-  override def place(e: BlockPlaceEvent): Unit = {
+  override def onPlace(e: BlockPlaceEvent): Unit = {
     if (!canBuild(e.getBlock.getLocation)) {
       e.getPlayer.sendActionBar(ChatColor.RED + "その地点にブロックを置くことはできません！")
       e.setCancelled(true)
@@ -583,13 +589,13 @@ class Domination(override val id: String) extends Game {
       override def run(): Unit = {
         if (!coolTime) {
           WarsCoreAPI.getWPlayer(player).changeInventory = true
-          if (d.team == "red") {
+          if (d.team == GameTeam.RED) {
             player.teleport(redPoint)
           } else {
             player.teleport(bluePoint)
           }
         } else if (player.getKiller != null) {
-          player.setSpectatorTarget(player.getKiller)
+          // WarsCoreAPI.spectate(player, player.getKiller)
         }
         if (coolTime) {
           WarsCoreAPI.freeze(player)
@@ -598,7 +604,7 @@ class Domination(override val id: String) extends Game {
               if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
                   WarsCoreAPI.unfreeze(player)
-                  if (d.team == "red") {
+                  if (d.team == GameTeam.RED) {
                     player.teleport(redPoint)
                   } else {
                     player.teleport(bluePoint)
@@ -642,26 +648,38 @@ class Domination(override val id: String) extends Game {
     )
   }
 
-  private def setTeam(p: Player): Unit = {
-    if (redTeam.getEntries.size() > blueTeam.getEntries.size()) {
-      blueTeam.addEntry(p.getName)
-      data(p).team = "blue"
-    } else if (redTeam.getEntries.size() < blueTeam.getEntries.size()) {
-      redTeam.addEntry(p.getName)
-      data(p).team = "red"
-    } else {
-      WarsCoreAPI.random.nextInt(2) match {
-        case 1 =>
-          blueTeam.addEntry(p.getName)
-          data(p).team = "blue"
-        case 0 =>
-          redTeam.addEntry(p.getName)
-          data(p).team = "red"
-      }
+  /**
+   * 決定したチームを適用する
+   *
+   * @param name 参加させるプレイヤーの名前
+   * @param team 決定したチーム
+   */
+  private def addEntryTeam(name: String, team: GameTeam): Unit = {
+    team match {
+      case GameTeam.RED => redTeam.addEntry(name)
+      case GameTeam.BLUE => blueTeam.addEntry(name)
+      case _ =>
     }
   }
 
-//TODO 報酬
+  private def setTeam(p: Player): Unit = {
+    val d = data(p)
+    if (redTeam.getEntries.size() > blueTeam.getEntries.size()) {
+      d.team = GameTeam.BLUE
+    } else if (redTeam.getEntries.size() < blueTeam.getEntries.size()) {
+      d.team = GameTeam.RED
+    } else {
+      WarsCoreAPI.random.nextInt(2) match {
+        case 1 =>
+          d.team = GameTeam.BLUE
+        case 0 =>
+          d.team = GameTeam.RED
+      }
+    }
+    addEntryTeam(p.getName, d.team)
+  }
+
+  //TODO 報酬
   // TODO なぜか負の値になる
   private def occupy(point: CapturePoint, flag: Material = Material.WHITE_STAINED_GLASS): Unit = {
     scoreboard.resetScores(point.name)
@@ -699,53 +717,11 @@ class Domination(override val id: String) extends Game {
       (location.getZ >= p.location.getZ - buildRange && location.getZ <= p.location.getZ + buildRange))
   }
 
-  private def createResult(data: DOMData, winner: String): Array[BaseComponent] = {
-    val comp = new ComponentBuilder("- = - = - = - = - = ").color(ChatColor.GRAY).underlined(true)
-      .append("戦績").underlined(false).bold(true).color(ChatColor.AQUA)
-      .append("- = - = - = - = - = \n\n").underlined(true).bold(false).color(ChatColor.GRAY)
-      .append("* ").underlined(false).color(ChatColor.WHITE)
-      .append("結果: ").color(ChatColor.GRAY)
-
-    if (winner == "draw") {
-      comp.append("引き分け\n")
-    } else if (winner == data.team) {
-      comp.append("勝利").color(ChatColor.YELLOW).bold(true).append("\n").bold(false)
-    } else {
-      comp.append("敗北").color(ChatColor.BLUE).append("\n")
-    }
-
-    comp.append("* ").reset()
-      .append("キル数: ").color(ChatColor.GRAY)
-      .append(data.kill.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("デス数: ").color(ChatColor.GRAY)
-      .append(data.death.toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("K/D: ").color(ChatColor.GRAY)
-      .append((data.kill / (if(data.death == 0) 1 else data.death).toDouble).toString).color(ChatColor.GREEN).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("与えたダメージ: ").color(ChatColor.GRAY)
-      .append(s"❤ × ${data.damage.toInt / 2}").color(ChatColor.RED).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.append("* ")
-      .append("受けたダメージ: ").color(ChatColor.GRAY)
-      .append(s"❤ × ${data.damaged.toInt / 2}").color(ChatColor.RED).bold(true)
-      .append("\n").color(ChatColor.RESET).bold(false)
-
-    comp.create()
-  }
-
-  class CapturePoint(var name: String , var team: String, var count: Int, var location: Location)
+  class CapturePoint(var name: String, var team: String, var count: Int, var location: Location)
 
   /**
    * Java用メソッド。Optionalではないためnullの可能性がある。
+   *
    * @param player データを持つプレイヤー。
    * @return 現時点のDOMのデータ。存在しないならnull
    */
@@ -754,16 +730,10 @@ class Domination(override val id: String) extends Game {
   /**
    * 試合中の一時的なデータを管理するクラス
    */
-  class DOMData {
-    // 順に, キル, デス, アシスト, ダメージ量, 受けたダメージ量
-    var kill, death, assist: Int = 0
-    var damage, damaged: Double = 0d
-    var win = false
-    var damagedPlayer = mutable.Set.empty[Player]
-    var team = ""
+  class DOMData extends GamePlayerData
 
-    def calcExp(): Int = {
-      kill * 5 + death + assist + (if (win) 100 else 0)
-    }
-  }
+  /**
+   * 最大試合時間
+   */
+  override var maxTime: Int = _
 }

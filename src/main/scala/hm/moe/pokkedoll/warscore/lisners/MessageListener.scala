@@ -1,11 +1,11 @@
 package hm.moe.pokkedoll.warscore.lisners
 
 import com.google.common.io.ByteStreams
-import hm.moe.pokkedoll.warscore.WarsCore
+import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.ItemUtil
 import org.bukkit.entity.Player
 import org.bukkit.plugin.messaging.PluginMessageListener
-import org.bukkit.{ChatColor, Sound}
+import org.bukkit.{Bukkit, ChatColor, Sound}
 
 /**
  * BungeeCordにお問い合わせしてクライアントのバージョンを得る
@@ -17,15 +17,16 @@ class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
     val in = ByteStreams.newDataInput(message)
     val subChannel = in.readUTF()
 
-    if (subChannel == "TakeVotePoint") {
-      if (in.readBoolean()) {
-        player.sendMessage(ChatColor.BLUE + "VP一つ消費しました\nポールクリスタルを一つ獲得しました")
-        ItemUtil.getItem("vote").foreach(player.getInventory.addItem(_))
-        player.playSound(player.getLocation, Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f)
-      } else {
-        player.sendMessage(ChatColor.RED + "VP が足りません！")
-        player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
-      }
+    subChannel match {
+      case "TakeVotePoint" =>
+        if (in.readBoolean()) {
+          player.sendMessage(ChatColor.BLUE + "VP一つ消費しました\nポールクリスタルを一つ獲得しました")
+          ItemUtil.getItem("vote").foreach(player.getInventory.addItem(_))
+          player.playSound(player.getLocation, Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f)
+        } else {
+          player.sendMessage(ChatColor.RED + "VP が足りません！")
+          player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
+        }
     }
   }
 

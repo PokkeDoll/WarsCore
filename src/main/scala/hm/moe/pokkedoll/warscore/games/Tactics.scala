@@ -76,26 +76,8 @@ class Tactics(override val id: String) extends Game {
       blue.getLocation(world))
   }
 
-  override def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
-    state = GameState.INIT
-    this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
-    WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
-      override def success(value: World): Unit = {
-        world = value
-        loaded = true
-        disable = false
-        init()
-        players.foreach(join)
-      }
-
-      override def failure(error: Exception): Unit = {
-        players.foreach(_.sendMessage(ChatColor.RED + "エラー！ワールドの読み込みに失敗しました！"))
-        state = GameState.ERROR
-      }
-    })
-  }
-
   override def init(): Unit = {
+
     state = GameState.INIT
 
     // getPlayer().clear()よりよいはず
@@ -174,7 +156,7 @@ class Tactics(override val id: String) extends Game {
     world.setPVP(false)
     // ここで勝敗を決める
     val winner = if (first > second) members.head.player.getName else members.last.player.getName
-    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, winner))
+    Bukkit.getPluginManager.callEvent(new GameEndEvent(this, GameTeam.of(winner)))
     sendMessage(
       "§7==========================================\n" +
         "§7                Game Over!                \n" +
@@ -208,19 +190,15 @@ class Tactics(override val id: String) extends Game {
     }.runTaskLater(WarsCore.instance, 10L)
   }
 
-  override def join(wp: WPlayer): Boolean = {
+  override def join(wp: WPlayer): Unit = {
     if (wp.game.isDefined) {
       wp.sendMessage("ほかのゲームに参加しています!")
-      false
     } else if (!loaded && state == GameState.DISABLE) {
       load(Vector(wp.player))
-      false
     } else if (!state.join) {
       wp.player.sendMessage("§cゲームに参加できません!")
-      false
     } else if (members.length >= maxMember) {
       wp.player.sendMessage("§c人数が満員なので参加できません！")
-      false
     } else {
       wp.sendMessage(
         s"マップ名: §a${mapInfo.mapName}\n" +
@@ -243,9 +221,7 @@ class Tactics(override val id: String) extends Game {
             ready()
           }
         case _ =>
-          return false
       }
-      true
     }
   }
 
@@ -271,7 +247,7 @@ class Tactics(override val id: String) extends Game {
     }.runTaskLater(WarsCore.instance, 1L)
   }
 
-  override def death(e: PlayerDeathEvent): Unit = {
+  override def onDeath(e: PlayerDeathEvent): Unit = {
     e.setCancelled(true)
     val victim = e.getEntity
     // 試合中のみのできごと
@@ -285,10 +261,9 @@ class Tactics(override val id: String) extends Game {
           } else {
             first += 1
           }
-          WarsCore.instance.database.addItem(
-            attacker.getUniqueId.toString,
-            config.onKillItem
-          )
+
+          reward(attacker, GameRewardType.KILL)
+
           sendMessage(s"${attacker.getName}が1ポイント獲得しました")
           e.setShouldPlayDeathSound(true)
           e.setDeathSound(Sound.ENTITY_PLAYER_LEVELUP)
@@ -296,8 +271,10 @@ class Tactics(override val id: String) extends Game {
           WarsCoreAPI.getAttackerWeaponName(attacker) match {
             case Some(name) =>
               sendMessage(s"§f0X §c${attacker.getName} §f[$name§f] §7-> §0Killed §7-> §9${victim.getName}")
+              log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}, weapon: $name")
             case None =>
               sendMessage(s"§f0X §c${attacker.getName} §7-> §0Killed §7-> §9${victim.getName}")
+              log("KILL", s"attacker: ${attacker.getName}, victim: ${victim.getName}")
           }
         case None =>
           sendMessage(s"§f0X ${victim.getName} dead")
@@ -365,23 +342,7 @@ class Tactics(override val id: String) extends Game {
   }
 
   /**
-   * ブロックを破壊するときに呼び出されるイベント
-   *
-   * @param e BlockBreakEvent
+   * 最大試合時間
    */
-  override def break(e: BlockBreakEvent): Unit = {}
-
-  /**
-   * ブロックを設置するときに呼び出されるイベント
-   *
-   * @param e BlockPlaceEvent
-   */
-  override def place(e: BlockPlaceEvent): Unit = {}
-
-  /**
-   * プレイヤーがダメージを受けた時のイベント
-   *
-   * @param e EntityDamageByEntityEvent
-   */
-  override def damage(e: EntityDamageByEntityEvent): Unit = {}
+  override var maxTime: Int = _
 }

@@ -2,7 +2,6 @@ package hm.moe.pokkedoll.warscore.db
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.utils.TagUtil.UserTagInfo
 import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil, ShopUtil}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
@@ -12,7 +11,7 @@ import org.bukkit.scheduler.BukkitRunnable
 
 import java.sql.{ResultSet, SQLException}
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try, Using}
+import scala.util.{Try, Using}
 
 /**
  * SQLite3でのDatabase実装
@@ -107,117 +106,19 @@ class SQLite(private val plugin: WarsCore) extends Database {
   }
 
   /**
-   * タグを取得する
-   *
-   * @param uuid     UUIDを指定
-   * @param callback 非同期で返される
-   * @version 2
-   * @since v1.3
+   * ゲームのログを設定する
+   * @param game ゲームID
+   * @param reason 記録される理由
+   * @param message 内容
    */
-  override def getTags(uuid: String, callback: Callback[Vector[UserTagInfo]]): Unit = {
-    new BukkitRunnable {
-      override def run(): Unit = {
-
-        callback.async = true
-        Using.Manager { use =>
-          val c = use(hikari.getConnection)
-          val ps = use(c.prepareStatement("SELECT * FROM tag WHERE uuid=?"))
-          ps.setString(1, uuid)
-          val rs = ps.executeQuery()
-          var vec = Vector.empty[UserTagInfo]
-          while (rs.next()) {
-            vec :+= new UserTagInfo(rs.getString("tagId"), rs.getBoolean("use"))
-          }
-          callback.success(vec)
-        }
-      }
-    }.runTaskAsynchronously(plugin)
-  }
-
-  /**
-   * 設定しているタグを返す
-   *
-   * @param uuid     UUIDを指定
-   * @param callback 非同期で返される
-   * @version 2
-   * @since v1.3
-   */
-  override def getTag(uuid: String, callback: Callback[String]): Unit = {
-    new BukkitRunnable {
-      override def run(): Unit = {
-
-        callback.async = true
-
-        Using.Manager { use =>
-          val c = use(hikari.getConnection)
-          val ps = use(c.prepareStatement("SELECT tagId FROM tag WHERE uuid=? and use=1"))
-          ps.setString(1, uuid)
-          val rs = ps.executeQuery()
-          if (rs.next()) {
-            callback.success(rs.getString("tagId"))
-          } else {
-            callback.success("")
-          }
-        }
-      }
-    }.runTaskAsynchronously(plugin)
-  }
-
-
-  /**
-   * タグをセットする
-   *
-   * @param uuid UUID
-   * @param id   タグID
-   */
-  override def setTag(uuid: String, id: String): Unit = {
+  override def gameLog(game: String, reason: String, message: String): Try[Unit] = {
     Using.Manager { use =>
-      val c = use(hikari.getConnection)
-      val ps = use(c.prepareStatement("UPDATE `tag` SET `tagId`=? WHERE `uuid`=?"))
-      ps.setString(1, id)
-      ps.setString(2, uuid)
-      ps.executeUpdate()
+      val c = use(hikari.getConnection())
+      val s = use(c.createStatement())
+      s.executeUpdate(s"INSERT INTO gamelog VALUES(date(), '$game', '$reason', '$message')")
     }
   }
 
-  /**
-   * タグコンテナにタグを追加する
-   *
-   * @param uuid UUID
-   * @param id   タグID
-   */
-  override def addTag(uuid: String, id: String): Unit = {
-    val c = hikari.getConnection
-    val ps = c.prepareStatement("INSERT INTO `tagContainer` VALUES(?,?)")
-    try {
-      ps.setString(1, uuid)
-      ps.setString(2, id)
-      ps.executeUpdate()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      ps.close()
-      c.close()
-    }
-  }
-
-  def gameLog(gameid: String, level: String, message: String): Unit = {
-    val c = hikari.getConnection
-    val ps = c.prepareStatement("INSERT INTO `gamelog` VALUES((select datetime()), ?, ?, ?)")
-    try {
-      ps.setString(1, gameid)
-      ps.setString(2, level)
-      ps.setString(3, message)
-      ps.executeUpdate()
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      ps.close()
-      c.close()
-    }
-  }
 
   /**
    * 仮想インベントリを読み込む
@@ -264,22 +165,22 @@ class SQLite(private val plugin: WarsCore) extends Database {
     new BukkitRunnable {
       override def run(): Unit = {
         val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT player.uuid, player.disconnect, rank.id, rank.exp, tag.tagId FROM player JOIN rank ON player.uuid=rank.uuid JOIN tag ON player.uuid=tag.uuid and tag.use=1 WHERE player.uuid=?")
+        //val ps = c.prepareStatement("SELECT player.uuid, player.disconnect, rank.id, rank.exp, tag.tagId FROM player JOIN rank ON player.uuid=rank.uuid JOIN tag ON player.uuid=tag.uuid and tag.use=1 WHERE player.uuid=?")
+        val ps = c.prepareStatement("SELECT player.uuid, player.disconnect, rank.id, rank.exp FROM player JOIN rank ON player.uuid=rank.uuid WHERE player.uuid=?")
         try {
           ps.setString(1, wp.player.getUniqueId.toString)
           val rs = ps.executeQuery()
 
           if (rs.next()) {
-            //println("true!")
             wp.rank = rs.getInt("id")
             wp.exp = rs.getInt("exp")
-            wp.tag = rs.getString("tagId")
-            wp.disconnect = ((i: Int) => (if (i == 1) true else false)) (rs.getInt("disconnect"))
+            //wp.tag = rs.getString("tagId")
+            wp.tag = ""
+            wp.disconnect = ((i: Int) => if (i == 1) true else false) (rs.getInt("disconnect"))
           } else {
-            // println("false!!!")
-            wp.rank = -9999
-            wp.exp = -9999
-            wp.tag = "Unknown"
+            wp.rank = -1
+            wp.exp = -1
+            wp.tag = ""
             wp.disconnect = false
           }
           new BukkitRunnable {
@@ -714,6 +615,24 @@ class SQLite(private val plugin: WarsCore) extends Database {
       val rs = use(s.executeQuery("SELECT * FROM item"))
       while (rs.next()) {
         seq :+= (rs.getString("name"), rs.getString("displayname"), ItemStack.deserializeBytes(rs.getBytes("data")))
+      }
+      seq
+    }
+  }
+
+  /**
+   * すべてのタグを取得する
+   *
+   * @return
+   */
+  override def getTags: Try[Seq[(String, String)]] = {
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      var seq = Seq.empty[(String, String)]
+      val rs = use(s.executeQuery("SELECT * FROM tag"))
+      while (rs.next()) {
+        seq :+= (rs.getString("id"), rs.getString("title"))
       }
       seq
     }

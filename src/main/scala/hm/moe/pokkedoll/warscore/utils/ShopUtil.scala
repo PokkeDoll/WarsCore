@@ -106,12 +106,17 @@ object ShopUtil {
     else
       None
   }
-
+/*
+  trait Shop
+  class ItemShop extends Shop
+  class DataShop extends Shop
+*/
   /**
    * ショップそのもの
    *
    * @param product 製品
    * @param price   購入するために必要なアイテム
    */
+  @Deprecated
   class Shop(val `type`: String, val product: Item, val price: Array[Item], val rank: Int = -1)
 }

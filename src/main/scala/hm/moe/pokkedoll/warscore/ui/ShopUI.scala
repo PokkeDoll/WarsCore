@@ -6,7 +6,7 @@ import net.md_5.bungee.api.ChatColor
 import org.bukkit.{Bukkit, Material, NamespacedKey, Sound}
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
-import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.{Inventory, InventoryView, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 
 import scala.jdk.CollectionConverters._
@@ -106,9 +106,8 @@ object ShopUI {
           List(
             "§7§l|",
             "§7§l| §7達成条件 §7§l: §7必要値 §8/ §7現在値",
-            // "§fテスト条件: §c0 / 1"
           ) ++
-          (if (shop.rank != -1) {
+          (if (shop.rank != -1 && shop.rank != 0) {
             List({
               val rank = WarsCoreAPI.getWPlayer(player).rank
               "§fランク: " + (if (rank >= shop.rank) {
@@ -140,13 +139,9 @@ object ShopUI {
 
   // TODO どちらかというとoffsetKey
   // TODO どのアイコンにおいてもoffset, nameは使用している。統一したほうが良いのでは？
-  def onClick(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    e.getClickedInventory.getType match {
+  def onClick(player: Player, inv: Inventory, slot: Int, item: ItemStack, view: InventoryView): Unit = {
+    inv.getType match {
       case InventoryType.CHEST =>
-        val slot = e.getSlot
-        val item = e.getCurrentItem
-        val player = e.getWhoClicked.asInstanceOf[Player]
         if (item != null && item.getType != Material.AIR && item.hasItemMeta) {
           val data = item.getItemMeta.getPersistentDataContainer
           if (slot == 18 && data.has(WarsCoreAPI.UI.PAGE_KEY, PersistentDataType.INTEGER)) {
@@ -159,7 +154,9 @@ object ShopUI {
             WarsCore.instance.database.addWeapon(player.getUniqueId.toString, shop.`type`, shop.product.name, shop.product.amount)
             WarsCore.instance.database.delWeapon(player.getUniqueId.toString, shop.price)
             player.playSound(player.getLocation, Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1.5f)
-            openShopUI(player, e.getView.getTitle.replaceAll("Shop: ", ""))
+            openShopUI(player, view.getTitle.replaceAll("Shop: ", ""))
+            // キャッシュのクリア
+            WeaponUI.weaponCache.remove(player)
           } else {
             // WarsCoreAPI.debug(player, "何も起きず！")
             player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)

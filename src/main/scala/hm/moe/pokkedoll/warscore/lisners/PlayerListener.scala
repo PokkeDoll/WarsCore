@@ -1,9 +1,8 @@
 package hm.moe.pokkedoll.warscore.lisners
 
-import java.util
-
+import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.info
-import hm.moe.pokkedoll.warscore.ui.{EnderChestUI, GameUI, ShopUI, SndCheckerUI, TagUI, WeaponUI}
+import hm.moe.pokkedoll.warscore.ui._
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
@@ -15,21 +14,39 @@ import org.bukkit.event.player._
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.persistence.PersistentDataType
-import org.bukkit.{Bukkit, ChatColor, GameMode, Material, Sound}
+import org.bukkit._
+import org.bukkit.scheduler.BukkitRunnable
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onDeath(e: PlayerDeathEvent): Unit = {
-    WarsCoreAPI.getWPlayer(e.getEntity).game match {
-      case Some(game) =>
-        game.death(e)
+    e.setKeepInventory(true)
+    e.setKeepLevel(true)
+    e.getEntity match {
+      case player: Player =>
+        WarsCoreAPI.getWPlayer(player).game.foreach(_.onDeath(e))
+        new BukkitRunnable {
+          override def run(): Unit = {
+            player.spigot().respawn()
+          }
+        }.runTaskLater(plugin, 1L)
       case _ =>
-        e.setCancelled(true)
-        if (e.getEntity.getWorld == Bukkit.getWorlds.get(0)) {
-          e.getEntity.teleport(e.getEntity.getWorld.getSpawnLocation)
-        }
     }
+  }
+
+  @EventHandler
+  def onRespawn(e: PlayerRespawnEvent): Unit = {
+    WarsCoreAPI.getWPlayer(e.getPlayer).game.foreach(game => {
+      game.onRespawn(e)
+    })
+  }
+
+  @EventHandler
+  def onPostRespawn(e: PlayerPostRespawnEvent): Unit = {
+    WarsCoreAPI.getWPlayer(e.getPlayer).game.foreach(game => {
+      game.onPostRespawn(e)
+    })
   }
 
   @EventHandler
@@ -38,7 +55,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       case player: Player =>
         WarsCoreAPI.getWPlayer(player).game match {
           case Some(game) =>
-            game.damage(e)
+            game.onDamage(e)
           case _ =>
         }
       case _ =>
@@ -50,7 +67,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     if (e.getPlayer.getGameMode == GameMode.SURVIVAL) {
       WarsCoreAPI.getWPlayer(e.getPlayer).game match {
         case Some(game) =>
-          game.break(e)
+          game.onBreak(e)
         case _ =>
           e.setCancelled(true)
       }
@@ -62,7 +79,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     if (e.getPlayer.getGameMode == GameMode.SURVIVAL) {
       WarsCoreAPI.getWPlayer(e.getPlayer).game match {
         case Some(game) =>
-          game.place(e)
+          game.onPlace(e)
         case _ =>
           e.setCancelled(true)
       }
@@ -77,12 +94,23 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         case Some(_) =>
           e.setCancelled(true)
           if (player.isSneaking) {
+            val pickUpItem = e.getItem.getItemStack
             val item = player.getInventory.getItemInMainHand
-            if (WarsCore.instance.getCSUtility.getWeaponTitle(e.getItem.getItemStack) != null) {
-              player.getInventory.setItemInMainHand(e.getItem.getItemStack)
-              e.getItem.remove()
-              player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
-              WarsCoreAPI.info(player, "武器を拾った！")
+            if (WarsCore.instance.getCSUtility.getWeaponTitle(pickUpItem) != null) {
+              val weaponType = WarsCoreAPI.getWeaponTypeFromLore(pickUpItem)
+              val contents = player.getInventory.getContents
+              contents.indices.filterNot(i => contents(i) == null || contents(i).getType == Material.AIR).find(i => WarsCoreAPI.getWeaponTypeFromLore(contents(i)) == weaponType) match {
+                case Some(i) =>
+                  player.getInventory.setItem(i, pickUpItem)
+                  e.getItem.remove()
+                  player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
+                  player.sendActionBar(ChatColor.BLUE + "武器を持ち替えた！")
+                case None =>
+                  player.getInventory.addItem(pickUpItem)
+                  e.getItem.remove()
+                  player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
+                  player.sendActionBar(ChatColor.BLUE + "武器を拾った！")
+              }
             } else {
               player.sendActionBar(ChatColor.BLUE + "手に武器を持っていません！")
             }
@@ -102,13 +130,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
 
     val title = e.getView.getTitle
 
-    if (inv.getType == InventoryType.ANVIL && e.getSlot == 2 && e.getClick == ClickType.LEFT) {
-      if (!UpgradeUtil.onUpgrade(inv, p)) {
-        e.setCancelled(true)
-      }
-    }
     // クラフトはできない
-    else if (inv.getType == InventoryType.PLAYER && e.getSlotType == SlotType.CRAFTING) {
+    if (inv.getType == InventoryType.PLAYER && e.getSlotType == SlotType.CRAFTING) {
       e.setCancelled(true)
       // ゲームインベントリ
     } else if (title == GameUI.GAME_INVENTORY_TITLE) {
@@ -127,17 +150,25 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         TagUI.onClick(e)
       }
     } else if (title == WeaponUI.MAIN_UI_TITLE && e.getClickedInventory.getType == InventoryType.CHEST) {
-      WeaponUI.onClickMainUI(e)
+      e.setCancelled(true)
+      WeaponUI.onClickMainUI(e.getWhoClicked, e.getSlot)
     } else if (title == WeaponUI.SETTING_TITLE) {
-      WeaponUI.onClickSettingUI(e)
+      e.setCancelled(true)
+      WeaponUI.onClickSettingUI(e.getWhoClicked, e.getClickedInventory, e.getCurrentItem, e.getSlot)
     } else if (title.startsWith("Shop: ")) {
-      ShopUI.onClick(e)
+      e.setCancelled(true)
+      ShopUI.onClick(e.getWhoClicked.asInstanceOf[Player], e.getClickedInventory, e.getSlot, e.getCurrentItem, e.getView)
     } else if (title == SndCheckerUI.TITLE) {
       SndCheckerUI.onClick(e)
     } else if (title == WeaponUI.STORAGE_TITLE) {
-      WeaponUI.onClickStorageUI(e)
+      e.setCancelled(true)
+      WeaponUI.onClickStorageUI(e.getWhoClicked, e.getCurrentItem, e.getSlot, e.isLeftClick, e.isRightClick)
     } else if (title == EnderChestUI.TITLE) {
-      EnderChestUI.onClick(e)
+      e.setCancelled(true)
+      EnderChestUI.onClick(e.getWhoClicked, e.getSlot)
+    } else if (title == GameUI.TIME_INVENTORY_TITLE) {
+      e.setCancelled(true)
+      GameUI.onClickTimeInventory(e.getClickedInventory, e.getSlot, e.getWhoClicked.asInstanceOf[Player])
     }
   }
 
@@ -161,21 +192,12 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
           )
           info(player, s"${WarsCoreAPI.getItemStackName(item)} をアンロックしました！")
           player.playSound(player.getLocation, Sound.BLOCK_CHEST_LOCKED, 1f, 2f)
-        } else {
-          /*
-          WarsCoreAPI.getWPlayer(player).game match {
-            case Some(game) if item.getType == Material.CLOCK =>
-              WeaponUI.openMySetUI(e.getPlayer)
-            case _ =>
-          }
-           */
         }
+        // TODO ここにマイセット
       }
     } else if (e.getClickedBlock != null) {
       if (e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
         e.setCancelled(true)
-        // WeaponUI.openStorageUI(e.getPlayer)
-        // EnderChestUI.openUI(e.getPlayer)
         WeaponUI.openMainUI(e.getPlayer)
       }
     }
@@ -192,41 +214,6 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
   }
 
   @EventHandler
-  def onAnvilPrepare(e: PrepareAnvilEvent): Unit = {
-    val inv = e.getInventory
-    // 元となるアイテム
-    val sourceItem = inv.getItem(0)
-    // 強化素材となるアイテム
-    val materialItem = inv.getItem(1)
-    if (sourceItem == null || materialItem == null) {
-    } else {
-      if (UpgradeUtil.isUpgradeItem(sourceItem)) {
-        if (sourceItem != null) {
-          val baseChance = UpgradeUtil.getChance(materialItem)
-          UpgradeUtil.getUpgradeItem(sourceItem) match {
-            case Some(upgradeItem) =>
-              val key = ItemUtil.getKey(materialItem)
-              upgradeItem.list.get(if (upgradeItem.list.contains(key)) key else "else") match {
-                case Some(value) =>
-                  val result = ItemUtil.getItem(value._1).getOrElse(UpgradeUtil.invalidItem).clone()
-                  val rMeta = result.getItemMeta
-                  val chance = if (baseChance - value._2 > 0) baseChance - value._2 else 0.0
-                  rMeta.setLore(util.Arrays.asList(s"§f成功確率: §a${chance * materialItem.getAmount}%", "§4§n確率で失敗します!!"))
-                  result.setItemMeta(rMeta)
-                  e.setResult(result)
-                  e.getInventory.setRepairCost(1)
-                  return
-                case _ =>
-              }
-            case _ =>
-          }
-        }
-      }
-      e.getInventory.setRepairCost(40)
-    }
-  }
-
-  @EventHandler
   def onFood(e: FoodLevelChangeEvent): Unit = {
     e.setCancelled(true)
   }
@@ -238,6 +225,4 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       .forEach(_.sendMessage(
         ChatColor.translateAlternateColorCodes('&', s"&7[&3CMDESP&7]&3 ${e.getPlayer.getName}: ${e.getMessage}")))
   }
-
-
 }

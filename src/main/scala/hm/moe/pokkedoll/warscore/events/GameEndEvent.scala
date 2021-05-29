@@ -1,6 +1,6 @@
 package hm.moe.pokkedoll.warscore.events
 
-import hm.moe.pokkedoll.warscore.games.Game
+import hm.moe.pokkedoll.warscore.games.{Game, GameTeam}
 import org.bukkit.event.{Event, HandlerList}
 
 /**
@@ -8,11 +8,11 @@ import org.bukkit.event.{Event, HandlerList}
  * @param game 試合そのもの
  * @param winner 勝者
  */
-class GameEndEvent(private val game: Game, private val winner: String) extends Event {
+class GameEndEvent(private val game: Game, private val winner: GameTeam) extends Event {
 
   def getGame: Game = game
 
-  def getWinner: String = winner
+  def getWinner: GameTeam = winner
 
   override def getHandlers: HandlerList = GameEndEvent.handlers
 }

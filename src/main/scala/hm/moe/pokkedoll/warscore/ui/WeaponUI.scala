@@ -2,17 +2,19 @@ package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil}
-import hm.moe.pokkedoll.warscore.{Registry, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{Registry, WarsCore}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
-import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
+import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{Bukkit, Material, NamespacedKey}
+import org.bukkit.{Bukkit, Material}
 
 import java.util
+import scala.collection.mutable
 
 object WeaponUI {
 
@@ -21,14 +23,7 @@ object WeaponUI {
   /**
    * getWeapons()したときのキャッシュを保存する
    */
-  var weaponCache = Map.empty[HumanEntity, (String, Int, Seq[Item])]
-
-  /**
-   * キャッシュを削除する
-   *
-   * @param player 削除するプレイヤー
-   */
-  def clearCache(player: HumanEntity): Unit = weaponCache -= player
+  val weaponCache = mutable.HashMap.empty[HumanEntity, (String, Int, Seq[Item])]
 
   val sortTypeMap = Map(0 -> "獲得順", 1 -> "個数順", 2 -> "名前順")
 
@@ -99,14 +94,28 @@ object WeaponUI {
   val MAIN_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
 
   def openMainUI(player: HumanEntity): Unit = {
-    val inv = Bukkit.createInventory(null, 27, MAIN_UI_TITLE)
-    inv.setContents(Array.fill(27)(PANEL))
+    val inv = Bukkit.createInventory(null, 9, MAIN_UI_TITLE)
+    inv.setContents(Array.fill(9)(PANEL))
 
-    inv.setItem(15, OPEN_CHEST_ICON)
-    inv.setItem(16, OPEN_MY_SET_ICON)
-    inv.setItem(17, CLOSE_INVENTORY_ICON)
+    inv.setItem(8, CLOSE_INVENTORY_ICON)
 
     player.openInventory(inv)
+
+    inv.setItem(0, {
+      val i = new ItemStack(Material.BOOK)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.RED + "メニューに戻る")
+      i.setItemMeta(m)
+      i
+    })
+
+    inv.setItem(7, {
+      val i = new ItemStack(Material.FLINT_AND_STEEL)
+      val m = i.getItemMeta
+      m.setDisplayName(ChatColor.RED + "アイテムを表示する(回覧用)")
+      i.setItemMeta(m)
+      i
+    })
 
     new BukkitRunnable {
       override def run(): Unit = {
@@ -120,11 +129,11 @@ object WeaponUI {
           i.setItemMeta(m)
           i
         }
-        inv.setItem(10, weaponIcon(ItemUtil.getItem(weapons._1).getOrElse(EMPTY)))
-        inv.setItem(11, weaponIcon(ItemUtil.getItem(weapons._2).getOrElse(EMPTY)))
-        inv.setItem(12, weaponIcon(ItemUtil.getItem(weapons._3).getOrElse(EMPTY)))
-        inv.setItem(13, weaponIcon(ItemUtil.getItem(weapons._4).getOrElse(EMPTY)))
-        inv.setItem(14, weaponIcon(ItemUtil.getItem(weapons._5).getOrElse(EMPTY)))
+        inv.setItem(1, weaponIcon(ItemUtil.getItem(weapons._1).getOrElse(EMPTY)))
+        inv.setItem(2, weaponIcon(ItemUtil.getItem(weapons._2).getOrElse(EMPTY)))
+        inv.setItem(3, weaponIcon(ItemUtil.getItem(weapons._3).getOrElse(EMPTY)))
+        inv.setItem(4, weaponIcon(ItemUtil.getItem(weapons._4).getOrElse(EMPTY)))
+        inv.setItem(5, weaponIcon(ItemUtil.getItem(weapons._5).getOrElse(EMPTY)))
       }
     }.runTask(WarsCore.instance)
   }
@@ -134,21 +143,24 @@ object WeaponUI {
    *
    * @param e イベント
    */
-  def onClickMainUI(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    val player = e.getWhoClicked
-    if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
-    e.getSlot match {
-
-      case 10 => openSettingUI(player, 1, WeaponDB.PRIMARY)
-      case 11 => openSettingUI(player, 1, WeaponDB.SECONDARY)
-      case 12 => openSettingUI(player, 1, WeaponDB.MELEE)
-      case 13 => openSettingUI(player, 1, WeaponDB.GRENADE)
-      case 14 => openSettingUI(player, 1, WeaponDB.HEAD)
-
+  def onClickMainUI(player: HumanEntity, slot: Int): Unit = {
+    val metadata = player.getMetadata("sortType")
+    val sortType = if(metadata.isEmpty) {
+      0
+    } else {
+      metadata.get(0).asInt()
+    }
+    slot match {
+      case 0 => player.asInstanceOf[Player].performCommand("pp")
+      case 1 => openSettingUI(player, 1, WeaponDB.PRIMARY, sortType)
+      case 2 => openSettingUI(player, 1, WeaponDB.SECONDARY, sortType)
+      case 3 => openSettingUI(player, 1, WeaponDB.MELEE, sortType)
+      case 4 => openSettingUI(player, 1, WeaponDB.GRENADE, sortType)
+      case 5 => openSettingUI(player, 1, WeaponDB.HEAD, sortType)
       //case 15 => openWeaponStorageUI(player)
       //case 16 => openMySetUI(player)
-      case 17 => player.closeInventory()
+      case 7 => openStorageUI(player, 1, "item")
+      case 8 => player.closeInventory()
       case _ =>
     }
   }
@@ -262,22 +274,43 @@ object WeaponUI {
    *
    * @param e InventoryClickEvent
    */
-  def onClickStorageUI(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    val player = e.getWhoClicked
-    e.getSlot match {
+  def onClickStorageUI(player: HumanEntity, i: ItemStack, slot: Int, isLeftClick: Boolean, isRightClick: Boolean): Unit = {
+    slot match {
       case 0 => player.closeInventory()
       case 1 => openMainUI(player)
       case 4 =>
-        val i = e.getCurrentItem
         val page = i.getItemMeta.getPersistentDataContainer.get(Registry.PAGE_KEY, PersistentDataType.INTEGER)
-        if (e.isLeftClick) {
+        if (isLeftClick) {
           if (page != 1) openStorageUI(player, page - 1)
-        } else if (e.isRightClick) {
+        } else if (isRightClick) {
           openStorageUI(player, page + 1)
         }
       case _ =>
     }
+  }
+
+  private val sortByHaving = {
+    val i = new ItemStack(Material.FEATHER)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.UNDERLINE + "" + ChatColor.GREEN + "獲得順で並び変える")
+    i.setItemMeta(m)
+    i
+  }
+
+  private val sortByName = {
+    val i = new ItemStack(Material.NAME_TAG)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.UNDERLINE + "" + ChatColor.GREEN + "名前順で並び変える")
+    i.setItemMeta(m)
+    i
+  }
+
+  private val sortByAmount = {
+    val i = new ItemStack(Material.EMERALD, 64)
+    val m = i.getItemMeta
+    m.setDisplayName(ChatColor.UNDERLINE + "" + ChatColor.GREEN + "所持数順で並び変える")
+    i.setItemMeta(m)
+    i
   }
 
   /**
@@ -287,7 +320,6 @@ object WeaponUI {
    * @param page   ページ番号
    */
   def openSettingUI(player: HumanEntity, page: Int = 1, weaponType: String, sortType: Int = 0): Unit = {
-    if (WarsCoreAPI.getWPlayer(player.asInstanceOf[Player]).game.isDefined) return
     val inv = Bukkit.createInventory(null, 54, SETTING_TITLE)
     (0 to 8).filterNot(_ == 4).foreach(inv.setItem(_, PANEL))
 
@@ -307,11 +339,11 @@ object WeaponUI {
     //TODO レジストリを作成する
 
     // 獲得順
-    inv.setItem(6, new ItemStack(Material.FEATHER))
+    inv.setItem(6, sortByHaving)
     // 名前順
-    inv.setItem(7, new ItemStack(Material.NAME_TAG))
+    inv.setItem(7, sortByName)
     // 個数順
-    inv.setItem(8, new ItemStack(Material.EMERALD, 64))
+    inv.setItem(8, sortByAmount)
 
     val baseSlot = (page - 1) * 45
     new BukkitRunnable {
@@ -323,7 +355,7 @@ object WeaponUI {
             weaponCache += (player -> (weaponType, sortType, weapons))
             weapons
         }).slice(baseSlot, baseSlot + 45)
-        println(s"size: ${weapons.size}")
+        // println(s"size: ${weapons.size}")
         //
         inv.setItem(1, BACK_MAIN_UI)
         inv.setItem(4, p)
@@ -345,21 +377,16 @@ object WeaponUI {
   /**
    * openSettingUIに対して呼ばれる
    *
-   * @param e InventoryClickEvent
    */
-  def onClickSettingUI(e: InventoryClickEvent): Unit = {
-    e.setCancelled(true)
-    val player = e.getWhoClicked
-    val inv = e.getClickedInventory
+  def onClickSettingUI(player: HumanEntity, inv: Inventory,  i: ItemStack, slot: Int): Unit = {
     inv.getType match {
       case InventoryType.CHEST =>
-        val i = e.getCurrentItem
         // val pageItem = inv.getItem(4)
         // val usedSlotItem = inv.getItem(0)
         val index0 = inv.getItem(0).getItemMeta.getPersistentDataContainer
         val weaponType = index0.get(Registry.WEAPON_TYPE_KEY, PersistentDataType.STRING)
         val sortType = index0.get(Registry.SORT_TYPE_KEY, PersistentDataType.INTEGER)
-        e.getSlot match {
+        slot match {
           // バリアブロック。インベントリを閉じる
           case 0 =>
             player.closeInventory()
@@ -367,11 +394,14 @@ object WeaponUI {
           case 1 =>
             openMainUI(player)
           case 6 if sortType != 0 =>
-            openSettingUI(player, 1, weaponType, 0)
+            openSettingUI(player, 1, weaponType)
+            player.setMetadata("sortType", new FixedMetadataValue(WarsCore.instance, 0))
           case 7 if sortType != 1 =>
             openSettingUI(player, 1, weaponType, 1)
+            player.setMetadata("sortType", new FixedMetadataValue(WarsCore.instance, 1))
           case 8 if sortType != 2 =>
             openSettingUI(player, 1, weaponType, 2)
+            player.setMetadata("sortType", new FixedMetadataValue(WarsCore.instance, 2))
           case _ if i != null && i.getType != Material.AIR && i.getType != PANEL.getType =>
             val meta = i.getItemMeta
             val per = meta.getPersistentDataContainer

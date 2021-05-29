@@ -1,16 +1,17 @@
 package hm.moe.pokkedoll.warscore
 
 import com.google.common.io.ByteStreams
-import com.shampaggon.crackshot.CSUtility
-import hm.moe.pokkedoll.cspp.CrackShotPP
+import com.shampaggon.crackshot.{CSDirector, CSUtility}
+import hm.moe.pokkedoll.crackshot.WeaponLoader
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands._
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
+import hm.moe.pokkedoll.warscore.events.InitializeWarsCoreEvent
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
-import hm.moe.pokkedoll.warscore.utils.{GameConfig, ItemUtil, ShopUtil, TagUtil, UpgradeUtil}
+import hm.moe.pokkedoll.warscore.utils._
 import org.bukkit.Bukkit
-import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitRunnable
 
 import scala.jdk.CollectionConverters._
 /**
@@ -25,6 +26,8 @@ class WarsCore extends JavaPlugin {
   private val develop = true
 
   var cs: CSUtility = _
+
+  var wl: WeaponLoader = _
 
   override def onEnable(): Unit = {
     WarsCore.instance = this
@@ -54,21 +57,21 @@ class WarsCore extends JavaPlugin {
     getCommand("invite").setExecutor(new InviteCommand)
     getCommand("warscore").setExecutor(new WarsCoreCommand)
     getCommand("item").setExecutor(new ItemCommand)
-    getCommand("upgrade").setExecutor(new UpgradeCommand)
-    // getCommand("merchant").setExecutor(new MerchantCommand)
     getCommand("tag").setExecutor(new TagCommand)
     getCommand("spawn").setExecutor(new SpawnCommand)
     getCommand("wp").setExecutor(new WeaponCommand)
     getCommand("shop").setExecutor(new ShopCommand)
     getCommand("sndchecker").setExecutor(new SndCheckerCommand)
     getCommand("money").setExecutor(new MoneyCommand)
+    getCommand("continue").setExecutor(new ContinueCommand)
+    getCommand("cse").setExecutor(new CSECommand)
+
     saveDefaultConfig()
 
     ItemUtil.reloadItem()
     // MerchantUtil.reload()
     ShopUtil.reload()
-    UpgradeUtil.reloadConfig()
-    TagUtil.reloadConfig()
+    TagUtil.init()
     GameConfig.reload()
 
     WarsCoreAPI.DEFAULT_SPAWN = WarsCoreAPI.getLocation(getConfig.getString("spawns.default", "")).getOrElse(Bukkit.getWorlds.get(0).getSpawnLocation)
@@ -98,7 +101,22 @@ class WarsCore extends JavaPlugin {
       getServer.sendPluginMessage(this, MODERN_TORUS_CHANNEL, out2.toByteArray)
     }
 
+    new BukkitRunnable {
+      override def run(): Unit = {
+        Bukkit.getOnlinePlayers.forEach(_.setArrowsInBody(0))
+      }
+    }.runTaskTimer(this, 0L, 5L)
+
     Registry.init()
+
+    if(Bukkit.getPluginManager.isPluginEnabled("CrackShot")) {
+      val cd = Bukkit.getPluginManager.getPlugin("CrackShot").asInstanceOf[CSDirector]
+      wl = new WeaponLoader(cd)
+      Bukkit.dispatchCommand(Bukkit.getConsoleSender, "/shot config reload")
+      wl.loadWeapons()
+    }
+
+    Bukkit.getPluginManager.callEvent(new InitializeWarsCoreEvent(this))
   }
 
   override def onDisable(): Unit = {
@@ -116,6 +134,10 @@ class WarsCore extends JavaPlugin {
    * @return
    */
   def getDatabase: Database = database
+
+  def info(string: String): Unit = {
+    getLogger.info(string)
+  }
 }
 
 object WarsCore {

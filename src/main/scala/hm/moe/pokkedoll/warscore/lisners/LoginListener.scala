@@ -1,11 +1,11 @@
 package hm.moe.pokkedoll.warscore.lisners
 
 import com.google.common.io.ByteStreams
-import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.event.player.{PlayerJoinEvent, PlayerQuitEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{Bukkit, ChatColor}
+import org.bukkit.{Bukkit, ChatColor, GameMode}
 
 class LoginListener(plugin: WarsCore) extends Listener {
   @EventHandler
@@ -44,16 +44,16 @@ class LoginListener(plugin: WarsCore) extends Listener {
   def onQuit(e: PlayerQuitEvent): Unit = {
     e.setQuitMessage("")
     val player = e.getPlayer
+    if(player.getGameMode == GameMode.SPECTATOR) player.setSpectatorTarget(null)
     if (player.getWorld.getName != "p-lobby") {
       player.teleport(Bukkit.getWorlds.get(0).getSpawnLocation)
     }
     val wp = WarsCoreAPI.getWPlayer(player)
-    wp.game match {
-      case Some(game) =>
-        plugin.database.setDisconnect(player.getUniqueId.toString, disconnect = true)
-        game.hub(wp)
-      case _ =>
-    }
+    wp.game.foreach(game => {
+      plugin.database.setDisconnect(player.getUniqueId.toString, disconnect = true)
+      game.hub(wp)
+    })
+
     // キャッシュから削除
     WarsCoreAPI.wplayers.remove(player)
     WarsCoreAPI.removeScoreboard(player)
