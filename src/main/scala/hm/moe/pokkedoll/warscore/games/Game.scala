@@ -5,7 +5,7 @@ import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
-import org.bukkit.World
+import org.bukkit.{GameRule, World}
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
@@ -114,6 +114,9 @@ trait Game {
     WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
       override def success(value: World): Unit = {
         world = value
+        world.setGameRule(GameRule.KEEP_INVENTORY, java.lang.Boolean.TRUE)
+        world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, java.lang.Boolean.FALSE)
+        world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, java.lang.Boolean.FALSE)
         loaded = true
         disable = false
         init()

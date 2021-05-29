@@ -49,12 +49,10 @@ class LoginListener(plugin: WarsCore) extends Listener {
       player.teleport(Bukkit.getWorlds.get(0).getSpawnLocation)
     }
     val wp = WarsCoreAPI.getWPlayer(player)
-    wp.game match {
-      case Some(game) =>
-        plugin.database.setDisconnect(player.getUniqueId.toString, disconnect = true)
-        game.hub(wp)
-      case _ =>
-    }
+    wp.game.foreach(game => {
+      plugin.database.setDisconnect(player.getUniqueId.toString, disconnect = true)
+      game.hub(wp)
+    })
 
     // キャッシュから削除
     WarsCoreAPI.wplayers.remove(player)

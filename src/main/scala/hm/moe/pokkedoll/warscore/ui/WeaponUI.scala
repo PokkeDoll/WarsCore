@@ -14,6 +14,7 @@ import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, Material}
 
 import java.util
+import scala.collection.mutable
 
 object WeaponUI {
 
@@ -22,14 +23,7 @@ object WeaponUI {
   /**
    * getWeapons()したときのキャッシュを保存する
    */
-  var weaponCache = Map.empty[HumanEntity, (String, Int, Seq[Item])]
-
-  /**
-   * キャッシュを削除する
-   *
-   * @param player 削除するプレイヤー
-   */
-  def clearCache(player: HumanEntity): Unit = weaponCache -= player
+  val weaponCache = mutable.HashMap.empty[HumanEntity, (String, Int, Seq[Item])]
 
   val sortTypeMap = Map(0 -> "獲得順", 1 -> "個数順", 2 -> "名前順")
 

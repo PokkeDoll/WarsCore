@@ -156,7 +156,7 @@ object ShopUI {
             player.playSound(player.getLocation, Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1.5f)
             openShopUI(player, view.getTitle.replaceAll("Shop: ", ""))
             // キャッシュのクリア
-            WeaponUI.clearCache(player)
+            WeaponUI.weaponCache.remove(player)
           } else {
             // WarsCoreAPI.debug(player, "何も起きず！")
             player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)

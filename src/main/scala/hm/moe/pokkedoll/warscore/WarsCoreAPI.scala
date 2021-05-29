@@ -22,7 +22,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
 
-  val CYCLE_VERSION = "0.4-RC4"
+  val CYCLE_VERSION = "0.5"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -69,61 +69,26 @@ object WarsCoreAPI {
    * @param player Player
    * @return
    */
-  def getWPlayer(player: Player): WPlayer = {
-    wplayers.get(player) match {
-      case Some(wp) =>
-        wp
-      case None =>
-        val wp = new WPlayer(player)
-        wplayers.put(player, wp)
-        database.loadWPlayer(wp, new Callback[WPlayer] {
-          override def success(value: WPlayer): Unit = {
-            addScoreBoard(player)
-            println(value.disconnect)
-            if (value.disconnect) {
-              value.disconnect = false
-              database.setDisconnect(player.getUniqueId.toString, disconnect = false)
-              WarsCoreAPI.restoreLobbyInventory(player)
-              player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
-            }
+  def getWPlayer(player: Player): WPlayer = wplayers.getOrElseUpdate(player, {
+      val wp = new WPlayer(player)
+      database.loadWPlayer(wp, new Callback[WPlayer] {
+        override def success(value: WPlayer): Unit = {
+          addScoreBoard(player)
+          println(value.disconnect)
+          if (value.disconnect) {
+            value.disconnect = false
+            database.setDisconnect(player.getUniqueId.toString, disconnect = false)
+            WarsCoreAPI.restoreLobbyInventory(player)
+            player.teleport(WarsCoreAPI.DEFAULT_SPAWN)
           }
-
-          override def failure(error: Exception): Unit = {
-            error.printStackTrace()
-            player.sendMessage(ChatColor.RED + "データの読み込みに失敗しました")
-          }
-        })
-        wp
-    }
-  }
-
-  /**
-   * プレイヤーの動きを止める。視点は動かせる
-   *
-   * @param player Player
-   */
-  @Deprecated
-  def freeze(player: Player): Unit = {
-    player.teleport(player.getLocation().add(0, 0.001, 0))
-    player.setAllowFlight(true)
-    player.setFlying(true)
-    player.setFlySpeed(0.01f)
-  }
-
-  /**
-   * プレイヤーを動けるようにする。freezeと共に使用する
-   *
-   * @see freeze(Player)
-   */
-  @Deprecated
-  def unfreeze(player: Player): Unit = {
-    val event = new PlayerUnfreezeEvent(player)
-    Bukkit.getServer.getPluginManager.callEvent(event)
-    player.setAllowFlight(false)
-    player.setFlying(false)
-    player.setWalkSpeed(event.walkSpeed)
-    player.setFlySpeed(event.flySpeed)
-  }
+        }
+        override def failure(error: Exception): Unit = {
+          error.printStackTrace()
+          player.sendMessage(ChatColor.RED + "データの読み込みに失敗しました")
+        }
+      })
+      wp
+    })
 
   /**
    * ゲームの情報を読み込む
@@ -161,7 +126,7 @@ object WarsCoreAPI {
     if (item == null || !item.hasItemMeta) None
     else {
       val meta = item.getItemMeta
-      if (meta.hasDisplayName) Some(meta.getDisplayName) else Some(item.getType.toString)
+      Some(if(meta.hasDisplayName) meta.getDisplayName else item.getType.toString)
     }
   }
 

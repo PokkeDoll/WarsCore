@@ -14,10 +14,6 @@ object RankManager {
 
   private lazy val plugin = WarsCore.instance
 
-  private lazy val chatColor = ChatColor.translateAlternateColorCodes('&', _)
-
-
-
   val rankMap = Map(
     0 -> "&fぽっけ市民",
     1 -> "&f二等兵",
@@ -41,8 +37,7 @@ object RankManager {
     19 -> "&f大将",
     20 -> "&f元帥",
     21 -> "&f大元帥",
-    22 -> "?"
-  )
+    22 -> "?")
 
   val getClassName: Int => String = (rank: Int) => rankMap.getOrElse(rank / 3, "-")
 

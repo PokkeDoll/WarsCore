@@ -6,6 +6,7 @@ import hm.moe.pokkedoll.crackshot.WeaponLoader
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands._
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
+import hm.moe.pokkedoll.warscore.events.InitializeWarsCoreEvent
 import hm.moe.pokkedoll.warscore.lisners.{LoginListener, MessageListener, PlayerListener, SignListener}
 import hm.moe.pokkedoll.warscore.utils._
 import org.bukkit.Bukkit
@@ -114,6 +115,8 @@ class WarsCore extends JavaPlugin {
       Bukkit.dispatchCommand(Bukkit.getConsoleSender, "/shot config reload")
       wl.loadWeapons()
     }
+
+    Bukkit.getPluginManager.callEvent(new InitializeWarsCoreEvent(this))
   }
 
   override def onDisable(): Unit = {

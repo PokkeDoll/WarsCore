@@ -21,18 +21,17 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onDeath(e: PlayerDeathEvent): Unit = {
+    e.setKeepInventory(true)
+    e.setKeepLevel(true)
     e.getEntity match {
       case player: Player =>
-        WarsCoreAPI.getWPlayer(player).game match {
-          case Some(game) =>
-            game.onDeath(e)
-          case _ =>
-        }
+        WarsCoreAPI.getWPlayer(player).game.foreach(_.onDeath(e))
         new BukkitRunnable {
           override def run(): Unit = {
             player.spigot().respawn()
           }
         }.runTaskLater(plugin, 1L)
+      case _ =>
     }
   }
 
