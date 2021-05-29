@@ -531,17 +531,19 @@ class TeamDeathMatch(override val id: String) extends Game {
       var pt: Int = protectionTime
       override def run(): Unit = {
         if(pt > 0) {
-          player.sendMessage(ChatColor.BLUE + s"$pt")
+          player.sendMessage(ChatColor.BLUE + s"無敵時間終了まで $pt 秒")
+          ParticleUtil.protection(player)
           pt -= 1
         } else {
-          player.sendMessage(ChatColor.BLUE + "無敵時間が終了！？")
+          player.sendMessage(ChatColor.BLUE + "無敵時間が終了")
+          protectionPlayers.remove(player)
           cancel()
         }
       }
     }.runTaskTimer(WarsCore.instance, 0, 20L))
   }
 
-  val getAttacker = (entity: Entity) => entity match {
+  val getAttacker: Entity => Option[Player] = {
     case player: Player => Some(player)
     case arrow: Arrow => arrow.getShooter match {
       case player: Player => Some(player)
@@ -560,15 +562,17 @@ class TeamDeathMatch(override val id: String) extends Game {
     val victim = e.getEntity.asInstanceOf[Player]
     if(protectionPlayers.contains(victim)) {
       e.setCancelled(true)
-      getAttacker(e.getDamager).foreach(_.sendMessage(ChatColor.RED + "リスポーンしてすぐは攻撃できません！！！"))
+      getAttacker(e.getDamager).foreach(_.sendMessage(ChatColor.RED + "リスポーンしてすぐは攻撃できません！"))
     }
     val vData = data(victim)
     getAttacker(e.getDamager) match {
       case Some(attacker) =>
-        if(protectionPlayers.contains(attacker)) {
+        protectionPlayers.get(attacker).foreach(task => {
+          task.cancel()
           protectionPlayers.remove(attacker)
-          attacker.sendMessage(ChatColor.RED + "無敵時間中に攻撃したため解除しました")
-        }
+          attacker.sendMessage(ChatColor.RED + "無敵時間中に攻撃したため解除されました")
+        })
+
         val aData = data(attacker)
         aData.damage += e.getFinalDamage
         vData.damagedPlayer.add(attacker)
