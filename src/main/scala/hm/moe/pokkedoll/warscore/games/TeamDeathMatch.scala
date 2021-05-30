@@ -106,6 +106,8 @@ class TeamDeathMatch(override val id: String) extends Game {
   var protectionTime = 5
   val protectionPlayers = mutable.HashMap.empty[Player, BukkitTask]
 
+  var loadingTask: BukkitTask = _
+
   /**
    * ゲームを初期化する
    */
@@ -139,6 +141,8 @@ class TeamDeathMatch(override val id: String) extends Game {
 
     // 実に待機状態...! Joinされるまで待つ
     state = GameState.WAIT
+
+    loadingTask = WarsCoreAPI.getLoadingTitleTask(this).runTaskTimer(WarsCore.instance, 0, 5)
   }
 
   /**
@@ -340,9 +344,9 @@ class TeamDeathMatch(override val id: String) extends Game {
           s"マップ名: &a${mapInfo.mapName}\n" +
             s"製作者: &a${mapInfo.authors}\n" +
             s"退出する場合は&a/game quit&7もしくは&a/game leave\n" +
-            "&a/invite <player>&fで他プレイヤーを招待することができます!"
-        )
+            "&a/invite <player>&fで他プレイヤーを招待することができます!")
         wp.game = Some(this)
+
         // インベントリを変更
         WarsCoreAPI.changeWeaponInventory(wp)
 
@@ -374,9 +378,9 @@ class TeamDeathMatch(override val id: String) extends Game {
               }
             }.runTaskLater(WarsCore.instance, 2L)
           case GameState.READY =>
-            wp.player.teleport(locationData._1)
+            // wp.player.teleport(locationData._1)
           case GameState.WAIT =>
-            wp.player.teleport(locationData._1)
+            // wp.player.teleport(locationData._1)
             if (members.length >= 2) {
               ready()
             }

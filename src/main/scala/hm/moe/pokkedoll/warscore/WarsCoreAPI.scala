@@ -9,6 +9,7 @@ import org.bukkit.entity.{EntityType, Firework, Player}
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
 import org.bukkit.scoreboard._
 
 import scala.collection.mutable
@@ -21,7 +22,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
 
-  val VERSION = "1.12.0"
+  val VERSION = "1.12.0-Alpha"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -219,8 +220,6 @@ object WarsCoreAPI {
   def sendNews4User(player: Player): Unit = {
     player.sendMessage(
       new ComponentBuilder().append(createHeader("お知らせ"))
-        .append("* ").reset().append("大規模更新中。裏のシステム以外は変わらない\n")
-        .append("* ").reset().append("武器の性能を纏めました(12/25、自動生成)。閲覧するにはクリック！").event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://docs.google.com/spreadsheets/d/1rcf_mYWRa-plweVOn-xSYNETjLKy7B_njrDc01g5ZIc/edit#gid=2015109485"))
         .create(): _*
     )
   }
@@ -476,8 +475,9 @@ object WarsCoreAPI {
           comp.append(s"${i + 1}th").reset()
       }
       comp.append(".").color(ChatColor.GRAY).bold(false)
-        .append(s" ${v._1.getName} ${v._4}").color(ChatColor.YELLOW).append(s"(${v._2} / ${v._3})\n").color(ChatColor.GRAY).reset()
+        .append(s" ${v._1.getName} ${BigDecimal(v._4).setScale(2, BigDecimal.RoundingMode.HALF_UP)}").color(ChatColor.YELLOW).append(s"(${v._2} / ${v._3})\n").color(ChatColor.GRAY).reset()
     })
+
     comp.append("\n").reset()
     comp.append(": Damage :==========>\n").color(ChatColor.YELLOW)
     dd.indices.foreach(i => {
@@ -514,6 +514,24 @@ object WarsCoreAPI {
     }
     ""
   }
+
+  val loadingFont: Array[String] = Array("◜", "◝", "◞", "◟")
+
+  def getLoadingTitleTask(game: Game): BukkitRunnable = {
+    new BukkitRunnable {
+      var i = 0
+      override def run(): Unit = {
+        if(game.state == GameState.WAIT || game.state == GameState.READY) {
+          if(i > 3) i = 0
+          game.members.map(_.player).foreach(_.sendTitle(loadingFont(i), "", 0, 5, 0))
+          i += 1
+        } else {
+          cancel()
+        }
+      }
+    }
+  }
+
 
   //TODO val mutableをvar immutableに変更する。参照とオブジェクトを間違えてはいけない！
 
