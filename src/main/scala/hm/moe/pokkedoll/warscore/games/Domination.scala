@@ -598,12 +598,10 @@ class Domination(override val id: String) extends Game {
           // WarsCoreAPI.spectate(player, player.getKiller)
         }
         if (coolTime) {
-          WarsCoreAPI.freeze(player)
           new BukkitRunnable {
             override def run(): Unit = {
               if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
-                  WarsCoreAPI.unfreeze(player)
                   if (d.team == GameTeam.RED) {
                     player.teleport(redPoint)
                   } else {
@@ -618,7 +616,6 @@ class Domination(override val id: String) extends Game {
                   spawnTime -= 1
                 }
               } else {
-                WarsCoreAPI.unfreeze(player)
                 WarsCoreAPI.setActiveWeapons(player)
                 player.setGameMode(GameMode.SURVIVAL)
                 cancel()

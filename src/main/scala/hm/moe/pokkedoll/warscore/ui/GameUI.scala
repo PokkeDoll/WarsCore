@@ -1,18 +1,15 @@
 package hm.moe.pokkedoll.warscore.ui
 
+import hm.moe.pokkedoll.warscore.WarsCoreAPI.{colorCode, games}
+import hm.moe.pokkedoll.warscore.games.{Domination, Game, GameState, Tactics, TeamDeathMatch, TeamDeathMatch4}
 import hm.moe.pokkedoll.warscore.{Registry, WarsCoreAPI}
-import hm.moe.pokkedoll.warscore.WarsCoreAPI.{colorCode, games, splitToComponentTimes}
-import hm.moe.pokkedoll.warscore.games.{Game, GameState, TeamDeathMatch}
 import net.md_5.bungee.api.ChatColor
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.{HumanEntity, Player}
-import org.bukkit.event.inventory.{ClickType, InventoryAction, InventoryClickEvent, InventoryCloseEvent}
+import org.bukkit.event.inventory.{ClickType, InventoryClickEvent}
+import org.bukkit.inventory.meta.{Damageable, ItemMeta}
 import org.bukkit.inventory.{Inventory, ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.{Bukkit, Material, Sound}
-
-import java.util.UUID
-import scala.collection.mutable
 
 object GameUI {
 
@@ -32,55 +29,61 @@ object GameUI {
 
   private def createIcon(game: Game): ItemStack = {
     val i = new ItemStack(Material.STONE)
+    i.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE)
     val m = i.getItemMeta
-    game.state match {
-      case GameState.PLAY | GameState.WAIT | GameState.READY =>
-        i.setType(Material.LIME_DYE)
-        i.setAmount(if (game.members.isEmpty) 1 else game.members.size)
-        m.setDisplayName(ChatColor.GREEN + game.id)
-        m.setLore(java.util.Arrays.asList(
-          ChatColor.LIGHT_PURPLE + game.title,
-          ChatColor.GREEN + game.mapInfo.mapName,
-          ChatColor.GREEN + (if (game.state == GameState.PLAY) "試合中！" else if (game.state == GameState.WAIT) s"${game.members.size} / ${game.maxMember} 待機中！" else s"${game.members.size} / ${game.maxMember} 準備中！"),
-        ))
-      case GameState.PLAY2 =>
-        i.setType(Material.GRAY_DYE)
-        m.setDisplayName(ChatColor.GRAY + game.id)
-        m.setLore(java.util.Arrays.asList(
-          ChatColor.LIGHT_PURPLE + game.title,
-          ChatColor.GREEN + game.mapInfo.mapName,
-          ChatColor.GREEN + (if (game.state == GameState.PLAY) "試合中！" else if (game.state == GameState.WAIT) s"${game.members.size} / ${game.maxMember} 待機中！" else s"${game.members.size} / ${game.maxMember} 準備中！"),
-          ChatColor.RED + "もうすぐ試合が終わるので参加できません！"
-        ))
-      case GameState.INIT =>
-        i.setType(Material.PINK_DYE)
-        m.setDisplayName(ChatColor.LIGHT_PURPLE + game.id)
-        m.setLore(java.util.Arrays.asList(
-          ChatColor.LIGHT_PURPLE + game.title,
-          ChatColor.WHITE + "初期化中..."
-        ))
-      case GameState.ERROR =>
-        i.setType(Material.PINK_DYE)
-        m.setDisplayName(ChatColor.LIGHT_PURPLE + game.id)
-        m.setLore(java.util.Arrays.asList(
-          ChatColor.LIGHT_PURPLE + game.title,
-          ChatColor.RED + "マップの読込に失敗しました"
-        ))
-      case GameState.END =>
-        i.setType(Material.GRAY_DYE)
-        m.setDisplayName(ChatColor.GRAY + game.id)
-        m.setLore(java.util.Arrays.asList(
-          ChatColor.LIGHT_PURPLE + game.title,
-          ChatColor.YELLOW + "試合が終了しました"
-        ))
-      case _ =>
-        i.setType(Material.GRAY_DYE)
-        m.setDisplayName(ChatColor.GRAY + game.id)
-        m.setLore(java.util.Arrays.asList(
-          ChatColor.LIGHT_PURPLE + game.title,
-          ChatColor.RED + "クリックして部屋を作成します"
-        ))
+    m.getPersistentDataContainer.set(Registry.GAME_ID, PersistentDataType.STRING, game.id)
+    val lore = new java.util.ArrayList[String]()
+    game match {
+      case _: TeamDeathMatch4 =>
+        i.setType(Material.IRON_HOE)
+        m.setCustomModelData(6)
+        m.setDisplayName(colorCode("&aチームデスマッチ&c4"))
+        lore.add(colorCode("&54対4でキル数を競います"))
+        lore.add(colorCode("&5マップが狭いのでゲームの展開が速いです"))
+      case _: TeamDeathMatch =>
+        i.setType(Material.IRON_HOE)
+        m.setCustomModelData(1)
+        m.setDisplayName(colorCode("&aチームデスマッチ"))
+        lore.add(colorCode("&510対10でキル数を競います"))
+      case _: Tactics =>
+        i.setType(Material.DIAMOND_SWORD)
+        m.setCustomModelData(1)
+        m.setDisplayName(colorCode("&aタクティクス"))
+        lore.add(colorCode("&51対1で3本先取で争います"))
+      case _: Domination =>
+        i.setType(Material.BEACON)
+        m.setDisplayName(colorCode("&aドミネーション"))
+        lore.add("&6:o")
     }
+    lore.add("&7================")
+    game.state match {
+      case GameState.WAIT =>
+        lore.add(colorCode("&7状態: &a待機中"))
+        lore.add(colorCode(s"&7* &a${game.mapInfo.mapName}"))
+        lore.add(colorCode(s"&7* &a${game.members.size} &7/ &a${game.maxMember} プレイ中"))
+      case GameState.READY =>
+        lore.add(colorCode("&7状態: &a準備中"))
+        lore.add(colorCode(s"&7*: &a${game.mapInfo.mapName}"))
+        lore.add(colorCode(s"&7* &a${game.members.size} &7/ &a${game.maxMember} プレイ中"))
+      case GameState.PLAY =>
+        lore.add(colorCode("&7状態: &a試合中！"))
+        lore.add(colorCode(s"&7*: &a${game.mapInfo.mapName}"))
+        lore.add(colorCode(s"&7* &a${game.members.size} &7/ &a${game.maxMember} プレイ中"))
+      case GameState.PLAY2 =>
+        lore.add(colorCode("&7状態: &c試合中(参加できません)"))
+        lore.add(colorCode(s"&7*: &a${game.mapInfo.mapName}"))
+        lore.add(colorCode(s"&7* &a${game.members.size} &7/ &a${game.maxMember} プレイ中"))
+      case GameState.INIT =>
+        lore.add(colorCode("&7状態: &e初期化中..."))
+      case GameState.END =>
+        lore.add(colorCode("&7状態: &e終了"))
+      case GameState.ERROR =>
+        lore.add(colorCode("&7状態: &dマップの読み込みに失敗したため停止しました"))
+      case _ =>
+        lore.add(colorCode("&7状態: 無効"))
+        lore.add(colorCode("&b&lクリックして部屋を作成します"))
+    }
+    i.setLore(lore)
     i.setItemMeta(m)
     i
   }
@@ -92,19 +95,22 @@ object GameUI {
    * @param player 対象のプレイヤー
    */
   def openMainUI(player: HumanEntity): Unit = {
-    val inv = Bukkit.createInventory(null, 36, GAME_INVENTORY_TITLE)
+    val inv = Bukkit.createInventory(null, 18, GAME_INVENTORY_TITLE)
     inv.setItem(0, openGameInventoryIcon)
     inv.setItem(9, new ItemStack(Material.IRON_SWORD))
-    val g = games.groupBy(f => f._2.title)
-    var slot = 0
-    g.foreach(f => {
-      var s = slot
-      f._2.foreach(ff => {
-        inv.setItem(s, createIcon(ff._2))
-        s += 1
-      })
-      slot += 9
-    })
+
+    val tdm = games.getOrElse("tdm-1", return)
+    val tdm4 = games.getOrElse("tdm4-1", return)
+    val tac = games.getOrElse("tactics-1", return)
+    val dom = games.getOrElse("dom-1", return)
+
+    inv.setContents(Array.fill(18)(WarsCoreAPI.UI.PANEL))
+
+    inv.setItem(3, createIcon(tdm))
+    inv.setItem(5, createIcon(tdm4))
+    inv.setItem(10, createIcon(tac))
+    inv.setItem(16, createIcon(dom))
+
     player.openInventory(inv)
   }
 
@@ -227,5 +233,37 @@ object GameUI {
         case _ =>
       }
     }
+  }
+
+  val TDM_UI: ItemStack = {
+    val i = new ItemStack(Material.IRON_HOE)
+    val damageable = i.getItemMeta.asInstanceOf[Damageable]
+    damageable.setDamage(1)
+    val meta = i.getItemMeta
+    meta.setCustomModelData(1)
+    meta.setUnbreakable(true)
+    meta.setDisplayName(colorCode("&aTeam Death Match"))
+    meta.setLore(java.util.Arrays.asList(
+      colorCode("&510対10に分かれてキル数を争います"),
+    ))
+    i.setItemMeta(damageable.asInstanceOf[ItemMeta])
+    i.setItemMeta(meta)
+    i
+  }
+
+  val TDM4_UI: ItemStack = {
+    val i = new ItemStack(Material.IRON_HOE)
+    val damageable = i.getItemMeta.asInstanceOf[Damageable]
+    damageable.setDamage(6)
+    val meta = i.getItemMeta
+    meta.setCustomModelData(6)
+    meta.setUnbreakable(true)
+    meta.setDisplayName(colorCode("&aTeam Death Match &c4"))
+    meta.setLore(java.util.Arrays.asList(
+      colorCode("&54対4に分かれてキル数を争います"),
+    ))
+    i.setItemMeta(damageable.asInstanceOf[ItemMeta])
+    i.setItemMeta(meta)
+    i
   }
 }

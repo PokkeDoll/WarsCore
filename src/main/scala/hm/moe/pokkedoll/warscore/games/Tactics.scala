@@ -167,7 +167,6 @@ class Tactics(override val id: String) extends Game {
     members.foreach(wp => {
       if (wp.player.getGameMode == GameMode.SPECTATOR) {
         wp.player.setGameMode(GameMode.SURVIVAL)
-        WarsCoreAPI.unfreeze(wp.player)
       }
       wp.game = None
       WarsCoreAPI.restoreLobbyInventory(wp.player)
@@ -298,7 +297,6 @@ class Tactics(override val id: String) extends Game {
         } else {
           player.teleport(locationData._3)
         }
-        WarsCoreAPI.freeze(player)
       }
     }.runTaskLater(WarsCore.instance, 1L)
   }
@@ -315,13 +313,11 @@ class Tactics(override val id: String) extends Game {
             } else {
               player.teleport(locationData._3)
             }
-            WarsCoreAPI.freeze(player)
           }
           new BukkitRunnable {
             override def run(): Unit = {
               if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
-                  WarsCoreAPI.unfreeze(player)
                   player.setGameMode(GameMode.SURVIVAL)
                   cancel()
                 } else {
@@ -330,7 +326,6 @@ class Tactics(override val id: String) extends Game {
                   spawnTime -= 1
                 }
               } else {
-                WarsCoreAPI.unfreeze(player)
                 player.setGameMode(GameMode.SURVIVAL)
                 cancel()
               }

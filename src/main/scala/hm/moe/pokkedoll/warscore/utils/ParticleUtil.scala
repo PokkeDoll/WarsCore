@@ -6,8 +6,6 @@ import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 
 object ParticleUtil {
-
-
   def protection(player: Player): Unit = {
     new BukkitRunnable {
       val pp: Double = Math.PI / 10  // 2π / 20

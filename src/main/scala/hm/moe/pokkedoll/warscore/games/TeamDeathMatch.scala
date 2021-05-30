@@ -603,14 +603,12 @@ class TeamDeathMatch(override val id: String) extends Game {
           // WarsCoreAPI.spectate(player, player.getKiller)
         }
         if (coolTime) {
-          WarsCoreAPI.freeze(player)
           new BukkitRunnable {
             override def run(): Unit = {
               if (!player.isOnline || WarsCoreAPI.getWPlayer(player).game.isEmpty) {
                 cancel()
               } else if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
-                  WarsCoreAPI.unfreeze(player)
                   WarsCoreAPI.setActiveWeapons(player)
                   if (redTeam.hasEntry(player.getName)) {
                     player.teleport(locationData._2)
@@ -626,7 +624,6 @@ class TeamDeathMatch(override val id: String) extends Game {
                   spawnTime -= 1
                 }
               } else {
-                WarsCoreAPI.unfreeze(player)
                 WarsCoreAPI.setActiveWeapons(player)
                 player.setGameMode(GameMode.SURVIVAL)
                 data.get(player).map(f => f.team).getOrElse(GameTeam.DEFAULT) match {

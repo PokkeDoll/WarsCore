@@ -16,6 +16,7 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit._
 import org.bukkit.scheduler.BukkitRunnable
+import hm.moe.pokkedoll.warscore.Registry.GAME_ID
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
 
@@ -137,8 +138,9 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     } else if (title == GameUI.GAME_INVENTORY_TITLE) {
       e.setCancelled(true)
       val icon = e.getCurrentItem
-      if (icon == null || !icon.hasItemMeta || !icon.getItemMeta.hasDisplayName) return
-      WarsCoreAPI.games.get(ChatColor.stripColor(icon.getItemMeta.getDisplayName)) match {
+      if(icon == null || !icon.hasItemMeta) return
+      Option(icon.getItemMeta.getPersistentDataContainer.get(GAME_ID, PersistentDataType.STRING))
+        .flatMap(WarsCoreAPI.games.get) match {
         case Some(game) if p.isInstanceOf[Player] =>
           lazy val player = p.asInstanceOf[Player]
           game.join(player)

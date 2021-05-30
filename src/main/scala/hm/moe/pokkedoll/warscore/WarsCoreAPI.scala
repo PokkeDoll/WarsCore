@@ -1,6 +1,5 @@
 package hm.moe.pokkedoll.warscore
 
-import hm.moe.pokkedoll.warscore.events.PlayerUnfreezeEvent
 import hm.moe.pokkedoll.warscore.games._
 import hm.moe.pokkedoll.warscore.utils._
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent}
@@ -22,7 +21,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
 
-  val CYCLE_VERSION = "0.5"
+  val VERSION = "1.12.0"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -104,15 +103,11 @@ object WarsCoreAPI {
     games.put(s"dom-1", new Domination(s"dom-1"))
     WorldLoader.asyncUnloadWorld(s"dom-1")
 
-    (1 until 2) foreach (i => {
-      games.put(s"tactics-$i", new Tactics(s"tactics-$i"))
-      WorldLoader.asyncUnloadWorld(s"tactics-$i")
-    })
+    games.put(s"tactics-1", new Tactics(s"tactics-1"))
+    WorldLoader.asyncUnloadWorld(s"tactics-1")
 
-    (1 until 4) foreach (i => {
-      games.put(s"tdm4-$i", new TeamDeathMatch4(s"tdm4-$i"))
-      WorldLoader.asyncUnloadWorld(s"tdm4-$i")
-    })
+    games.put(s"tdm4-1", new TeamDeathMatch4(s"tdm4-1"))
+    WorldLoader.asyncUnloadWorld(s"tdm4-1")
   }
 
   /**
@@ -174,7 +169,7 @@ object WarsCoreAPI {
   def updateSidebar(player: Player, scoreboard: Scoreboard): Unit = {
     wplayers.get(player).foreach(wp => {
       if (scoreboard.getObjective(DisplaySlot.SIDEBAR) != null) scoreboard.getObjective(DisplaySlot.SIDEBAR).unregister()
-      val obj = scoreboard.registerNewObjective("sidebar", "dummy", colorCode(s"&aWars &ev$CYCLE_VERSION"))
+      val obj = scoreboard.registerNewObjective("sidebar", "dummy", colorCode(s"&aWars &ev$VERSION"))
       obj.setDisplaySlot(DisplaySlot.SIDEBAR)
 
       val rank = wp.rank
