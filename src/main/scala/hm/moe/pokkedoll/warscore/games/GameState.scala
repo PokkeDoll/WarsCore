@@ -14,6 +14,7 @@ object GameState {
   case object END extends GameState("end", "終了", false)
 
   case object ERROR extends GameState("error", "読み込み失敗", false)
+  case object FREEZE extends GameState("freeze", "凍結中", false)
 
   def valueOf(name: String): GameState = name.toLowerCase match {
     case "init" => INIT
@@ -23,6 +24,7 @@ object GameState {
     case "play2" => PLAY2
     case "end" => END
     case "error" => ERROR
+    case "freeze" => FREEZE
     case _ => DISABLE
   }
 }

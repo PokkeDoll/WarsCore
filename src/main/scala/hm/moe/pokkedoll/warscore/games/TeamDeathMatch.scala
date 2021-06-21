@@ -75,7 +75,7 @@ class TeamDeathMatch(override val id: String) extends Game {
   private val scoreboard = Bukkit.getScoreboardManager.getNewScoreboard
 
   val sidebar: Objective = scoreboard.registerNewObjective("sidebar", "dummy")
-  sidebar.setDisplayName(ChatColor.GOLD + "戦況")
+  sidebar.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "戦況")
   sidebar.setDisplaySlot(DisplaySlot.SIDEBAR)
 
   var redTeam: Team = scoreboard.registerNewTeam(s"$id-red")
@@ -123,7 +123,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     redPoint = 0
     bluePoint = 0
 
-    sidebar.getScore(ChatColor.WHITE + "Room: " + ChatColor.GOLD + id).setScore(99)
+    sidebar.getScore(ChatColor.WHITE + "Id: " + ChatColor.GOLD + id).setScore(99)
     sidebar.getScore("").setScore(98)
     sidebar.getScore(ChatColor.RED + "赤チーム キル数:").setScore(0)
     sidebar.getScore(ChatColor.BLUE + "青チーム キル数:").setScore(0)
@@ -152,7 +152,7 @@ class TeamDeathMatch(override val id: String) extends Game {
     state = GameState.READY
     new BukkitRunnable {
       val removeProgress: Double = 1d / 40d
-      var count = 40
+      var count = 15
 
       override def run(): Unit = {
         if (members.length < 2) {
@@ -591,57 +591,16 @@ class TeamDeathMatch(override val id: String) extends Game {
    *
    * @param player Player
    */
-  private def spawn(player: Player, coolTime: Boolean = false): Unit = {
-    if (coolTime) player.setGameMode(GameMode.SPECTATOR)
-
+  private def spawn(player: Player): Unit = {
     var spawnTime: Int = 5
     new BukkitRunnable {
       override def run(): Unit = {
-        if (!coolTime) {
-          if (redTeam.hasEntry(player.getName)) {
-            player.teleport(locationData._2)
-          } else {
-            player.teleport(locationData._3)
-          }
-        } else if (player.getKiller != null) {
-          // WarsCoreAPI.spectate(player, player.getKiller)
+        if (redTeam.hasEntry(player.getName)) {
+          player.teleport(locationData._2)
+        } else {
+          player.teleport(locationData._3)
         }
-        if (coolTime) {
-          new BukkitRunnable {
-            override def run(): Unit = {
-              if (!player.isOnline || WarsCoreAPI.getWPlayer(player).game.isEmpty) {
-                cancel()
-              } else if (state == GameState.PLAY || state == GameState.PLAY2) {
-                if (0 >= spawnTime) {
-                  WarsCoreAPI.setActiveWeapons(player)
-                  if (redTeam.hasEntry(player.getName)) {
-                    player.teleport(locationData._2)
-                  } else {
-                    player.teleport(locationData._3)
-                  }
-                  player.addPotionEffect(PotionEffectType.ABSORPTION.createEffect(100, 10), true)
-                  player.setGameMode(GameMode.SURVIVAL)
-                  cancel()
-                } else {
-                  player.sendActionBar(s"§bリスポーンするまであと§a$spawnTime§b秒")
-                  player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f)
-                  spawnTime -= 1
-                }
-              } else {
-                WarsCoreAPI.setActiveWeapons(player)
-                player.setGameMode(GameMode.SURVIVAL)
-                data.get(player).map(f => f.team).getOrElse(GameTeam.DEFAULT) match {
-                  case GameTeam.RED =>
-                    player.getInventory.setChestplate(WarsCoreAPI.RED_CHESTPLATE)
-                  case GameTeam.BLUE =>
-                    player.getInventory.setChestplate(WarsCoreAPI.BLUE_CHESTPLATE)
-                  case _ =>
-                }
-                cancel()
-              }
-            }
-          }.runTaskTimer(WarsCore.instance, 0L, 20L)
-        }
+        WarsCoreAPI.setActiveWeapons(player)
       }
     }.runTaskLater(WarsCore.instance, 1L)
   }

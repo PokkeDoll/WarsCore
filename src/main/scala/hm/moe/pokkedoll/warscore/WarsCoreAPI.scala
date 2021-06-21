@@ -9,7 +9,7 @@ import org.bukkit.entity.{EntityType, Firework, Player}
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.persistence.PersistentDataType
-import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
+import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard._
 
 import scala.collection.mutable
@@ -22,7 +22,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
 
-  val VERSION = "1.12.0-Alpha"
+  val VERSION = "1.12.1-Alpha"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -109,6 +109,8 @@ object WarsCoreAPI {
 
     games.put(s"tdm4-1", new TeamDeathMatch4(s"tdm4-1"))
     WorldLoader.asyncUnloadWorld(s"tdm4-1")
+
+    games.get("dom-1").foreach(_.state = GameState.FREEZE)
   }
 
   /**
@@ -523,7 +525,7 @@ object WarsCoreAPI {
       override def run(): Unit = {
         if(game.state == GameState.WAIT || game.state == GameState.READY) {
           if(i > 3) i = 0
-          game.members.map(_.player).foreach(_.sendTitle(loadingFont(i), "", 0, 5, 0))
+          game.members.map(_.player).foreach(_.sendTitle(ChatColor.GREEN + loadingFont(i), if(game.state == GameState.WAIT) ChatColor.GREEN + s"待機中..." else ChatColor.GREEN + "まもなく試合が始まります！", 0, 10, 0))
           i += 1
         } else {
           cancel()

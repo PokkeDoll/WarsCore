@@ -307,6 +307,7 @@ class Tactics(override val id: String) extends Game {
       override def run(): Unit = {
         members.foreach(wp => {
           val player = wp.player
+          WarsCoreAPI.setActiveWeapons(player)
           if (player.getGameMode != GameMode.SPECTATOR) {
             if (members.head == wp) {
               player.teleport(locationData._2)

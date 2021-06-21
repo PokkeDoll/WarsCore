@@ -55,7 +55,7 @@ object GameUI {
         m.setDisplayName(colorCode("&aドミネーション"))
         lore.add("&6:o")
     }
-    lore.add("&7================")
+    lore.add(colorCode("&7= = = = = = = ="))
     game.state match {
       case GameState.WAIT =>
         lore.add(colorCode("&7状態: &a待機中"))
@@ -79,11 +79,13 @@ object GameUI {
         lore.add(colorCode("&7状態: &e終了"))
       case GameState.ERROR =>
         lore.add(colorCode("&7状態: &dマップの読み込みに失敗したため停止しました"))
+      case GameState.FREEZE =>
+        lore.add(colorCode("&7状態: &9参加できません"))
       case _ =>
         lore.add(colorCode("&7状態: 無効"))
         lore.add(colorCode("&b&lクリックして部屋を作成します"))
     }
-    i.setLore(lore)
+    m.setLore(lore)
     i.setItemMeta(m)
     i
   }
