@@ -222,6 +222,7 @@ object WarsCoreAPI {
   def sendNews4User(player: Player): Unit = {
     player.sendMessage(
       new ComponentBuilder().append(createHeader("お知らせ"))
+        .append(ChatColor.GREEN + "06/21: 投票が自動でカウントされるように.  /voteで確認できます.")
         .create(): _*
     )
   }

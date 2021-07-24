@@ -3,6 +3,7 @@ package hm.moe.pokkedoll.warscore
 import com.google.common.io.ByteStreams
 import com.shampaggon.crackshot.{CSDirector, CSUtility}
 import hm.moe.pokkedoll.crackshot.WeaponLoader
+import hm.moe.pokkedoll.db.PokkeDollDB
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
 import hm.moe.pokkedoll.warscore.commands._
 import hm.moe.pokkedoll.warscore.db.{Database, SQLite}
@@ -28,6 +29,8 @@ class WarsCore extends JavaPlugin {
   var cs: CSUtility = _
 
   var wl: WeaponLoader = _
+
+  var db: PokkeDollDB = _
 
   override def onEnable(): Unit = {
     WarsCore.instance = this
@@ -99,6 +102,11 @@ class WarsCore extends JavaPlugin {
       out2.writeUTF("ServerProgress")
       out2.writeByte(2)
       getServer.sendPluginMessage(this, MODERN_TORUS_CHANNEL, out2.toByteArray)
+    }
+
+    if(Bukkit.getPluginManager.isPluginEnabled("PokkeDollDB")) {
+      db = Bukkit.getPluginManager.getPlugin("PokkeDollDB").asInstanceOf[PokkeDollDB]
+      getCommand("vote").setExecutor(new VoteCommand(this))
     }
 
     new BukkitRunnable {
