@@ -1,8 +1,8 @@
 name := "WarsCore"
 
-version := "1.13.0"
+version := "1.14.0"
 
-scalaVersion := "2.13.3"
+scalaVersion := "2.13.6"
 
 javacOptions ++= Seq("-source", "11", "-target", "11")
 
@@ -15,14 +15,14 @@ resolvers += "jitpack.io" at "https://jitpack.io"
 resolvers += "dmulloy2-repo" at "https://repo.dmulloy2.net/nexus/repository/public/"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "3.2.3" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.9" % Test,
   "com.destroystokyo.paper" % "paper-api" % "1.16.4-R0.1-SNAPSHOT" % Provided,
-  "com.zaxxer" % "HikariCP" % "3.4.2" % Provided
+  "com.zaxxer" % "HikariCP" % "5.0.0" % Provided
 )
 
 val libs = Seq(
-  "lib/scala-library-2.13.3.jar",
-  "lib/HikariCP-3.4.2.jar",
+  "lib/scala-library-2.13.6.jar",
+  "lib/HikariCP-5.0.0.jar",
   "lib/CrackShotPP-lib.jar"
 )
 
