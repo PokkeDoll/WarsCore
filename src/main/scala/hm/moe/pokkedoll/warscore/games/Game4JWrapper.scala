@@ -8,6 +8,7 @@ import org.bukkit.entity.Player
  *
  * @param game ゲーム
  */
+@Deprecated
 class Game4JWrapper(private val game: Game) {
   def getGame: Game = game
 

@@ -111,6 +111,8 @@ object WarsCoreAPI {
     WorldLoader.asyncUnloadWorld(s"tdm4-1")
 
     games.get("dom-1").foreach(_.state = GameState.FREEZE)
+
+    games.put("hcg-1", new HardCoreGames("hcg-1"))
   }
 
   /**

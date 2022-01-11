@@ -1,10 +1,8 @@
 name := "WarsCore"
 
-version := "1.14.0"
+version := "2.0"
 
-scalaVersion := "2.13.6"
-
-javacOptions ++= Seq("-source", "11", "-target", "11")
+scalaVersion := "2.13.7"
 
 organization := "hm.moe.pokkedoll"
 
@@ -13,15 +11,17 @@ crossPaths := false
 resolvers += "papermc" at "https://papermc.io/repo/repository/maven-public/"
 resolvers += "jitpack.io" at "https://jitpack.io"
 resolvers += "dmulloy2-repo" at "https://repo.dmulloy2.net/nexus/repository/public/"
+resolvers += "sk89q-repo" at "https://maven.enginehub.org/repo/"
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.9" % Test,
-  "com.destroystokyo.paper" % "paper-api" % "1.16.4-R0.1-SNAPSHOT" % Provided,
-  "com.zaxxer" % "HikariCP" % "5.0.0" % Provided
+  "io.papermc.paper" % "paper-api" % "1.17.1-R0.1-SNAPSHOT" % Provided,
+  "com.zaxxer" % "HikariCP" % "5.0.0" % Provided,
+  "com.sk89q.worldguard" % "worldguard-bukkit" % "7.0.5" % Provided
 )
 
 val libs = Seq(
-  "lib/scala-library-2.13.6.jar",
+  "lib/scala-library-2.13.7.jar",
   "lib/HikariCP-5.0.0.jar",
   "lib/CrackShotPP-lib.jar"
 )

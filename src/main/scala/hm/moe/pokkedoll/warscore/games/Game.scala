@@ -1,8 +1,10 @@
 package hm.moe.pokkedoll.warscore.games
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
+import hm.moe.pokkedoll.warscore.events.GameJoinEvent
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WorldLoader}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import net.kyori.adventure.text.TextComponent
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
 import org.bukkit.{GameRule, World}
@@ -157,6 +159,24 @@ trait Game {
    */
   def join(wp: WPlayer): Unit
 
+  protected def canJoin(wp: WPlayer): Boolean = {
+    if(wp.game.isDefined) {
+      wp.sendMessage("他のゲームに参加しています！")
+      false
+    } else if(!loaded && state == GameState.DISABLE) {
+      load(Vector(wp.player))
+      false
+    } else if (!state.join) {
+      wp.sendMessage("ゲームに参加できません！")
+      false
+    } else if (members.length >= maxMember) {
+      wp.sendMessage("人数が満員なので参加できません！")
+      false
+    } else {
+      true
+    }
+  }
+
   /**
    * Playerバージョン
    *
@@ -244,22 +264,34 @@ trait Game {
    *
    * @param string メッセージ
    */
+  @Deprecated
   def sendMessage(string: String): Unit = {
     world.getPlayers.forEach(_.sendMessage(ChatColor.translateAlternateColorCodes('&', string)))
   }
 
+  def sendMessage(text: TextComponent): Unit = {
+    world.getPlayers.forEach(_.sendMessage(text))
+  }
+
+  @Deprecated
   def sendMessage(components: Array[BaseComponent]): Unit = {
     world.getPlayers.forEach(_.sendMessage(components: _*))
   }
 
+  @Deprecated
   def sendActionBar(string: String): Unit = {
     world.getPlayers.forEach(_.sendActionBar(ChatColor.translateAlternateColorCodes('&', string)))
+  }
+
+  def sendActionBar(text: TextComponent): Unit = {
+    world.getPlayers.forEach(_.sendActionBar(text))
   }
 
   def log(reason: String, message: String): Try[Unit] = {
     WarsCore.instance.database.gameLog(id, reason, message)
   }
 
+  @Deprecated
   def createResult(data: GamePlayerData, winner: GameTeam): Array[BaseComponent] = {
     val comp = new ComponentBuilder("= - = - = - = - = -").color(ChatColor.GRAY).underlined(true)
       .append(" 戦績 ").underlined(false).bold(true).color(ChatColor.AQUA)
@@ -311,3 +343,6 @@ trait Game {
   }
 }
 
+object Game {
+
+}

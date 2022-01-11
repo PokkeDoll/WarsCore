@@ -12,7 +12,6 @@ import org.bukkit.entity.{Arrow, Entity, Player}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
 import org.bukkit.scoreboard.{DisplaySlot, Objective, Team}
 

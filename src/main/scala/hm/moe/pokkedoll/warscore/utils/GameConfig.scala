@@ -16,8 +16,8 @@ class GameConfig(cs: ConfigurationSection) {
     .map(mapId => {
       new MapInfo(
         mapId = mapId,
-        mapName = cs.getString(s"maps.$mapId.mapName"),
-        authors = cs.getString(s"maps.$mapId.authors"),
+        mapName = cs.getString(s"maps.$mapId.mapName", ""),
+        authors = cs.getString(s"maps.$mapId.authors", ""),
         locations = cs.getConfigurationSection(s"maps.$mapId.location")
           .getKeys(false)
           .asScala

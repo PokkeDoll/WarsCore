@@ -1,7 +1,7 @@
 package hm.moe.pokkedoll.warscore.ui
 
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.{colorCode, games}
-import hm.moe.pokkedoll.warscore.games.{Domination, Game, GameState, Tactics, TeamDeathMatch, TeamDeathMatch4}
+import hm.moe.pokkedoll.warscore.games.{Domination, Game, GameState, HardCoreGames, Tactics, TeamDeathMatch, TeamDeathMatch4}
 import hm.moe.pokkedoll.warscore.{Registry, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.entity.{HumanEntity, Player}
@@ -54,6 +54,10 @@ object GameUI {
         i.setType(Material.BEACON)
         m.setDisplayName(colorCode("&aドミネーション"))
         lore.add("&6:o")
+      case _: HardCoreGames =>
+        i.setType(Material.IRON_SHOVEL)
+        m.setDisplayName(colorCode("ハードコアゲームズ"))
+        lore.add(colorCode("3人のチームを組み，最後まで生き残りましょう"))
     }
     lore.add(colorCode("&7= = = = = = = ="))
     game.state match {
@@ -65,11 +69,11 @@ object GameUI {
         lore.add(colorCode("&7状態: &a準備中"))
         lore.add(colorCode(s"&7*: &a${game.mapInfo.mapName}"))
         lore.add(colorCode(s"&7* &a${game.members.size} &7/ &a${game.maxMember} プレイ中"))
-      case GameState.PLAY =>
+      case GameState.PLAY | GameState.PLAYING =>
         lore.add(colorCode("&7状態: &a試合中！"))
         lore.add(colorCode(s"&7*: &a${game.mapInfo.mapName}"))
         lore.add(colorCode(s"&7* &a${game.members.size} &7/ &a${game.maxMember} プレイ中"))
-      case GameState.PLAY2 =>
+      case GameState.PLAY2 | GameState.PLAYING_CANNOT_JOIN =>
         lore.add(colorCode("&7状態: &c試合中(参加できません)"))
         lore.add(colorCode(s"&7*: &a${game.mapInfo.mapName}"))
         lore.add(colorCode(s"&7* &a${game.members.size} &7/ &a${game.maxMember} プレイ中"))
@@ -105,12 +109,14 @@ object GameUI {
     val tdm4 = games.getOrElse("tdm4-1", return)
     val tac = games.getOrElse("tactics-1", return)
     val dom = games.getOrElse("dom-1", return)
+    val hcg = games.getOrElse("hcg", return)
 
     inv.setContents(Array.fill(18)(WarsCoreAPI.UI.PANEL))
 
     inv.setItem(3, createIcon(tdm))
     inv.setItem(5, createIcon(tdm4))
     inv.setItem(10, createIcon(tac))
+    inv.setItem(13, createIcon(hcg))
     inv.setItem(16, createIcon(dom))
 
     player.openInventory(inv)
