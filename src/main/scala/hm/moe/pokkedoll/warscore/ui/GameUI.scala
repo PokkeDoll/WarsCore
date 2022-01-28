@@ -61,7 +61,7 @@ object GameUI {
     }
     lore.add(colorCode("&7= = = = = = = ="))
     game.state match {
-      case GameState.WAIT =>
+      case GameState.WAIT | GameState.STANDBY =>
         lore.add(colorCode("&7状態: &a待機中"))
         lore.add(colorCode(s"&7* &a${game.mapInfo.mapName}"))
         lore.add(colorCode(s"&7* &a${game.members.size} &7/ &a${game.maxMember} プレイ中"))
@@ -85,6 +85,8 @@ object GameUI {
         lore.add(colorCode("&7状態: &dマップの読み込みに失敗したため停止しました"))
       case GameState.FREEZE =>
         lore.add(colorCode("&7状態: &9参加できません"))
+      case GameState.LOADING_WORLD =>
+        lore.add(colorCode("わ"))
       case _ =>
         lore.add(colorCode("&7状態: 無効"))
         lore.add(colorCode("&b&lクリックして部屋を作成します"))
@@ -144,7 +146,8 @@ object GameUI {
               case ClickType.RIGHT =>
                 openGameSettingUI(player, game)
               case _ =>
-                game.join(player)
+                // game.join(player)
+                Game.join(WarsCoreAPI.getWPlayer(player), game)
                 player.closeInventory()
             }
           case None =>

@@ -1,6 +1,6 @@
 name := "WarsCore"
 
-version := "2.1"
+version := "2.2"
 
 scalaVersion := "2.13.7"
 
@@ -17,7 +17,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.9" % Test,
   "io.papermc.paper" % "paper-api" % "1.17.1-R0.1-SNAPSHOT" % Provided,
   "com.zaxxer" % "HikariCP" % "5.0.0" % Provided,
-  "com.sk89q.worldguard" % "worldguard-bukkit" % "7.0.5" % Provided
+  // "com.sk89q.worldguard" % "worldguard-bukkit" % "7.0.5" % Compile
 )
 
 val libs = Seq(

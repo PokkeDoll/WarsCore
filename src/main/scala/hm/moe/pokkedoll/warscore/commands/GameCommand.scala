@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.commands
 
 import java.util
 import hm.moe.pokkedoll.warscore.WarsCoreAPI
-import hm.moe.pokkedoll.warscore.games.GameState
+import hm.moe.pokkedoll.warscore.games.{Game, GameState}
 import hm.moe.pokkedoll.warscore.ui.GameUI
 import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.{ChatColor, GameMode}
@@ -52,7 +52,8 @@ class GameCommand extends CommandExecutor with TabCompleter {
         }  else if (args.length >= 2 && args(0) == "join") {
           WarsCoreAPI.games.get(args(1)) match {
             case Some(game) =>
-              game.join(player)
+              // game.join(player)
+              Game.join(WarsCoreAPI.getWPlayer(player), game)
             case None =>
               player.sendMessage(s"${args(1)}は存在しません！")
           }

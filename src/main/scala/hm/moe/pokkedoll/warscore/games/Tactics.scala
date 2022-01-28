@@ -21,6 +21,9 @@ import org.bukkit._
  * @author Emorard
  */
 class Tactics(override val id: String) extends Game {
+
+  override val newGameSystem: Boolean = false
+
   /**
    * 読み込むワールドのID.  最初は必ず0
    */

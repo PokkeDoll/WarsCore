@@ -13,6 +13,9 @@ import hm.moe.pokkedoll.warscore.utils._
  * @version 3.0
  */
 class TeamDeathMatch4(override val id: String) extends TeamDeathMatch(id) {
+
+
+
   /**
    * ゲームの構成
    */

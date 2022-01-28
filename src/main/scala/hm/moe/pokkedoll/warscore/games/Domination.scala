@@ -24,6 +24,9 @@ import scala.collection.mutable
  * @version 1.0
  */
 class Domination(override val id: String) extends Game {
+
+  override val newGameSystem: Boolean = false
+
   /**
    * 読み込むワールドのID.  最初は必ず0
    */

@@ -2,6 +2,7 @@ package hm.moe.pokkedoll.warscore
 
 import hm.moe.pokkedoll.warscore.games._
 import hm.moe.pokkedoll.warscore.utils._
+import hm.moe.pokkedoll.warsgame.PPEX
 import net.md_5.bungee.api.chat.{BaseComponent, ClickEvent, ComponentBuilder, HoverEvent}
 import org.bukkit._
 import org.bukkit.configuration.ConfigurationSection
@@ -34,9 +35,10 @@ object WarsCoreAPI {
 
   lazy val random = new Random()
 
-  protected[warscore] var DEFAULT_SPAWN: Location = _
+  //TODO 脆弱！堅牢にするべき
+  var DEFAULT_SPAWN: Location = _
 
-  protected[warscore] var FIRST_SPAWN: Location = _
+  var FIRST_SPAWN: Location = _
 
   /** データベース */
   private val database = WarsCore.instance.database
@@ -97,7 +99,7 @@ object WarsCoreAPI {
    */
   def reloadGame(cs: ConfigurationSection): Unit = {
     games.clear()
-
+    /*
     games.put("tdm-1", new TeamDeathMatch("tdm-1"))
     WorldLoader.asyncUnloadWorld("tdm-1")
 
@@ -113,6 +115,8 @@ object WarsCoreAPI {
     games.get("dom-1").foreach(_.state = GameState.FREEZE)
 
     games.put("hcg-1", new HardCoreGames("hcg-1"))
+    */
+    games.put("ppex-1", new PPEX("ppex-1"))
   }
 
   /**

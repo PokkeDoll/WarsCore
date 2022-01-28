@@ -20,6 +20,7 @@ import org.bukkit._
  */
 
 class HardCoreGames(override val id : String) extends Game {
+  override val newGameSystem: Boolean = false
   /**
    * ゲームの構成
    */
@@ -245,7 +246,7 @@ class HardCoreGames(override val id : String) extends Game {
    * @return 参加できる場合
    */
   override def join(wp: WPlayer): Unit = {
-    if(canJoin(wp)) {
+    if(canJoinD(wp)) {
       val joinEvent = new GameJoinEvent(this, wp)
       Bukkit.getPluginManager.callEvent(joinEvent)
       if(joinEvent.getCancelReason != "") {

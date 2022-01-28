@@ -28,6 +28,9 @@ import scala.collection.mutable
  * @version 3.0
  */
 class TeamDeathMatch(override val id: String) extends Game {
+
+  override val newGameSystem: Boolean = false
+
   /**
    * 読み込むワールドのID.  最初は必ず0
    */
