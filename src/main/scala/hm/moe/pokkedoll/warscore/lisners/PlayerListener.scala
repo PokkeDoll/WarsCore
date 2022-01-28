@@ -17,6 +17,8 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit._
 import org.bukkit.scheduler.BukkitRunnable
 import hm.moe.pokkedoll.warscore.Registry.GAME_ID
+import hm.moe.pokkedoll.warscore.features.Chests
+import org.bukkit.block.Chest
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
 
@@ -77,13 +79,16 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onPlace(e: BlockPlaceEvent): Unit = {
-    if (e.getPlayer.getGameMode == GameMode.SURVIVAL) {
-      WarsCoreAPI.getWPlayer(e.getPlayer).game match {
+    val player = e.getPlayer
+    if (player.getGameMode == GameMode.SURVIVAL) {
+      WarsCoreAPI.getWPlayer(player).game match {
         case Some(game) =>
           game.onPlace(e)
         case _ =>
           e.setCancelled(true)
       }
+    } else if (player.getGameMode == GameMode.CREATIVE) {
+
     }
   }
 
@@ -198,9 +203,25 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         // TODO ここにマイセット
       }
     } else if (e.getClickedBlock != null) {
-      if (e.getClickedBlock.getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
+      val block = e.getClickedBlock
+      val getType = block.getType
+      val player = e.getPlayer
+      if (getType == Material.ENDER_CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
         e.setCancelled(true)
-        WeaponUI.openMainUI(e.getPlayer)
+        WeaponUI.openMainUI(player)
+      } else if (getType == Material.CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
+        block match {
+          case chest: Chest =>
+            Chests.getLoot(chest.getLocation) match {
+              case Right(loot) =>
+                val i = chest.getInventory
+                i.setItem(11, loot(0))
+                i.setItem(13, loot(1))
+                i.setItem(15, loot(2))
+              case Left(error) =>
+                player.sendMessage(error)
+            }
+        }
       }
     }
   }

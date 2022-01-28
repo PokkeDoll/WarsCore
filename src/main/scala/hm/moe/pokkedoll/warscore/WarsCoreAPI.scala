@@ -537,6 +537,10 @@ object WarsCoreAPI {
     }
   }
 
+  def showTitle(): Unit = {
+
+  }
+
 
   //TODO val mutableをvar immutableに変更する。参照とオブジェクトを間違えてはいけない！
 
@@ -575,5 +579,4 @@ object WarsCoreAPI {
       i
     }
   }
-
 }
