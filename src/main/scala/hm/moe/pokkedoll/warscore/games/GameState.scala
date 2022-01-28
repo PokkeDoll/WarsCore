@@ -4,7 +4,6 @@ package hm.moe.pokkedoll.warscore.games
  * ゲームの状態を表す
  * @author Emorard
  */
-@Deprecated
 object GameState {
   case object DISABLE extends GameState("disable", "§c無効化", false)
   case object LOADING_WORLD extends GameState("loading_world", "§eワールドの読み込み中", false)

@@ -2,8 +2,8 @@ package hm.moe.pokkedoll.warscore
 
 import com.google.common.io.ByteStreams
 import com.shampaggon.crackshot.{CSDirector, CSUtility}
-import com.sk89q.worldguard.WorldGuard
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin
+// import com.sk89q.worldguard.WorldGuard
+// import com.sk89q.worldguard.bukkit.WorldGuardPlugin
 import hm.moe.pokkedoll.crackshot.WeaponLoader
 import hm.moe.pokkedoll.db.PokkeDollDB
 import hm.moe.pokkedoll.warscore.WarsCore.MODERN_TORUS_CHANNEL
@@ -85,8 +85,8 @@ class WarsCore extends JavaPlugin {
     // WarsCoreAPI.reloadMapInfo(getConfig.getConfigurationSection("mapinfo"))
     WarsCoreAPI.reloadGame(null)
 
-    val wg = WorldGuardPlugin.inst()
-    val wg2 = WorldGuard.getInstance()
+    // val wg = WorldGuardPlugin.inst()
+    // val wg2 = WorldGuard.getInstance()
 
 
 

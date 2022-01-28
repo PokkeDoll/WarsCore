@@ -26,7 +26,8 @@ val libs = Seq(
   "lib/CrackShotPP-lib.jar"
 )
 
-packageOptions in (Compile, packageBin) +=
+Compile / packageBin / packageOptions +=
+// packageOptions in (Compile, packageBin) +=
   Package.ManifestAttributes("Class-Path" -> libs.mkString(" "))
 
 // artifactName :={(sv: ScalaVersion,module: ModuleID, artifact: Artifact) => "WarsCore-" + module.revision + "." + artifact.extension}
