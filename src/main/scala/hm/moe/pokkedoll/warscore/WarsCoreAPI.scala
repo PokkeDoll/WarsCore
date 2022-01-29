@@ -23,7 +23,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
 
-  val VERSION = "1.12.1-Alpha"
+  val VERSION = "2.3"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
@@ -184,10 +184,10 @@ object WarsCoreAPI {
       val rank = wp.rank
       setSidebarContents(obj,
         List(
-          s"&9Rank&7: &a$rank",
-          s"&9Class&7: &r${RankManager.getClassName(rank)}",
-          s"&9EXP&7: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}",
-          " ",
+          //s"&9Rank&7: &a$rank",
+          //s"&9Class&7: &r${RankManager.getClassName(rank)}",
+          //s"&9EXP&7: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}",
+          //" ",
           s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する",
           "&e/game &fゲームをする")
           .map(colorCode))
