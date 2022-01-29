@@ -4,8 +4,10 @@ import hm.moe.pokkedoll.warscore.WarsCore
 import org.bukkit.Material
 import org.bukkit.configuration.file.{FileConfiguration, YamlConfiguration}
 import org.bukkit.inventory.ItemStack
+import org.jetbrains.annotations.Nullable
 
 import java.io.File
+import java.util.Optional
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -55,6 +57,8 @@ object ItemUtil {
    * @return
    */
   def getItem(key: String): Option[ItemStack] = cache.get(key)
+
+  def getItemJava(key: String): ItemStack = cache(key)
 
   /**
    * キーを取得する。効率はあまりよくない

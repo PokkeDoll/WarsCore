@@ -1,10 +1,9 @@
 name: 'WarsCore'
-version: '1.11.19'
-api-version: '1.16'
+version: '2.2'
+api-version: '1.17'
 main: hm.moe.pokkedoll.warscore.WarsCore
 authors: [Emorard]
-softdepend: [Vault, CrackShot]
-
+softdepend: [Vault, CrackShot, PokkeDollDB]
 commands:
   game:
     permission: pokkedoll.command.game
@@ -45,6 +44,9 @@ commands:
     permission: pokkedoll.command.continue
   cse:
     permission: pokkedoll.command.cse
+  vote:
+    permission: pokkedoll.command.vp
+
 permissions:
   pokkedoll.command.game:
     default: true
@@ -74,6 +76,8 @@ permissions:
     default: true
   pokkedoll.command.continue:
     default: true
+  pokkedoll.command.vp:
+    default: true
 
   pokkedoll.user:
     default: true
@@ -85,6 +89,8 @@ permissions:
       pokkedoll.command.weapon: true
       pokkedoll.command.money: true
       pokkedoll.command.continue: true
+      pokkedoll.command.vp: true
+
   pokkedoll.admin:
     default: op
     children:

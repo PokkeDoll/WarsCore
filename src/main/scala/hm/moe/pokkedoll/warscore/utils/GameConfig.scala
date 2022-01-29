@@ -16,8 +16,8 @@ class GameConfig(cs: ConfigurationSection) {
     .map(mapId => {
       new MapInfo(
         mapId = mapId,
-        mapName = cs.getString(s"maps.$mapId.mapName"),
-        authors = cs.getString(s"maps.$mapId.authors"),
+        mapName = cs.getString(s"maps.$mapId.mapName", ""),
+        authors = cs.getString(s"maps.$mapId.authors", ""),
         locations = cs.getConfigurationSection(s"maps.$mapId.location")
           .getKeys(false)
           .asScala
@@ -48,7 +48,10 @@ object GameConfig {
   def reload(): Unit = {
     createConfig() match {
       case Success(_) =>
-        gameConfig = config.getKeys(false).asScala.map(f => (f, new GameConfig(config.getConfigurationSection(f)))).toMap
+        gameConfig = config.getKeys(false).asScala.map(f => {
+          plugin.getLogger.info(f)
+          (f, new GameConfig(config.getConfigurationSection(f)))
+        }).toMap
         plugin.getLogger.info("game.ymlの読み込みに成功しました")
       case Failure(exception) =>
         exception.printStackTrace()

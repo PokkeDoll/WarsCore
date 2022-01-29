@@ -3,16 +3,15 @@ package hm.moe.pokkedoll.warscore.commands
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.ui.{SndCheckerUI, WeaponUI}
-import hm.moe.pokkedoll.warscore.utils.{ItemUtil, TagUtil}
+import hm.moe.pokkedoll.warscore.utils.{BossBarMessage, Item, ItemUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.chat.ComponentBuilder
-import org.bukkit.{ChatColor, Location}
+import org.bukkit.{Bukkit, ChatColor, Location}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.{ArmorStand, EntityType, Player}
 import org.bukkit.inventory.{Inventory, ItemStack}
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.persistence.PersistentDataType
-import hm.moe.pokkedoll.warscore.utils.Item
 import org.bukkit.scheduler.BukkitRunnable
 
 class WarsCoreCommand extends CommandExecutor {
@@ -126,6 +125,8 @@ class WarsCoreCommand extends CommandExecutor {
               SndCheckerUI.openUI(player)
             case "storage" =>
               WeaponUI.openStorageUI(player, 1)
+            case "bossbar" =>
+              BossBarMessage.send("テスト(10秒)", 10)
             case _ =>
           }
         }

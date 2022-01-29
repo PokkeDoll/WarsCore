@@ -21,6 +21,9 @@ import org.bukkit._
  * @author Emorard
  */
 class Tactics(override val id: String) extends Game {
+
+  override val newGameSystem: Boolean = false
+
   /**
    * 読み込むワールドのID.  最初は必ず0
    */
@@ -167,7 +170,6 @@ class Tactics(override val id: String) extends Game {
     members.foreach(wp => {
       if (wp.player.getGameMode == GameMode.SPECTATOR) {
         wp.player.setGameMode(GameMode.SURVIVAL)
-        WarsCoreAPI.unfreeze(wp.player)
       }
       wp.game = None
       WarsCoreAPI.restoreLobbyInventory(wp.player)
@@ -298,7 +300,6 @@ class Tactics(override val id: String) extends Game {
         } else {
           player.teleport(locationData._3)
         }
-        WarsCoreAPI.freeze(player)
       }
     }.runTaskLater(WarsCore.instance, 1L)
   }
@@ -309,19 +310,18 @@ class Tactics(override val id: String) extends Game {
       override def run(): Unit = {
         members.foreach(wp => {
           val player = wp.player
+          WarsCoreAPI.setActiveWeapons(player)
           if (player.getGameMode != GameMode.SPECTATOR) {
             if (members.head == wp) {
               player.teleport(locationData._2)
             } else {
               player.teleport(locationData._3)
             }
-            WarsCoreAPI.freeze(player)
           }
           new BukkitRunnable {
             override def run(): Unit = {
               if (state == GameState.PLAY || state == GameState.PLAY2) {
                 if (0 >= spawnTime) {
-                  WarsCoreAPI.unfreeze(player)
                   player.setGameMode(GameMode.SURVIVAL)
                   cancel()
                 } else {
@@ -330,7 +330,6 @@ class Tactics(override val id: String) extends Game {
                   spawnTime -= 1
                 }
               } else {
-                WarsCoreAPI.unfreeze(player)
                 player.setGameMode(GameMode.SURVIVAL)
                 cancel()
               }

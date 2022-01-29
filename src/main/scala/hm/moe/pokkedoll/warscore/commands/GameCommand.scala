@@ -2,7 +2,7 @@ package hm.moe.pokkedoll.warscore.commands
 
 import java.util
 import hm.moe.pokkedoll.warscore.WarsCoreAPI
-import hm.moe.pokkedoll.warscore.games.GameState
+import hm.moe.pokkedoll.warscore.games.{Game, GameState}
 import hm.moe.pokkedoll.warscore.ui.GameUI
 import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.{ChatColor, GameMode}
@@ -28,18 +28,28 @@ class GameCommand extends CommandExecutor with TabCompleter {
           player.sendMessage(sb.toString())
         } else if (args(0).nonEmpty && (args(0) == "leave" || args(0) == "quit")) {
           val wp = WarsCoreAPI.getWPlayer(player)
-          wp.game match {
-            case Some(game) if player.getGameMode != GameMode.SPECTATOR =>
-              game.hub(wp)
-            case None =>
-              WarsCoreAPI.games.values.find(p => p.world == player.getWorld) match {
-                case Some(game) if game.state == GameState.END =>
-                  game.hub(player)
-                case _ =>
-                  player.sendMessage("§cゲームに参加していません！")
-              }
-            case _ =>
-              player.sendMessage("§c現在使用できません")
+          if(args.length >= 2 && args(1).equalsIgnoreCase("force")) {
+            wp.game match {
+              case Some(game) =>
+                game.hub(wp)
+                player.sendMessage("はぶゆ")
+              case None =>
+                player.sendMessage("ないゆ")
+            }
+          } else {
+            wp.game match {
+              case Some(game) if player.getGameMode != GameMode.SPECTATOR =>
+                game.hub(wp)
+              case None =>
+                WarsCoreAPI.games.values.find(p => p.world == player.getWorld) match {
+                  case Some(game) if game.state == GameState.END =>
+                    game.hub(player)
+                  case _ =>
+                    player.sendMessage("§cゲームに参加していません！")
+                }
+              case _ =>
+                player.sendMessage("§c現在使用できません")
+            }
           }
         } else if (args(0).length >= 2 && (args(0) == "delete" || args(0) == "d") && player.hasPermission("pokkedoll.game.admin")) {
           val wp = WarsCoreAPI.getWPlayer(player)
@@ -52,7 +62,8 @@ class GameCommand extends CommandExecutor with TabCompleter {
         }  else if (args.length >= 2 && args(0) == "join") {
           WarsCoreAPI.games.get(args(1)) match {
             case Some(game) =>
-              game.join(player)
+              // game.join(player)
+              Game.join(WarsCoreAPI.getWPlayer(player), game)
             case None =>
               player.sendMessage(s"${args(1)}は存在しません！")
           }

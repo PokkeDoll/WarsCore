@@ -2,15 +2,18 @@ package hm.moe.pokkedoll.warscore.games
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WorldLoader}
+import hm.moe.pokkedoll.warscore.wplayer.WPlayerState
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.{Component, TextComponent}
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.{BaseComponent, ComponentBuilder}
-import org.bukkit.{GameRule, World}
 import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.player.PlayerRespawnEvent
+import org.bukkit.{GameRule, World}
 
 import scala.util.Try
 
@@ -20,6 +23,8 @@ import scala.util.Try
  * @author Emorard
  */
 trait Game {
+
+  val newGameSystem: Boolean
 
   var loaded = false
   /**
@@ -109,7 +114,7 @@ trait Game {
    * ゲームを開始するためのワールドを読み込むメソッド。
    */
   def load(players: Vector[Player] = Vector.empty[Player], mapInfo: Option[MapInfo] = None): Unit = {
-    state = GameState.INIT
+    state = GameState.LOADING_WORLD
     this.mapInfo = mapInfo.getOrElse(scala.util.Random.shuffle(config.maps).head)
     WorldLoader.asyncLoadWorld(world = this.mapInfo.mapId, worldId = worldId, new Callback[World] {
       override def success(value: World): Unit = {
@@ -155,14 +160,40 @@ trait Game {
    * @param wp プレイヤー
    * @return 参加できる場合
    */
-  def join(wp: WPlayer): Unit
+  protected[Game] def join(wp: WPlayer): Unit
+
+  /**
+   * 次のバージョンで削除
+   * @param wp
+   * @return
+   */
+  @Deprecated
+  protected def canJoinD(wp: WPlayer): Boolean = {
+    if(wp.game.isDefined) {
+      wp.sendMessage("他のゲームに参加しています！")
+      false
+    } else if(!loaded && state == GameState.DISABLE) {
+      load(Vector(wp.player))
+      false
+    } else if (!state.join) {
+      wp.sendMessage("ゲームに参加できません！")
+      false
+    } else if (members.length >= maxMember) {
+      wp.sendMessage("人数が満員なので参加できません！")
+      false
+    } else {
+      true
+    }
+  }
+
+  def canJoin(wp: WPlayer): Option[Component] = None
 
   /**
    * Playerバージョン
    *
    * @param p プレイヤー
    */
-  def join(p: Player): Unit = join(WarsCoreAPI.getWPlayer(p))
+  protected[Game] def join(p: Player): Unit = join(WarsCoreAPI.getWPlayer(p))
 
   /**
    * プレイヤーがゲームから抜けたときのメソッド
@@ -244,22 +275,34 @@ trait Game {
    *
    * @param string メッセージ
    */
+  @Deprecated
   def sendMessage(string: String): Unit = {
     world.getPlayers.forEach(_.sendMessage(ChatColor.translateAlternateColorCodes('&', string)))
   }
 
+  def sendMessage(text: TextComponent): Unit = {
+    world.getPlayers.forEach(_.sendMessage(text))
+  }
+
+  @Deprecated
   def sendMessage(components: Array[BaseComponent]): Unit = {
     world.getPlayers.forEach(_.sendMessage(components: _*))
   }
 
+  @Deprecated
   def sendActionBar(string: String): Unit = {
     world.getPlayers.forEach(_.sendActionBar(ChatColor.translateAlternateColorCodes('&', string)))
+  }
+
+  def sendActionBar(text: TextComponent): Unit = {
+    world.getPlayers.forEach(_.sendActionBar(text))
   }
 
   def log(reason: String, message: String): Try[Unit] = {
     WarsCore.instance.database.gameLog(id, reason, message)
   }
 
+  @Deprecated
   def createResult(data: GamePlayerData, winner: GameTeam): Array[BaseComponent] = {
     val comp = new ComponentBuilder("= - = - = - = - = -").color(ChatColor.GRAY).underlined(true)
       .append(" 戦績 ").underlined(false).bold(true).color(ChatColor.AQUA)
@@ -311,3 +354,38 @@ trait Game {
   }
 }
 
+object Game {
+  def join(wp: WPlayer, game: Game): Unit = {
+    // TODO newGameSystemを解決する
+    if(game.newGameSystem) {
+      canJoin(wp, game) match {
+        case Some(error) =>
+          wp.sendMessage(error)
+        case None =>
+          game.join(wp)
+          println(s"Game.join: ${wp.game.isDefined}")
+      }
+    } else {
+      wp.sendMessage(Component.text("v2.3より: 新システムに対応していないゲームです.  参加処理は拒否されました"))
+    }
+  }
+
+  /**
+   * プレイヤーが参加できるかを判定する
+   * @param wp
+   * @param game
+   * @return Someならエラーメッセージあり！Noneが正解！
+   */
+  def canJoin(wp: WPlayer, game: Game): Option[Component] = {
+    wp.state match {
+      case WPlayerState.ONLINE =>
+        game.canJoin(wp)
+      case WPlayerState.PLAYING =>
+        Some(Component.text("試合中だよ！").color(NamedTextColor.RED))
+      case WPlayerState.ENTRY =>
+        Some(Component.text("既にゲームにエントリーしています").color(NamedTextColor.RED))
+      case _ =>
+        Some(Component.text("参加が拒否されました！").color(NamedTextColor.RED))
+    }
+  }
+}
