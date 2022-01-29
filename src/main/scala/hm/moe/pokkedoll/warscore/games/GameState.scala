@@ -39,7 +39,7 @@ object GameState {
   }
 }
 
-protected sealed abstract class GameState(val name: String, val title: String, val join: Boolean)
+sealed abstract class GameState(val name: String, val title: String, val join: Boolean)
 
 /*
 v3.0用

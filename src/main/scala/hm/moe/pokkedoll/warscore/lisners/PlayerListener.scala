@@ -18,6 +18,7 @@ import org.bukkit._
 import org.bukkit.scheduler.BukkitRunnable
 import hm.moe.pokkedoll.warscore.Registry.GAME_ID
 import hm.moe.pokkedoll.warscore.features.Chests
+import hm.moe.pokkedoll.warscore.games.Game
 import org.bukkit.block.Chest
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
@@ -28,6 +29,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     e.setKeepLevel(true)
     e.getEntity match {
       case player: Player =>
+        println(WarsCoreAPI.getWPlayer(player).game.isDefined.toString)
         WarsCoreAPI.getWPlayer(player).game.foreach(_.onDeath(e))
         new BukkitRunnable {
           override def run(): Unit = {
@@ -148,7 +150,8 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         .flatMap(WarsCoreAPI.games.get) match {
         case Some(game) if p.isInstanceOf[Player] =>
           lazy val player = p.asInstanceOf[Player]
-          game.join(player)
+          Game.join(WarsCoreAPI.getWPlayer(player), game)
+          // game.join(player)
           player.closeInventory()
         case None =>
       }

@@ -3,6 +3,7 @@ package hm.moe.pokkedoll.warscore.ui
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.{colorCode, games}
 import hm.moe.pokkedoll.warscore.games.{Domination, Game, GameState, HardCoreGames, Tactics, TeamDeathMatch, TeamDeathMatch4}
 import hm.moe.pokkedoll.warscore.{Registry, WarsCoreAPI}
+import hm.moe.pokkedoll.warsgame.PPEX
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.entity.{HumanEntity, Player}
 import org.bukkit.event.inventory.{ClickType, InventoryClickEvent}
@@ -58,6 +59,10 @@ object GameUI {
         i.setType(Material.IRON_SHOVEL)
         m.setDisplayName(colorCode("ハードコアゲームズ"))
         lore.add(colorCode("3人のチームを組み，最後まで生き残りましょう"))
+      case _: PPEX =>
+        i.setType(Material.IRON_SHOVEL)
+        m.setDisplayName(colorCode("ハードコアゲームズじゃない"))
+        lore.add(colorCode("3人のチームを組み，最後まで生き残りましょう"))
     }
     lore.add(colorCode("&7= = = = = = = ="))
     game.state match {
@@ -106,20 +111,30 @@ object GameUI {
     val inv = Bukkit.createInventory(null, 18, GAME_INVENTORY_TITLE)
     inv.setItem(0, openGameInventoryIcon)
     inv.setItem(9, new ItemStack(Material.IRON_SWORD))
-
+    println("a")
     val tdm = games.getOrElse("tdm-1", return)
+    println("a")
     val tdm4 = games.getOrElse("tdm4-1", return)
+    println("a")
     val tac = games.getOrElse("tactics-1", return)
+    println("a")
     val dom = games.getOrElse("dom-1", return)
-    val hcg = games.getOrElse("hcg", return)
-
+    println("a")
+    //val hcg = games.getOrElse("hcg", return)
+    //println("a")
+    val ppex = games.getOrElse("ppex-1", return)
+    println("b")
     inv.setContents(Array.fill(18)(WarsCoreAPI.UI.PANEL))
+
+    println(ppex == null)
+    println(ppex.state.name)
 
     inv.setItem(3, createIcon(tdm))
     inv.setItem(5, createIcon(tdm4))
     inv.setItem(10, createIcon(tac))
-    inv.setItem(13, createIcon(hcg))
+    //inv.setItem(13, createIcon(hcg))
     inv.setItem(16, createIcon(dom))
+    inv.setItem(17, createIcon(ppex))
 
     player.openInventory(inv)
   }
@@ -209,13 +224,13 @@ object GameUI {
   val TIME_INVENTORY_TITLE: String = colorCode("&c試合時間を変更します")
 
   private val currentTimeIcon = (game: Game) => {
-      val item = new ItemStack(Material.FILLED_MAP)
-      val meta = item.getItemMeta
-      meta.setDisplayName(colorCode(s"&a現在の試合時間: ${WarsCoreAPI.splitToComponentTimes(game.maxTime)._2}分"))
-      meta.getPersistentDataContainer.set(Registry.GAME_ID, PersistentDataType.STRING, game.id)
-      item.setItemMeta(meta)
-      item
-    }
+    val item = new ItemStack(Material.FILLED_MAP)
+    val meta = item.getItemMeta
+    meta.setDisplayName(colorCode(s"&a現在の試合時間: ${WarsCoreAPI.splitToComponentTimes(game.maxTime)._2}分"))
+    meta.getPersistentDataContainer.set(Registry.GAME_ID, PersistentDataType.STRING, game.id)
+    item.setItemMeta(meta)
+    item
+  }
 
 
   val timeInventory: Game => Inventory = (game: Game) => {
@@ -235,7 +250,7 @@ object GameUI {
 
   def onClickTimeInventory(inv: Inventory, slot: Int, player: Player): Unit = {
     val item = inv.getItem(0)
-    if(item != null && item.getType != Material.AIR && item.hasItemMeta) {
+    if (item != null && item.getType != Material.AIR && item.hasItemMeta) {
       WarsCoreAPI.games.get(item.getItemMeta.getPersistentDataContainer.get(Registry.GAME_ID, PersistentDataType.STRING)) match {
         case Some(game) if slot > 0 && slot < 9 =>
           game.maxTime = 60 + slot * 60

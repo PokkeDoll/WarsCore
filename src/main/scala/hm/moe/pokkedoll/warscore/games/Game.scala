@@ -160,7 +160,7 @@ trait Game {
    * @param wp プレイヤー
    * @return 参加できる場合
    */
-  def join(wp: WPlayer): Unit
+  protected[Game] def join(wp: WPlayer): Unit
 
   /**
    * 次のバージョンで削除
@@ -193,7 +193,7 @@ trait Game {
    *
    * @param p プレイヤー
    */
-  def join(p: Player): Unit = join(WarsCoreAPI.getWPlayer(p))
+  protected[Game] def join(p: Player): Unit = join(WarsCoreAPI.getWPlayer(p))
 
   /**
    * プレイヤーがゲームから抜けたときのメソッド
@@ -362,8 +362,8 @@ object Game {
         case Some(error) =>
           wp.sendMessage(error)
         case None =>
-          wp.game = Some(game)
           game.join(wp)
+          println(s"Game.join: ${wp.game.isDefined}")
       }
     } else {
       wp.sendMessage(Component.text("v2.3より: 新システムに対応していないゲームです.  参加処理は拒否されました"))

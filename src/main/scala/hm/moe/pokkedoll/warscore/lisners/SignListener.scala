@@ -1,6 +1,7 @@
 package hm.moe.pokkedoll.warscore.lisners
 
 import com.google.common.io.ByteStreams
+import hm.moe.pokkedoll.warscore.games.Game
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.ChatColor
 import org.bukkit.block.Sign
@@ -28,7 +29,8 @@ class SignListener(plugin: WarsCore) extends Listener {
             // [<ゲームのID>]
             WarsCoreAPI.games.get(lines(0).substring(1, lines(0).length - 1)) match {
               case Some(game) =>
-                game.join(e.getPlayer)
+                // game.join(e.getPlayer)
+                Game.join(WarsCoreAPI.getWPlayer(e.getPlayer), game)
               case None =>
             }
             if (lines(0).contains("[Vote Point]")) {

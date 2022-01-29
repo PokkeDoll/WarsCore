@@ -1,5 +1,7 @@
 package hm.moe.pokkedoll.warscore.utils
 
+import org.jetbrains.annotations.NotNull
+
 /**
  * Q: なぜLoaction型じゃないんですか！？<br>
  * A: Game.load()するたびにワールドの情報が変わるため、読み込みエラーが発生してしまう。 <br>
@@ -12,14 +14,8 @@ package hm.moe.pokkedoll.warscore.utils
  * @version 2
  */
 //TODO MapInfo.ofの追加
-class MapInfo(val mapId: String = "Unknown",
-              val mapName: String = "Unknown",
-              val authors: String = "Unknown",
-              val locations: Map[String, WeakLocation] = Map.empty[String, WeakLocation],
-              val metadata: Map[String, Any] = Map.empty[String, Any])
-
-object MapInfo {
-  def of(): MapInfo = {
-    null
-  }
-}
+class MapInfo(@NotNull val mapId: String = "Unknown",
+              @NotNull val mapName: String = "Unknown",
+              @NotNull val authors: String = "Unknown",
+              @NotNull val locations: Map[String, WeakLocation] = Map.empty[String, WeakLocation],
+              @NotNull val metadata: Map[String, Any] = Map.empty[String, Any])

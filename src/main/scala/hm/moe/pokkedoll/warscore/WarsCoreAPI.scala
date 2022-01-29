@@ -99,7 +99,6 @@ object WarsCoreAPI {
    */
   def reloadGame(cs: ConfigurationSection): Unit = {
     games.clear()
-    /*
     games.put("tdm-1", new TeamDeathMatch("tdm-1"))
     WorldLoader.asyncUnloadWorld("tdm-1")
 
@@ -115,8 +114,9 @@ object WarsCoreAPI {
     games.get("dom-1").foreach(_.state = GameState.FREEZE)
 
     games.put("hcg-1", new HardCoreGames("hcg-1"))
-    */
+
     games.put("ppex-1", new PPEX("ppex-1"))
+    WorldLoader.asyncUnloadWorld(s"ppex-1")
   }
 
   /**
