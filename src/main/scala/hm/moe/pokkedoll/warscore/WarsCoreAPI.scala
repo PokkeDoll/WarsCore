@@ -545,6 +545,14 @@ object WarsCoreAPI {
 
   }
 
+  def createRunnable(): Unit = {
+    val a: BukkitRunnable = () => {
+
+    }
+
+
+  }
+
 
   //TODO val mutableをvar immutableに変更する。参照とオブジェクトを間違えてはいけない！
 

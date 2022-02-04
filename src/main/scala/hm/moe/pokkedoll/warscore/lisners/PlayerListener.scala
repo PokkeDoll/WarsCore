@@ -23,6 +23,8 @@ import org.bukkit.block.Chest
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
 
+
+
   @EventHandler
   def onDeath(e: PlayerDeathEvent): Unit = {
     e.setKeepInventory(true)

@@ -14,11 +14,14 @@ import org.bukkit._
 import org.bukkit.entity.Player
 import org.bukkit.event.entity.PlayerDeathEvent
 
+import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
 
 class PPEX(override val id: String) extends Game {
 
   override val newGameSystem: Boolean = true
+
+  this.debug = true
 
   /**
    * ゲームの構成
@@ -154,6 +157,14 @@ class PPEX(override val id: String) extends Game {
     }.runTaskLater(WarsCore.getInstance, 300L)
   }
 
+  private def shouldGameSet: Boolean = {
+    if(!this.debug && getSurvivedCount < 1) {
+      true
+    } else {
+      members.exists(p => p.player.getInventory.getItemInMainHand.getType == Material.DIAMOND)
+    }
+  }
+
   private def processPhase(): Unit = {
     // TODO これ全部スレッドに移せない？
     bossbar.setTitle(s"§aフェーズ: $phase")
@@ -181,8 +192,7 @@ class PPEX(override val id: String) extends Game {
             cancel()
             processCloseBorder()
           }
-          if (getSurvivedCount <= 1) {
-            println("end!")
+          if (shouldGameSet) {
             cancel()
             end()
           }
@@ -210,8 +220,7 @@ class PPEX(override val id: String) extends Game {
             cancel()
             processPhase()
           }
-          if (getSurvivedCount <= 1) {
-            println("end!")
+          if (shouldGameSet) {
             cancel()
             end()
           }
@@ -249,6 +258,8 @@ class PPEX(override val id: String) extends Game {
 
     bossbar.removeAll()
     // ユーザーデータの消去
+    var delay = 200L
+
     new BukkitRunnable {
       override def run(): Unit = {
         members.foreach(wp => {
@@ -260,19 +271,27 @@ class PPEX(override val id: String) extends Game {
             .append(Component.text("{メンバー2}: ")).append(Component.newline())
             .append(Component.text("{メンバー3}: ")).append(Component.newline()))
         })
-        new BukkitRunnable {
-          override def run(): Unit = {
-            WorldLoader.asyncUnloadWorld(id)
-            new BukkitRunnable {
-              override def run(): Unit = {
-                load()
-              }
-            }.runTaskLater(WarsCore.getInstance, 100L)
-          }
-        }.runTaskLater(WarsCore.getInstance, 300L)
       }
-    }.runTaskLater(WarsCore.getInstance, 200L)
+    }.runTaskLater(WarsCore.getInstance, delay)
+
+    delay += 300L
+
+    new BukkitRunnable {
+      override def run(): Unit = {
+        WorldLoader.asyncUnloadWorld(id)
+      }
+    }.runTaskLater(WarsCore.getInstance, delay)
+
+    delay += 100L
+
+    new BukkitRunnable {
+      override def run(): Unit = {
+        load()
+      }
+    }.runTaskLater(WarsCore.getInstance, delay)
   }
+
+
 
   /**
    * プレイヤーがゲームに参加するときのメソッド
@@ -392,8 +411,7 @@ class PPEX(override val id: String) extends Game {
     val gde = (attacker: Player) => new GameDeathEvent(this, attacker, victim)
     val vdata = data(victim)
     vdata.survived = false
-    if (getSurvivedCount <= 1) {
-      println("end!")
+    if (shouldGameSet) {
       this.end()
     }
     // キルログのための処理

@@ -5,6 +5,7 @@ import hm.moe.pokkedoll.warscore.db.WeaponDB
 import hm.moe.pokkedoll.warscore.ui.{SndCheckerUI, WeaponUI}
 import hm.moe.pokkedoll.warscore.utils.{BossBarMessage, Item, ItemUtil, TagUtil}
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warsgame.Skills
 import net.md_5.bungee.api.chat.ComponentBuilder
 import org.bukkit.{Bukkit, ChatColor, Location}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender}
@@ -127,6 +128,27 @@ class WarsCoreCommand extends CommandExecutor {
               WeaponUI.openStorageUI(player, 1)
             case "bossbar" =>
               BossBarMessage.send("テスト(10秒)", 10)
+            case "task" => {
+              def o(a: Unit): BukkitRunnable = {
+                () => {
+                  a
+                }
+              }
+
+              val a = o({
+                player.sendMessage("a")
+                player.sendMessage("a")
+                player.sendMessage("a")
+                player.sendMessage("a")
+                player.sendMessage("a")
+                player.sendMessage("a")
+              })
+
+              a.runTask(WarsCore.instance)
+
+            }
+            case "sk:bh" =>
+              Skills.bh(player)
             case _ =>
           }
         }

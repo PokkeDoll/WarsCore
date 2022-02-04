@@ -27,6 +27,8 @@ trait Game {
   val newGameSystem: Boolean
 
   var loaded = false
+
+  var debug = false
   /**
    * ゲームの識別ID
    */
