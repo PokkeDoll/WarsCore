@@ -7,11 +7,11 @@ import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
-import org.bukkit.event.entity.{EntityDamageByEntityEvent, FoodLevelChangeEvent, PlayerDeathEvent}
-import org.bukkit.event.inventory.InventoryType.SlotType
+import org.bukkit.event.entity.{EntityDamageByEntityEvent, EntityToggleGlideEvent, FoodLevelChangeEvent, PlayerDeathEvent}
+import org.bukkit.event.inventory.InventoryType.{COMPOSTER, SlotType}
 import org.bukkit.event.inventory._
 import org.bukkit.event.player._
-import org.bukkit.event.{EventHandler, Listener}
+import org.bukkit.event.{EventHandler, EventPriority, Listener}
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit._
@@ -19,11 +19,15 @@ import org.bukkit.scheduler.BukkitRunnable
 import hm.moe.pokkedoll.warscore.Registry.GAME_ID
 import hm.moe.pokkedoll.warscore.features.Chests
 import hm.moe.pokkedoll.warscore.games.Game
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.block.Chest
+import org.bukkit.metadata.FixedMetadataValue
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
 
 
+  private val knockdownKey = new NamespacedKey(plugin, "knockdown")
 
   @EventHandler
   def onDeath(e: PlayerDeathEvent): Unit = {
@@ -31,8 +35,20 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     e.setKeepLevel(true)
     e.getEntity match {
       case player: Player =>
-        println(WarsCoreAPI.getWPlayer(player).game.isDefined.toString)
-        WarsCoreAPI.getWPlayer(player).game.foreach(_.onDeath(e))
+        /*
+
+         */
+        val values = player.getMetadata("wc:isKnockdown")
+        if(!values.isEmpty && values.get(0).asBoolean()) {
+          player.setMetadata("wc:isKnockdown", new FixedMetadataValue(plugin, false))
+          // player.getPersistentDataContainer.set(knockdownKey, PersistentDataType.BYTE, 0.toByte.asInstanceOf[java.lang.Byte])
+          WarsCoreAPI.getWPlayer(player).game.foreach(_.onDeath(e))
+        } else {
+          player.sendMessage(Component.text("ノックダウンした！").color(NamedTextColor.RED))
+          e.getPlayer.setGliding(true)
+          player.setMetadata("wc:isKnockdown", new FixedMetadataValue(plugin, true))
+          // player.getPersistentDataContainer.set(knockdownKey, PersistentDataType.BYTE, 1.toByte.asInstanceOf[java.lang.Byte])
+        }
         new BukkitRunnable {
           override def run(): Unit = {
             player.spigot().respawn()
@@ -42,8 +58,27 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     }
   }
 
+  @EventHandler(priority = EventPriority.HIGHEST)
+  def onToggleGlide(e: EntityToggleGlideEvent): Unit = {
+    e.getEntity match {
+      case player: Player =>
+        val values = player.getMetadata("wc:isKnockdown")
+        //player.sendMessage(s"${values.isEmpty.toString}, ${values.get(0).asBoolean().toString}")
+        if(!values.isEmpty && values.get(0).asBoolean()) {
+          e.setCancelled(true)
+        }
+        // val isKnockdown = player.getPersistentDataContainer.get(knockdownKey, PersistentDataType.BYTE)
+      case _ =>
+    }
+  }
+
   @EventHandler
   def onRespawn(e: PlayerRespawnEvent): Unit = {
+    val values = e.getPlayer.getMetadata("wc:isKnockdown")
+    if(!values.isEmpty && values.get(0).asBoolean()) {
+      e.setRespawnLocation(e.getPlayer.getLocation())
+
+    }
     WarsCoreAPI.getWPlayer(e.getPlayer).game.foreach(game => {
       game.onRespawn(e)
     })

@@ -128,6 +128,8 @@ class WarsCoreCommand extends CommandExecutor {
               WeaponUI.openStorageUI(player, 1)
             case "bossbar" =>
               BossBarMessage.send("テスト(10秒)", 10)
+            case "damage" =>
+              player.damage(100.0)
             case "task" => {
               def o(a: Unit): BukkitRunnable = {
                 () => {
