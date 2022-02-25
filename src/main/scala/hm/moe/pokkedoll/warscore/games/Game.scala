@@ -13,6 +13,9 @@ import org.bukkit.entity.Player
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, PlayerDeathEvent}
 import org.bukkit.event.player.PlayerRespawnEvent
+import org.bukkit.metadata.FixedMetadataValue
+import org.bukkit.potion.{PotionEffect, PotionEffectType, PotionEffectTypeWrapper}
+import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{GameRule, World}
 
 import scala.util.Try
@@ -389,5 +392,28 @@ object Game {
       case _ =>
         Some(Component.text("参加が拒否されました！").color(NamedTextColor.RED))
     }
+  }
+
+  def isKnockdown(player: Player): Boolean = {
+    val values = player.getMetadata("wc:isKnockdown")
+    !values.isEmpty && values.get(0).asBoolean()
+  }
+
+  def setKnockdown(player: Player, value: Boolean): Unit =
+    player.setMetadata("wc:isKnockdown", new FixedMetadataValue(WarsCore.instance, value))
+
+  def knockdown(player: Player): Unit = {
+    player.sendMessage(Component.text("ノックダウンした！").color(NamedTextColor.RED))
+    new BukkitRunnable {
+      override def run(): Unit = {
+        // 3 -> 80%マイナス
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 60*20, 3, true, true, false))
+        // 128 = -1 -> 跳躍-50%
+        // player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 60, 128, false, false, false))
+        player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 6000, 0, true, true, false))
+        // setKnockdown(player, value = true)
+        player.setSneaking(true)
+      }
+    }.runTaskLater(WarsCore.instance, 5L)
   }
 }
