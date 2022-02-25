@@ -236,6 +236,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         e.setCancelled(true)
         WeaponUI.openMainUI(player)
       } else if (getType == Material.CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
+        /*
         block match {
           case chest: Chest =>
             Chests.getLoot(chest.getLocation) match {
@@ -248,6 +249,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
                 player.sendMessage(error)
             }
         }
+         */
       }
     }
   }

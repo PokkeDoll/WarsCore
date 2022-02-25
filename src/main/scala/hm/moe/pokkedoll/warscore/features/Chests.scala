@@ -16,6 +16,7 @@ import scala.util.Random
  * @param parent 報酬として出現するアイテムが入っている親チェストの名前
  * @param isOpened 開けられたかを表すフラグ
  */
+@Deprecated
 class ChildChest(val parent: String, var isOpened: Boolean = false) {
   /**
    * 名前を返すのと同時にフラグを有効にする
@@ -30,6 +31,7 @@ class ChildChest(val parent: String, var isOpened: Boolean = false) {
 /**
  * ランダムでアイテムが入っているチェストのオブジェクト
  */
+@Deprecated
 object Chests {
   val parentChestMap = mutable.HashMap.empty[String, Location]
   val childChestMap = mutable.HashMap.empty[Location, ChildChest]
