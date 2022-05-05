@@ -5,16 +5,17 @@ import hm.moe.pokkedoll.warscore.games.{Game, GamePlayerData, GameState}
 import hm.moe.pokkedoll.warscore.utils.{GameConfig, MapInfo, WeakLocation, WorldLoader}
 import hm.moe.pokkedoll.warscore.{WPlayer, WarsCore, WarsCoreAPI}
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.{NamedTextColor, Style}
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
-import org.bukkit.boss.{BarColor, BarStyle, BossBar}
-import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.scoreboard.{DisplaySlot, Scoreboard}
 import org.bukkit._
-import org.bukkit.entity.Player
+import org.bukkit.boss.{BarColor, BarStyle, BossBar}
+import org.bukkit.entity.{ArmorStand, EntityType, Player}
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.inventory.{EquipmentSlot, Inventory, ItemStack}
+import org.bukkit.scheduler.BukkitRunnable
 
-import java.util.concurrent.CompletableFuture
+import java.util.UUID
 import scala.collection.mutable
 
 class PPEX(override val id: String) extends Game {
@@ -78,6 +79,8 @@ class PPEX(override val id: String) extends Game {
 
   val data = mutable.HashMap.empty[Player, PPEXData]
 
+  val deathBox = mutable.HashMap.empty[UUID, Inventory]
+
   /**
    * ゲームを初期化する
    */
@@ -97,6 +100,7 @@ class PPEX(override val id: String) extends Game {
     this.members = Vector.empty[WPlayer]
 
     this.data.clear()
+    this.deathBox.clear()
 
     this.world.setPVP(true)
     standby()
@@ -428,6 +432,9 @@ class PPEX(override val id: String) extends Game {
         sendMessage(Component.text(s"Dead → ${victim.getName}"))
         Bukkit.getPluginManager.callEvent(gde(null))
     }
+
+    spawnDeathBox(victim)
+
     // 死亡したプレイヤーの処理
     if (false /* もしチームメンバーがいるとき */ ) {
 
@@ -475,5 +482,22 @@ class PPEX(override val id: String) extends Game {
       )
     }
     */
+  }
+
+  private def spawnDeathBox(victim: Player): Unit = {
+    victim.getWorld.spawnEntity(victim.getLocation, EntityType.ARMOR_STAND, SpawnReason.CUSTOM) match {
+      case base: ArmorStand =>
+        base.setInvisible(true)
+        base.setInvulnerable(true)
+        base.setBasePlate(true)
+        // 全部対象
+        base.setDisabledSlots(EquipmentSlot.values(): _*)
+
+        base.setHelmet(new ItemStack(Material.PUMPKIN))
+        base.setVelocity(base.getVelocity.add(new org.bukkit.util.Vector(0, 1, 0)))
+
+        deathBox.put(base.getUniqueId, Bukkit.createInventory(null, 36, Component.text(s"${victim.getName}'s DeathBox'")))
+      case _ =>
+    }
   }
 }
