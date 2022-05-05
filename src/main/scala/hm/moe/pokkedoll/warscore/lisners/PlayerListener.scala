@@ -3,13 +3,11 @@ package hm.moe.pokkedoll.warscore.lisners
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import hm.moe.pokkedoll.warscore.Registry.GAME_ID
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.info
-import hm.moe.pokkedoll.warscore.features.Chests
 import hm.moe.pokkedoll.warscore.games.Game
 import hm.moe.pokkedoll.warscore.ui._
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import org.bukkit._
-import org.bukkit.block.Chest
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, FoodLevelChangeEvent, PlayerDeathEvent}
@@ -97,7 +95,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         case Some(game) =>
           game.onBreak(e)
         case _ =>
-          e.setCancelled(true)
+          // e.setCancelled(true)
       }
     }
   }
@@ -110,7 +108,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         case Some(game) =>
           game.onPlace(e)
         case _ =>
-          e.setCancelled(true)
+          // e.setCancelled(true)
       }
     } else if (player.getGameMode == GameMode.CREATIVE) {
 
