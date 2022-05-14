@@ -32,13 +32,14 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
       case player: Player =>
         /*
         ノックダウン処理
-         */
+
         if(Game.isKnockdown(player)) {
           Game.setKnockdown(player, value = false)
-          WarsCoreAPI.getWPlayer(player).game.foreach(_.onDeath(e))
+
         } else {
           Game.setKnockdown(player, value = true)
-        }
+        }*/
+        WarsCoreAPI.getWPlayer(player).game.foreach(_.onDeath(e))
         new BukkitRunnable {
           override def run(): Unit = {
             player.spigot().respawn()

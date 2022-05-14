@@ -11,7 +11,9 @@ import org.bukkit._
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{ArmorStand, EntityType, Player}
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.{EquipmentSlot, Inventory, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
 
@@ -63,7 +65,7 @@ class PPEX(override val id: String) extends Game {
    */
   override var maxTime: Int = _
 
-  private val matchMakingText: Int => String = i => s"マッチメイキング中... ${i}/$maxMember"
+  private val matchMakingText: Int => String = i => s"マッチメイキング中... $i/$maxMember"
 
   var phase = 0
   // フェーズ1, フェーズ2, フェーズ3, 最終リング
@@ -176,7 +178,7 @@ class PPEX(override val id: String) extends Game {
 
     playSound(Sound.BLOCK_BELL_USE, 6.0F, 0.0F)
     var _time: Int = phaseTime(phase)
-    sendMessage(Component.text(s"フェーズ: ${phase}; ボーダー縮小まであと${_time}秒"))
+    sendMessage(Component.text(s"フェーズ: $phase; ボーダー縮小まであと${_time}秒"))
     new BukkitRunnable {
       var _time: Int = phaseTime(phase)
 
@@ -405,16 +407,33 @@ class PPEX(override val id: String) extends Game {
     ))
   }
 
+  private def __getParty(): Int = 1
+
   override def onDeath(e: PlayerDeathEvent): Unit = {
     super.onDeath(e)
 
-    println(this.state.name)
     if (this.state != GameState.PLAYING && state != GameState.PLAYING_CANNOT_JOIN) return
 
     val victim = e.getEntity
+
+    val isVoid = victim.getLastDamageCause.getCause match {
+      case DamageCause.VOID => true
+      case _ => false
+    }
+    val vData = data(victim)
+
+    if (isVoid || __getParty() == 1 || vData.knockdown)  {
+      // そのまま殺す
+      vData.knockdown = false
+
+    } else {
+      vData.knockdown = true
+      return
+    }
+
     val gde = (attacker: Player) => new GameDeathEvent(this, attacker, victim)
-    val vdata = data(victim)
-    vdata.survived = false
+
+    vData.survived = false
     if (shouldGameSet) {
       this.end()
     }
@@ -454,6 +473,16 @@ class PPEX(override val id: String) extends Game {
     }
   }
 
+  override def onRespawn(e: PlayerRespawnEvent): Unit = {
+    super.onRespawn(e)
+    val player = e.getPlayer
+    val vData = data(player)
+    if (vData.knockdown) {
+      e.setRespawnLocation(player.getLocation)
+      Game.knockdown(player)
+    }
+  }
+
   private def getSurvivedCount: Int = {
     data.values.map(_.survived).count(f => f)
   }
@@ -461,6 +490,7 @@ class PPEX(override val id: String) extends Game {
   class PPEXData extends GamePlayerData {
     var rankPoint: Int = -99
     var survived: Boolean = true
+    var knockdown: Boolean = false
     /*
     val scoreboard: Scoreboard = Bukkit.getScoreboardManager.getNewScoreboard
 

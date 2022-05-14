@@ -394,14 +394,17 @@ object Game {
     }
   }
 
+  @Deprecated
   def isKnockdown(player: Player): Boolean = {
     val values = player.getMetadata("wc:isKnockdown")
     !values.isEmpty && values.get(0).asBoolean()
   }
 
+  @Deprecated
   def setKnockdown(player: Player, value: Boolean): Unit =
     player.setMetadata("wc:isKnockdown", new FixedMetadataValue(WarsCore.instance, value))
 
+  @Deprecated
   def knockdown(player: Player): Unit = {
     player.sendMessage(Component.text("ノックダウンした！").color(NamedTextColor.RED))
     new BukkitRunnable {
