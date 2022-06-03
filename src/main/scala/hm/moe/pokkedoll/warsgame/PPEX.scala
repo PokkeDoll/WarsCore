@@ -83,6 +83,8 @@ class PPEX(override val id: String) extends Game {
 
   val deathBox = mutable.HashMap.empty[UUID, Inventory]
 
+  var killLeader: Player = _
+
   /**
    * ゲームを初期化する
    */
@@ -425,7 +427,6 @@ class PPEX(override val id: String) extends Game {
     if (isVoid || __getParty() == 1 || vData.knockdown)  {
       // そのまま殺す
       vData.knockdown = false
-
     } else {
       vData.knockdown = true
       return
@@ -491,27 +492,9 @@ class PPEX(override val id: String) extends Game {
     var rankPoint: Int = -99
     var survived: Boolean = true
     var knockdown: Boolean = false
-    /*
-    val scoreboard: Scoreboard = Bukkit.getScoreboardManager.getNewScoreboard
 
-    setupScoreboard()
-
-    private def setupScoreboard(): Unit = {
-      val oldObj = this.scoreboard.getObjective(DisplaySlot.SIDEBAR)
-      if (oldObj != null) oldObj.unregister()
-      val newObj = this.scoreboard.registerNewObjective("sidebar", "dummy", "あ")
-      newObj.setDisplaySlot(DisplaySlot.SIDEBAR)
-      WarsCoreAPI.setSidebarContents(
-        newObj,
-        List(
-          s"キル数: ${this.kill}",
-          s"アシスト数: ${this.assist}",
-          s"ダメージ: ${this.damage}",
-          s"RP: ${this.rankPoint}"
-        )
-      )
-    }
-    */
+    // キルストリーク
+    var killStreak: Int = 0
   }
 
   private def spawnDeathBox(victim: Player): Unit = {
