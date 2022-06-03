@@ -530,4 +530,6 @@ class PPEX(override val id: String) extends Game {
       case _ =>
     }
   }
+
+  def getDataJava(player: Player): PPEXData = data(player)
 }
