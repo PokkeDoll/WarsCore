@@ -556,6 +556,12 @@ class PPEX(override val id: String) extends Game {
     def getHandlerList: HandlerList = handlers
   }
 
+  /**
+   * パーティーがゲームオーバーになったときに呼ばれる。1位でも呼ばれる
+   * @param ppex ゲームそのもの
+   * @param party 対象のパーティー
+   * @param rank パーティーの順位。1位が決まらなかった場合は0が入る
+   */
   class PPEXGameOverEvent(val ppex: PPEX, val party: peru.sugoi.ppapi.classes.Party, val rank: Int) extends Event {
     override def getHandlers: HandlerList = PPEXGameOverEvent.handlers
   }
