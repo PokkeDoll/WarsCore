@@ -188,8 +188,11 @@ object WarsCoreAPI {
           //s"&9Class&7: &r${RankManager.getClassName(rank)}",
           //s"&9EXP&7: &a${wp.exp} &7/ &a${RankManager.nextExp(rank)}",
           //" ",
-          s"&e/pp &fメニューを開く", "&e/wp &f武器を設定する",
-          "&e/game &fゲームをする")
+          //s"&e/pp &fメニューを開く",
+          //"&e/wp &f武器を設定する",
+          //"&e/game &fゲームをする"
+          "*",
+          )
           .map(colorCode))
     })
   }

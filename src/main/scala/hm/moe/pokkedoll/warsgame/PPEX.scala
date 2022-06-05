@@ -100,6 +100,7 @@ class PPEX(override val id: String) extends Game {
     this.spawn = this.mapInfo.locations.getOrElse("spawn", WeakLocation.empty)
 
     this.bossbar.removeAll()
+    this.bossbar.setVisible(true)
     this.bossbar.setProgress(1d)
     this.bossbar.setTitle(matchMakingText(0))
 
@@ -166,6 +167,7 @@ class PPEX(override val id: String) extends Game {
     members.foreach(f => f.player.teleport(spawn.getLocation(world)))
     this.sendMessage(Component.text("スタブ: 準備時間"))
     world.setPVP(true)
+    bossbar.setVisible(false)
     new BukkitRunnable {
       override def run(): Unit = {
         processPhase()
@@ -174,16 +176,20 @@ class PPEX(override val id: String) extends Game {
   }
 
   private def shouldGameSet: Boolean = {
-    if(!this.debug && getSurvivedCount <= 0) {
+    // リーダーの数が一人の時 = 勝利
+    if(!this.debug && members.map(wp => Party.getParty(wp.player)).groupBy(_.getLeader).size <= 1) {
+      true
+    } else if(!this.debug && getSurvivedCount <= 1) {
       true
     } else {
       members.exists(p => p.player.getInventory.getItemInMainHand.getType == Material.DIAMOND)
+      // members.exists(p => p.player.isSneaking)
     }
   }
 
   private def processPhase(): Unit = {
     // TODO これ全部スレッドに移せない？
-    bossbar.setTitle(s"§aフェーズ: $phase")
+    // bossbar.setTitle(s"§aフェーズ: $phase")
     worldBorder.setDamageAmount(1.0 + phase * 2.0)
 
     playSound(Sound.BLOCK_BELL_USE, 6.0F, 0.0F)
@@ -198,12 +204,8 @@ class PPEX(override val id: String) extends Game {
         // TODO 人数モニタがあります
         if (state == GameState.PLAYING) {
           _time -= 1
-          bossbar.setTitle(s"§aフェーズ: $phase | 残り${getSurvivedCount}人 |(test${_time})")
           val npg = bossbar.getProgress - tpb
           if (0 < npg) bossbar.setProgress(npg)
-          if (_time < 10) {
-            bossbar.setTitle(s"§aフェーズ: $phase | リング縮小まであと ${_time} 秒")
-          }
           if (_time < 0) {
             cancel()
             processCloseBorder()
@@ -222,7 +224,7 @@ class PPEX(override val id: String) extends Game {
 
   private def processCloseBorder(): Unit = {
     sendMessage(s"フェーズ ${phase}の縮小が開始")
-    bossbar.setTitle(s"§aフェーズ: $phase")
+    // bossbar.setTitle(s"§aフェーズ: $phase")
     worldBorder.setSize(phaseBorder(phase), closePhaseBorderTime(phase))
     new BukkitRunnable {
       var _time: Int = closePhaseBorderTime(phase)
@@ -230,7 +232,7 @@ class PPEX(override val id: String) extends Game {
       override def run(): Unit = {
         if (state == GameState.PLAYING) {
           _time -= 1
-          bossbar.setTitle(s"§aフェーズ: $phase")
+          // bossbar.setTitle(s"§aフェーズ: $phase")
           if (_time < 0) {
             phase += 1
             cancel()
@@ -259,6 +261,14 @@ class PPEX(override val id: String) extends Game {
     if (this.state == GameState.END) return
     this.state = GameState.END
     this.world.setPVP(false)
+    val leaders = members.map(wp => Party.getParty(wp.player)).groupBy(_.getLeader).keys.toSeq
+    // 1位が決まっている場合
+    if(leaders.size == 1) {
+      Bukkit.getPluginManager.callEvent(new PPEXGameOverEvent(this, Party.getParty(leaders.head), 1))
+    } else {
+      leaders.map(Party.getParty).foreach(party => Bukkit.getPluginManager.callEvent(new PPEXGameOverEvent(this, party, 0)))
+    }
+    /*
     this.data.filter(_._2.survived).keys.foreach(f => {
       f.showTitle(Title.title(
         Component.text("スタブ: 勝利"),
@@ -270,12 +280,14 @@ class PPEX(override val id: String) extends Game {
       Title.title(Component.text("スタブ: 敗北")
         , Component.empty(), Title.DEFAULT_TIMES)
     ))
+    */
     Bukkit.getPluginManager.callEvent(new GameEndEvent(this, null))
 
     bossbar.removeAll()
     // ユーザーデータの消去
     var delay = 200L
 
+    /*
     new BukkitRunnable {
       override def run(): Unit = {
         members.foreach(wp => {
@@ -289,6 +301,7 @@ class PPEX(override val id: String) extends Game {
         })
       }
     }.runTaskLater(WarsCore.getInstance, delay)
+     */
 
     delay += 300L
 
@@ -389,15 +402,17 @@ class PPEX(override val id: String) extends Game {
       Some(Component.text("ゲームに参加できません！").color(NamedTextColor.RED))
     } else if (members.length >= maxMember) {
       Some(Component.text("人数が満員なので参加できません！").color(NamedTextColor.RED))
+    } else if (wp.game.isDefined) {
+      Some(Component.text("既にゲームに参加しています！").color(NamedTextColor.RED))
     } else {
       val event = new GameJoinEvent(this, wp)
       Bukkit.getPluginManager.callEvent(event)
       // TODO 改善できそう
       val cr = event.getCancelReason
-      if (cr == null || cr.isEmpty) {
-        Some(Component.text(cr).color(NamedTextColor.RED))
-      } else
+      if (cr == null || cr.isBlank) {
         None
+      } else
+        Some(Component.text(cr).color(NamedTextColor.RED))
     }
   }
 
@@ -483,7 +498,7 @@ class PPEX(override val id: String) extends Game {
             .map(p => p.asInstanceOf[Player])
             .forEach(p => {
               p.sendMessage("スタブ: ここに報酬\nスタブ: ロビーに帰っても良い処理(強制送還)")
-              hub(p)
+              hub(WarsCoreAPI.getWPlayer(p))
             })
         }
       }.runTaskLater(WarsCore.getInstance, 60L)

@@ -9,6 +9,8 @@ import org.bukkit.{ChatColor, GameMode}
 import org.bukkit.command.{Command, CommandExecutor, CommandSender, ConsoleCommandSender, TabCompleter}
 import org.bukkit.entity.Player
 
+import scala.collection.mutable
+
 /**
  * ゲームのメインとなるコマンド
  *
@@ -21,7 +23,7 @@ class GameCommand extends CommandExecutor with TabCompleter {
         if (args.length == 0) {
           GameUI.openMainUI(player)
         } else if (args(0) == "list") {
-          val sb = new StringBuilder("§bゲームリスト")
+          val sb = new mutable.StringBuilder("§bゲームリスト")
           WarsCoreAPI.games.values.foreach(game => {
             sb.append(s"§a${game.id}§7: §f${game.title}§7: §f${game.mapInfo.mapName}§7: §f${game.members.size} / ${game.maxMember}\n")
           })
@@ -67,13 +69,14 @@ class GameCommand extends CommandExecutor with TabCompleter {
             case None =>
               player.sendMessage(s"${args(1)}は存在しません！")
           }
-        } else if (args.length >= 2 && args(0) == "end" && player.hasPermission("pokkedoll.game.admin")) {
+        } else if (args.length >= 2 && args(0) == "end") {
           WarsCoreAPI.games.get(args(1)) match {
             case Some(game) =>
               if(game.state == GameState.READY || game.state == GameState.WAIT) {
                 game.`end`()
               } else {
-                game.disable = true
+                // game.disable = true
+                game.`end`()
               }
               player.sendMessage(ChatColor.BLUE + s"${args(1)}を無効化しました")
             case None =>
@@ -81,6 +84,15 @@ class GameCommand extends CommandExecutor with TabCompleter {
           }
         } else if (args(0) == "who") {
           who(sender)
+        } else if (args(0) == "info") {
+          if(1 < args.length) {
+            WarsCoreAPI.games.get(args(1)) match {
+              case Some(game) =>
+                player.sendMessage(s"id: ${game.id}\nstate: ${game.state.name}")
+              case None =>
+                player.sendMessage(s"${args(1)}は存在しません！")
+            }
+          }
         }
       case console: ConsoleCommandSender =>
         if (args(0) == "who") {
