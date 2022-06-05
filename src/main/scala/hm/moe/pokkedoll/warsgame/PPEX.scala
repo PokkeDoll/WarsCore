@@ -10,12 +10,14 @@ import net.kyori.adventure.title.Title
 import org.bukkit._
 import org.bukkit.boss.{BarColor, BarStyle, BossBar}
 import org.bukkit.entity.{ArmorStand, EntityType, Player}
+import org.bukkit.event.{Event, HandlerList}
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.{EquipmentSlot, Inventory, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
+import peru.sugoi.ppapi.classes.Party
 
 import java.util.UUID
 import scala.collection.mutable
@@ -51,6 +53,8 @@ class PPEX(override val id: String) extends Game {
    * 受け入れる最大人数
    */
   override val maxMember: Int = Int.MaxValue
+
+  val minMember: Int = 1
   /**
    * ワールド。でも使うかわからん...
    */
@@ -83,13 +87,16 @@ class PPEX(override val id: String) extends Game {
 
   val deathBox = mutable.HashMap.empty[UUID, Inventory]
 
-  var killLeader: Player = _
+  var killLeader: Option[Player] = None
+
+  var parties: Vector[Party] = Vector.empty
 
   /**
    * ゲームを初期化する
    */
   override def init(): Unit = {
     this.state = GameState.INIT
+
     this.spawn = this.mapInfo.locations.getOrElse("spawn", WeakLocation.empty)
 
     this.bossbar.removeAll()
@@ -118,7 +125,7 @@ class PPEX(override val id: String) extends Game {
       override def run(): Unit = {
         val players = members.length
         // プレイするため最低人数
-        if (players < 1) {
+        if (players < minMember) {
           if (i > 3) i = 1
           bossbar.setTitle(matchMakingText(players) + "." * i)
           i += 1
@@ -135,6 +142,7 @@ class PPEX(override val id: String) extends Game {
    */
   override def ready(): Unit = {
     this.state = GameState.READY
+
     new BukkitRunnable {
       val t = 0.005
       bossbar.setTitle("まもなく試合が始まります")
@@ -166,7 +174,7 @@ class PPEX(override val id: String) extends Game {
   }
 
   private def shouldGameSet: Boolean = {
-    if(!this.debug && getSurvivedCount < 1) {
+    if(!this.debug && getSurvivedCount <= 0) {
       true
     } else {
       members.exists(p => p.player.getInventory.getItemInMainHand.getType == Material.DIAMOND)
@@ -316,7 +324,6 @@ class PPEX(override val id: String) extends Game {
       this.members :+= wp
       this.data.put(wp.player, new PPEXData)
       sendMessage(Component.text(wp.player.getName + " が参加"))
-
       WarsCoreAPI.scoreboards.get(wp.player) match {
         case Some(scoreboard) =>
           val sidebar = scoreboard.getObjective("sidebar")
@@ -329,14 +336,8 @@ class PPEX(override val id: String) extends Game {
             WarsCoreAPI.setSidebarContents(
               sidebar,
               List(
-                "プレイヤー1HP: <HP>",
-                "プレイヤー2HP: <HP>",
-                " ",
-                "キル数: <KILL>",
-                "アシスト数: <ASSIST>",
-                "ダメージ数: <DAMAGE>",
-                " ",
-                s"ランクポイント: ${Int.MinValue}"
+                "マップ名: -",
+                "縮小フェーズ: ∞"
               )
             )
           }
@@ -447,28 +448,43 @@ class PPEX(override val id: String) extends Game {
           case None =>
             sendMessage(Component.text(s"${attacker.getName} → Killed → ${victim.getName}"))
         }
+        val aData = data(attacker)
+        aData.kill += 1
         Bukkit.getPluginManager.callEvent(gde(attacker))
+
+        val aK = data.values.map(_.kill).max
+        val a = data.filter(p => p._2.kill == Math.max(aK, 3))
+        if((this.killLeader.isEmpty && a.nonEmpty) || (this.killLeader.isDefined && !a.contains(this.killLeader.get))) {
+          this.killLeader = a.keys.headOption
+          Bukkit.getPluginManager.callEvent(new PPEXNewKillLeaderEvent(this, this.killLeader.get, aK))
+        }
       case None =>
         sendMessage(Component.text(s"Dead → ${victim.getName}"))
+        vData.death += 1
         Bukkit.getPluginManager.callEvent(gde(null))
     }
 
     spawnDeathBox(victim)
 
-    // 死亡したプレイヤーの処理
-    if (false /* もしチームメンバーがいるとき */ ) {
+    val party = Party.getParty(victim)
+    val survivedTeammate = party.getMembers.stream().map(p => data(p.asInstanceOf[Player]).survived).filter(p => p).findFirst().isPresent
 
+    // 死亡したプレイヤーの処理
+    if (survivedTeammate) {
+      // 観戦モード
+      world.sendMessage(Component.text(s"${victim.getName} died"))
     } else {
-      victim.showTitle(Title.title(
-        Component.text("部隊全滅").color(NamedTextColor.DARK_RED),
-        Component.empty(),
-        Title.DEFAULT_TIMES))
-      victim.setGameMode(GameMode.SPECTATOR)
+      world.sendMessage(Component.text(s"${party.getLeader.getName}'s party lost!'"))
+      Bukkit.getPluginManager.callEvent(new PPEXGameOverEvent(this, party, -1))
       new BukkitRunnable {
         override def run(): Unit = {
-          victim.sendMessage("スタブ: ここに報酬")
-          victim.sendMessage("スタブ: ロビーに帰っても良い処理(強制送還)")
-          hub(victim)
+          party.getMembers.stream()
+            .filter(p => p.isOnline)
+            .map(p => p.asInstanceOf[Player])
+            .forEach(p => {
+              p.sendMessage("スタブ: ここに報酬\nスタブ: ロビーに帰っても良い処理(強制送還)")
+              hub(p)
+            })
         }
       }.runTaskLater(WarsCore.getInstance, 60L)
     }
@@ -515,4 +531,22 @@ class PPEX(override val id: String) extends Game {
   }
 
   def getDataJava(player: Player): PPEXData = data(player)
+
+  class PPEXNewKillLeaderEvent(val ppex: PPEX, val killLeader: Player, val killLeaderKillCount: Int) extends Event {
+    override def getHandlers: HandlerList = PPEXNewKillLeaderEvent.handlers
+  }
+
+  object PPEXNewKillLeaderEvent {
+    val handlers = new HandlerList()
+    def getHandlerList: HandlerList = handlers
+  }
+
+  class PPEXGameOverEvent(val ppex: PPEX, val party: peru.sugoi.ppapi.classes.Party, val rank: Int) extends Event {
+    override def getHandlers: HandlerList = PPEXGameOverEvent.handlers
+  }
+
+  object PPEXGameOverEvent {
+    val handlers = new HandlerList()
+    def getHandlerList: HandlerList = handlers
+  }
 }

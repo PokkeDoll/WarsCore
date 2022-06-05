@@ -23,7 +23,7 @@ import scala.util.Random
  */
 object WarsCoreAPI {
 
-  val VERSION = "2.3"
+  val VERSION = "2.4"
 
   lazy val scoreboardManager: ScoreboardManager = Bukkit.getScoreboardManager
 
