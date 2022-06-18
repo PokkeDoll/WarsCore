@@ -3,10 +3,13 @@ package hm.moe.pokkedoll.warscore.lisners
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import hm.moe.pokkedoll.warscore.Registry.GAME_ID
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.info
-import hm.moe.pokkedoll.warscore.games.Game
+import hm.moe.pokkedoll.warscore.games.{Game, GameState}
 import hm.moe.pokkedoll.warscore.ui._
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warsgame.PPEX
+import net.kyori.adventure.text.Component
+import net.md_5.bungee.api.chat.hover.content.Text
 import org.bukkit._
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
@@ -193,6 +196,21 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
           )
           info(player, s"${WarsCoreAPI.getItemStackName(item)} をアンロックしました！")
           player.playSound(player.getLocation, Sound.BLOCK_CHEST_LOCKED, 1f, 2f)
+        }
+        val wp = WarsCoreAPI.getWPlayer(player)
+        if(item.getType == Material.DEBUG_STICK && wp.game.isDefined) {
+          wp.game match {
+            case Some(game) =>
+              game match {
+                case ppex: PPEX =>
+                  if(ppex.state == GameState.PLAYING) {
+                    ppex.currentTime = 1
+                    player.sendMessage(Component.text("次のフェーズへ飛ばします..."))
+                  }
+                case _ =>
+              }
+            case _ =>
+          }
         }
         // TODO ここにマイセット
       }

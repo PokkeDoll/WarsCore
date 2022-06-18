@@ -71,8 +71,8 @@ class PPEX(override val id: String) extends Game {
   // フェーズ1, フェーズ2, フェーズ3, 最終リング
   //val phaseTime: Array[Int] = Array(300, 240, 180, 60)
   // 合計10分 = 600秒
-  // 3m + 2m(P1) + 2m40s + 1m20s(P2) + 2m + 1m(P3) + 1m30s + 1m(P4) + 1m + 2m(PE)
-  val phaseTime: Array[Int] = Array(180, 120, 160, 80, 120, 60, 90, 60, 60, 120)
+  // 3m + 2m40s(P1) + 2m40s + 2m20s(P2) + 2m + 1m50s(P3) + 1m30s + 1m30s(P4) + 1m + 2m(PE)
+  val phaseTime: Array[Int] = Array(180, 160, 160, 140, 120, 100, 90, 90, 30, 120)
 
   val phaseBorder: Array[Int] = Array(500, 250, 200, 120, 1)
 
@@ -197,10 +197,12 @@ class PPEX(override val id: String) extends Game {
     if (phase != 0 && phase % 2 == 0) {
       worldBorder.setSize(phaseBorder((phase / 2) - 1), phaseTime(phase - 1))
       playSound(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 6.0F, 0.0F)
-      currentTime = 0
+      currentTime = phaseTime(phase - 1)
       sendMessage(Component.text(s"フェーズ: $phase; ボーダーの縮小が開始(完了まで: ${currentTime}秒)"))
     } else {
-      worldBorder.setDamageAmount(1.0 + phase)
+      //worldBorder.setDamageAmount(1.0 + phase)
+      worldBorder.setDamageAmount(1.0)
+      worldBorder.setDamageBuffer(16.0)
       playSound(Sound.BLOCK_BELL_USE, 6.0F, 0.0F)
       currentTime = phaseTime(phase - 1)
       sendMessage(Component.text(s"フェーズ: $phase; ボーダー縮小まであと${currentTime}秒"))
