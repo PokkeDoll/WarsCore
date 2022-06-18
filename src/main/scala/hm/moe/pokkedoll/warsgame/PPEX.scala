@@ -17,6 +17,7 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.{EquipmentSlot, Inventory, ItemStack}
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.scoreboard.DisplaySlot
 import peru.sugoi.ppapi.classes.Party
 
 import java.util.UUID
@@ -75,6 +76,9 @@ class PPEX(override val id: String) extends Game {
   val phaseTime: Array[Int] = Array(180, 160, 160, 140, 120, 100, 90, 90, 30, 120)
 
   val phaseBorder: Array[Int] = Array(500, 250, 200, 120, 1)
+
+  val phaseDamageAmount: Array[Double] = Array(1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0)
+  val phaseDamageBuffer: Array[Double] = Array(16.0, 16.0, 8.0, 8.0, 4.0, 4.0, 2.0, 2.0, 0.0, 0.0)
 
   private var spawn: WeakLocation = _
 
@@ -200,9 +204,8 @@ class PPEX(override val id: String) extends Game {
       currentTime = phaseTime(phase - 1)
       sendMessage(Component.text(s"フェーズ: $phase; ボーダーの縮小が開始(完了まで: ${currentTime}秒)"))
     } else {
-      //worldBorder.setDamageAmount(1.0 + phase)
-      worldBorder.setDamageAmount(1.0)
-      worldBorder.setDamageBuffer(16.0)
+      worldBorder.setDamageAmount(phaseDamageAmount(phase - 1))
+      worldBorder.setDamageBuffer(phaseDamageBuffer(phase - 1))
       playSound(Sound.BLOCK_BELL_USE, 6.0F, 0.0F)
       currentTime = phaseTime(phase - 1)
       sendMessage(Component.text(s"フェーズ: $phase; ボーダー縮小まであと${currentTime}秒"))
@@ -211,6 +214,7 @@ class PPEX(override val id: String) extends Game {
       override def run(): Unit = {
         if (state == GameState.PLAYING) {
           currentTime -= 1
+          updateSidebar()
           if (currentTime < 0) {
             cancel()
             processPhase(phase + 1)
@@ -557,4 +561,27 @@ class PPEX(override val id: String) extends Game {
    * 試合時間
    */
   override val time: Int = 0
+
+  private def updateSidebar(): Unit = {
+    members.foreach(wp => {
+      WarsCoreAPI.scoreboards.get(wp.player) match {
+        case Some(sb) =>
+          val obj = sb.getObjective(DisplaySlot.SIDEBAR)
+          if (obj != null) {
+            sb.getEntries.forEach(e => {
+              sb.resetScores(e)
+            })
+            WarsCoreAPI.setSidebarContents(
+              obj,
+              List(
+                s"マップ名: ${mapInfo.mapName}",
+                s"フェーズ: ${currentPhase}",
+                s"次フェーズまで: ${currentTime}s"
+              )
+            )
+          }
+        case None =>
+      }
+    })
+  }
 }
