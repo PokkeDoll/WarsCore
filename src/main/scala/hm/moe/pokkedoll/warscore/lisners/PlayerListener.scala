@@ -118,38 +118,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onPickup(e: PlayerAttemptPickupItemEvent): Unit = {
-    val player = e.getPlayer
-    if (player.getGameMode == GameMode.SURVIVAL) {
-      WarsCoreAPI.getWPlayer(player).game match {
-        case Some(_) =>
-          e.setCancelled(true)
-          if (player.isSneaking) {
-            val pickUpItem = e.getItem.getItemStack
-            val item = player.getInventory.getItemInMainHand
-            if (WarsCore.instance.getCSUtility.getWeaponTitle(pickUpItem) != null) {
-              val weaponType = WarsCoreAPI.getWeaponTypeFromLore(pickUpItem)
-              val contents = player.getInventory.getContents
-              contents.indices.filterNot(i => contents(i) == null || contents(i).getType == Material.AIR).find(i => WarsCoreAPI.getWeaponTypeFromLore(contents(i)) == weaponType) match {
-                case Some(i) =>
-                  player.getInventory.setItem(i, pickUpItem)
-                  e.getItem.remove()
-                  player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
-                  player.sendActionBar(ChatColor.BLUE + "武器を持ち替えた！")
-                case None =>
-                  player.getInventory.addItem(pickUpItem)
-                  e.getItem.remove()
-                  player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
-                  player.sendActionBar(ChatColor.BLUE + "武器を拾った！")
-              }
-            } else {
-              player.sendActionBar(ChatColor.BLUE + "手に武器を持っていません！")
-            }
-          } else {
-            player.sendActionBar(ChatColor.BLUE + "スニークをすることで武器を切り替えることができます")
-          }
-        case _ =>
-      }
-    }
+
   }
 
   @EventHandler

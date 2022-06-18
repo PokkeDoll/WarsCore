@@ -52,7 +52,7 @@ class PPEX(override val id: String) extends Game {
   /**
    * 受け入れる最大人数
    */
-  override val maxMember: Int = Int.MaxValue
+  override val maxMember: Int = 40
 
   val minMember: Int = 1
   /**
@@ -60,10 +60,7 @@ class PPEX(override val id: String) extends Game {
    */
   override var world: World = _
   override var mapInfo: MapInfo = _
-  /**
-   * 試合時間
-   */
-  override val time: Int = 600
+
   /**
    * 最大試合時間
    */
@@ -71,13 +68,13 @@ class PPEX(override val id: String) extends Game {
 
   private val matchMakingText: Int => String = i => s"マッチメイキング中... $i/$maxMember"
 
-  var phase = 0
   // フェーズ1, フェーズ2, フェーズ3, 最終リング
-  val phaseTime: Array[Int] = Array(300, 240, 180, 60)
-  // フェーズ1, フェーズ2, フェーズ3, 最終リング
-  val closePhaseBorderTime: Array[Int] = Array(240, 180, 120, 120)
+  //val phaseTime: Array[Int] = Array(300, 240, 180, 60)
+  // 合計10分 = 600秒
+  // 3m + 2m(P1) + 2m40s + 1m20s(P2) + 2m + 1m(P3) + 1m30s + 1m(P4) + 1m + 2m(PE)
+  val phaseTime: Array[Int] = Array(180, 120, 160, 80, 120, 60, 90, 60, 60, 120)
 
-  val phaseBorder: Array[Int] = Array(500, 250, 125, 1)
+  val phaseBorder: Array[Int] = Array(500, 250, 200, 120, 1)
 
   private var spawn: WeakLocation = _
 
@@ -90,6 +87,12 @@ class PPEX(override val id: String) extends Game {
   var killLeader: Option[Player] = None
 
   var parties: Vector[Party] = Vector.empty
+
+  /**
+   *
+   */
+  var currentPhase: Int = 0
+  var currentTime: Int = 0
 
   /**
    * ゲームを初期化する
@@ -170,16 +173,16 @@ class PPEX(override val id: String) extends Game {
     bossbar.setVisible(false)
     new BukkitRunnable {
       override def run(): Unit = {
-        processPhase()
+        processPhase(1)
       }
     }.runTaskLater(WarsCore.getInstance, 300L)
   }
 
   private def shouldGameSet: Boolean = {
     // リーダーの数が一人の時 = 勝利
-    if(!this.debug && members.map(wp => Party.getParty(wp.player)).groupBy(_.getLeader).size <= 1) {
+    if (!this.debug && members.map(wp => Party.getParty(wp.player)).groupBy(_.getLeader).size <= 1) {
       true
-    } else if(!this.debug && getSurvivedCount <= 1) {
+    } else if (!this.debug && getSurvivedCount <= 1) {
       true
     } else {
       members.exists(p => p.player.getInventory.getItemInMainHand.getType == Material.DIAMOND)
@@ -187,28 +190,28 @@ class PPEX(override val id: String) extends Game {
     }
   }
 
-  private def processPhase(): Unit = {
-    // TODO これ全部スレッドに移せない？
-    // bossbar.setTitle(s"§aフェーズ: $phase")
-    worldBorder.setDamageAmount(1.0 + phase * 2.0)
-
-    playSound(Sound.BLOCK_BELL_USE, 6.0F, 0.0F)
-    var _time: Int = phaseTime(phase)
-    sendMessage(Component.text(s"フェーズ: $phase; ボーダー縮小まであと${_time}秒"))
+  private def processPhase(phase: Int): Unit = {
+    currentPhase = phase
+    Bukkit.getPluginManager.callEvent(new PPEXStartPhaseEvent(this, phase))
+    // リング縮小
+    if (phase != 0 && phase % 2 == 0) {
+      worldBorder.setSize(phaseBorder((phase / 2) - 1), phaseTime(phase - 1))
+      playSound(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 6.0F, 0.0F)
+      currentTime = 0
+      sendMessage(Component.text(s"フェーズ: $phase; ボーダーの縮小が開始(完了まで: ${currentTime}秒)"))
+    } else {
+      worldBorder.setDamageAmount(1.0 + phase)
+      playSound(Sound.BLOCK_BELL_USE, 6.0F, 0.0F)
+      currentTime = phaseTime(phase - 1)
+      sendMessage(Component.text(s"フェーズ: $phase; ボーダー縮小まであと${currentTime}秒"))
+    }
     new BukkitRunnable {
-      var _time: Int = phaseTime(phase)
-
-      var tpb: Double = 1.0 / _time
-
       override def run(): Unit = {
-        // TODO 人数モニタがあります
         if (state == GameState.PLAYING) {
-          _time -= 1
-          val npg = bossbar.getProgress - tpb
-          if (0 < npg) bossbar.setProgress(npg)
-          if (_time < 0) {
+          currentTime -= 1
+          if (currentTime < 0) {
             cancel()
-            processCloseBorder()
+            processPhase(phase + 1)
           }
           if (shouldGameSet) {
             cancel()
@@ -219,36 +222,9 @@ class PPEX(override val id: String) extends Game {
           end()
         }
       }
-    }.runTaskTimer(WarsCore.getInstance, 0, 20L)
+    }.runTaskTimer(WarsCore.getInstance, 0L, 20L)
   }
 
-  private def processCloseBorder(): Unit = {
-    sendMessage(s"フェーズ ${phase}の縮小が開始")
-    // bossbar.setTitle(s"§aフェーズ: $phase")
-    worldBorder.setSize(phaseBorder(phase), closePhaseBorderTime(phase))
-    new BukkitRunnable {
-      var _time: Int = closePhaseBorderTime(phase)
-
-      override def run(): Unit = {
-        if (state == GameState.PLAYING) {
-          _time -= 1
-          // bossbar.setTitle(s"§aフェーズ: $phase")
-          if (_time < 0) {
-            phase += 1
-            cancel()
-            processPhase()
-          }
-          if (shouldGameSet) {
-            cancel()
-            end()
-          }
-        } else {
-          cancel()
-          end()
-        }
-      }
-    }.runTaskTimer(WarsCore.getInstance, 0, 20L)
-  }
 
   /**
    * ゲームを終了する
@@ -263,7 +239,7 @@ class PPEX(override val id: String) extends Game {
     this.world.setPVP(false)
     val leaders = members.map(wp => Party.getParty(wp.player)).groupBy(_.getLeader).keys.toSeq
     // 1位が決まっている場合
-    if(leaders.size == 1) {
+    if (leaders.size == 1) {
       Bukkit.getPluginManager.callEvent(new PPEXGameOverEvent(this, Party.getParty(leaders.head), 1))
     } else {
       leaders.map(Party.getParty).foreach(party => Bukkit.getPluginManager.callEvent(new PPEXGameOverEvent(this, party, 0)))
@@ -287,22 +263,6 @@ class PPEX(override val id: String) extends Game {
     // ユーザーデータの消去
     var delay = 200L
 
-    /*
-    new BukkitRunnable {
-      override def run(): Unit = {
-        members.foreach(wp => {
-          wp.game = None
-          wp.player.setScoreboard(WarsCoreAPI.scoreboards(wp.player))
-          wp.sendMessage(Component.text("リザルト: ").append(Component.newline())
-            .append(Component.text(s"${wp.player.getName}")).append(Component.newline())
-            .append(Component.text("キル: x\nダメージ: x\nほかなどなど: y\nランクポイント: -999")).append(Component.newline())
-            .append(Component.text("{メンバー2}: ")).append(Component.newline())
-            .append(Component.text("{メンバー3}: ")).append(Component.newline()))
-        })
-      }
-    }.runTaskLater(WarsCore.getInstance, delay)
-     */
-
     delay += 300L
 
     new BukkitRunnable {
@@ -319,7 +279,6 @@ class PPEX(override val id: String) extends Game {
       }
     }.runTaskLater(WarsCore.getInstance, delay)
   }
-
 
 
   /**
@@ -440,7 +399,7 @@ class PPEX(override val id: String) extends Game {
     }
     val vData = data(victim)
 
-    if (isVoid || __getParty() == 1 || vData.knockdown)  {
+    if (isVoid || __getParty() == 1 || vData.knockdown) {
       // そのまま殺す
       vData.knockdown = false
     } else {
@@ -469,7 +428,7 @@ class PPEX(override val id: String) extends Game {
 
         val aK = data.values.map(_.kill).max
         val a = data.filter(p => p._2.kill == Math.max(aK, 3))
-        if((this.killLeader.isEmpty && a.nonEmpty) || (this.killLeader.isDefined && !a.contains(this.killLeader.get))) {
+        if ((this.killLeader.isEmpty && a.nonEmpty) || (this.killLeader.isDefined && !a.contains(this.killLeader.get))) {
           this.killLeader = a.keys.headOption
           Bukkit.getPluginManager.callEvent(new PPEXNewKillLeaderEvent(this, this.killLeader.get, aK))
         }
@@ -553,14 +512,16 @@ class PPEX(override val id: String) extends Game {
 
   object PPEXNewKillLeaderEvent {
     val handlers = new HandlerList()
+
     def getHandlerList: HandlerList = handlers
   }
 
   /**
    * パーティーがゲームオーバーになったときに呼ばれる。1位でも呼ばれる
-   * @param ppex ゲームそのもの
+   *
+   * @param ppex  ゲームそのもの
    * @param party 対象のパーティー
-   * @param rank パーティーの順位。1位が決まらなかった場合は0が入る
+   * @param rank  パーティーの順位。1位が決まらなかった場合は0が入る
    */
   class PPEXGameOverEvent(val ppex: PPEX, val party: peru.sugoi.ppapi.classes.Party, val rank: Int) extends Event {
     override def getHandlers: HandlerList = PPEXGameOverEvent.handlers
@@ -568,6 +529,30 @@ class PPEX(override val id: String) extends Game {
 
   object PPEXGameOverEvent {
     val handlers = new HandlerList()
+
     def getHandlerList: HandlerList = handlers
   }
+
+  class PPEXStartPhaseEvent(val ppex: PPEX, val phase: Int) extends Event {
+
+    /**
+     * 0じゃない偶数フェーズはワールドの縮小フェーズになる
+     *
+     * @return
+     */
+    def isClosingBorder: Boolean = phase != 0 && phase % 2 == 0
+
+    override def getHandlers: HandlerList = PPEXStartPhaseEvent.handlers
+  }
+
+  object PPEXStartPhaseEvent {
+    val handlers = new HandlerList()
+
+    def getHandlerList: HandlerList = handlers
+  }
+
+  /**
+   * 試合時間
+   */
+  override val time: Int = 0
 }

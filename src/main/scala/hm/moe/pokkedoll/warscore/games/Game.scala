@@ -16,7 +16,7 @@ import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.potion.{PotionEffect, PotionEffectType, PotionEffectTypeWrapper}
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.{GameRule, World}
+import org.bukkit.{GameRule, Material, World}
 
 import scala.util.Try
 
@@ -292,6 +292,13 @@ trait Game {
   @Deprecated
   def sendMessage(components: Array[BaseComponent]): Unit = {
     world.getPlayers.forEach(_.sendMessage(components: _*))
+  }
+
+  def sendDebugMessage(text: TextComponent, debugItemType: Material = Material.DEBUG_STICK): Unit = {
+    world.getPlayers
+      .stream()
+      .filter(p => p.getInventory.getItemInMainHand != null && p.getInventory.getItemInMainHand.getType == debugItemType)
+      .forEach(p => p.sendMessage(text))
   }
 
   @Deprecated
