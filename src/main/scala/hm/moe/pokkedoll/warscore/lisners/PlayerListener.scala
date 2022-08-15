@@ -1,10 +1,16 @@
 package hm.moe.pokkedoll.warscore.lisners
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
+import hm.moe.pokkedoll.warscore.Registry.GAME_ID
 import hm.moe.pokkedoll.warscore.WarsCoreAPI.info
+import hm.moe.pokkedoll.warscore.games.{Game, GameState}
 import hm.moe.pokkedoll.warscore.ui._
 import hm.moe.pokkedoll.warscore.utils._
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
+import hm.moe.pokkedoll.warsgame.PPEX
+import net.kyori.adventure.text.Component
+import net.md_5.bungee.api.chat.hover.content.Text
+import org.bukkit._
 import org.bukkit.entity.Player
 import org.bukkit.event.block.{Action, BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.entity.{EntityDamageByEntityEvent, FoodLevelChangeEvent, PlayerDeathEvent}
@@ -14,14 +20,12 @@ import org.bukkit.event.player._
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.persistence.PersistentDataType
-import org.bukkit._
 import org.bukkit.scheduler.BukkitRunnable
-import hm.moe.pokkedoll.warscore.Registry.GAME_ID
-import hm.moe.pokkedoll.warscore.features.Chests
-import hm.moe.pokkedoll.warscore.games.Game
-import org.bukkit.block.Chest
 
 class PlayerListener(val plugin: WarsCore) extends Listener {
+
+
+  private val knockdownKey = new NamespacedKey(plugin, "knockdown")
 
   @EventHandler
   def onDeath(e: PlayerDeathEvent): Unit = {
@@ -29,7 +33,15 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
     e.setKeepLevel(true)
     e.getEntity match {
       case player: Player =>
-        println(WarsCoreAPI.getWPlayer(player).game.isDefined.toString)
+        /*
+        ノックダウン処理
+
+        if(Game.isKnockdown(player)) {
+          Game.setKnockdown(player, value = false)
+
+        } else {
+          Game.setKnockdown(player, value = true)
+        }*/
         WarsCoreAPI.getWPlayer(player).game.foreach(_.onDeath(e))
         new BukkitRunnable {
           override def run(): Unit = {
@@ -42,10 +54,23 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onRespawn(e: PlayerRespawnEvent): Unit = {
+    if(Game.isKnockdown(e.getPlayer)) {
+      e.setRespawnLocation(e.getPlayer.getLocation())
+      Game.knockdown(e.getPlayer)
+    }
     WarsCoreAPI.getWPlayer(e.getPlayer).game.foreach(game => {
       game.onRespawn(e)
     })
   }
+
+  @EventHandler
+  def onSneak(e: PlayerToggleSneakEvent): Unit = {
+    val player = e.getPlayer
+    if(Game.isKnockdown(player)) {
+      e.setCancelled(true)
+    }
+  }
+
 
   @EventHandler
   def onPostRespawn(e: PlayerPostRespawnEvent): Unit = {
@@ -74,7 +99,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         case Some(game) =>
           game.onBreak(e)
         case _ =>
-          e.setCancelled(true)
+          // e.setCancelled(true)
       }
     }
   }
@@ -87,7 +112,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         case Some(game) =>
           game.onPlace(e)
         case _ =>
-          e.setCancelled(true)
+          // e.setCancelled(true)
       }
     } else if (player.getGameMode == GameMode.CREATIVE) {
 
@@ -96,38 +121,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
 
   @EventHandler
   def onPickup(e: PlayerAttemptPickupItemEvent): Unit = {
-    val player = e.getPlayer
-    if (player.getGameMode == GameMode.SURVIVAL) {
-      WarsCoreAPI.getWPlayer(player).game match {
-        case Some(_) =>
-          e.setCancelled(true)
-          if (player.isSneaking) {
-            val pickUpItem = e.getItem.getItemStack
-            val item = player.getInventory.getItemInMainHand
-            if (WarsCore.instance.getCSUtility.getWeaponTitle(pickUpItem) != null) {
-              val weaponType = WarsCoreAPI.getWeaponTypeFromLore(pickUpItem)
-              val contents = player.getInventory.getContents
-              contents.indices.filterNot(i => contents(i) == null || contents(i).getType == Material.AIR).find(i => WarsCoreAPI.getWeaponTypeFromLore(contents(i)) == weaponType) match {
-                case Some(i) =>
-                  player.getInventory.setItem(i, pickUpItem)
-                  e.getItem.remove()
-                  player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
-                  player.sendActionBar(ChatColor.BLUE + "武器を持ち替えた！")
-                case None =>
-                  player.getInventory.addItem(pickUpItem)
-                  e.getItem.remove()
-                  player.playSound(player.getLocation, Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f)
-                  player.sendActionBar(ChatColor.BLUE + "武器を拾った！")
-              }
-            } else {
-              player.sendActionBar(ChatColor.BLUE + "手に武器を持っていません！")
-            }
-          } else {
-            player.sendActionBar(ChatColor.BLUE + "スニークをすることで武器を切り替えることができます")
-          }
-        case _ =>
-      }
-    }
+
   }
 
   @EventHandler
@@ -203,6 +197,21 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
           info(player, s"${WarsCoreAPI.getItemStackName(item)} をアンロックしました！")
           player.playSound(player.getLocation, Sound.BLOCK_CHEST_LOCKED, 1f, 2f)
         }
+        val wp = WarsCoreAPI.getWPlayer(player)
+        if(item.getType == Material.DEBUG_STICK && wp.game.isDefined) {
+          wp.game match {
+            case Some(game) =>
+              game match {
+                case ppex: PPEX =>
+                  if(ppex.state == GameState.PLAYING) {
+                    ppex.currentTime = 1
+                    player.sendMessage(Component.text("次のフェーズへ飛ばします..."))
+                  }
+                case _ =>
+              }
+            case _ =>
+          }
+        }
         // TODO ここにマイセット
       }
     } else if (e.getClickedBlock != null) {
@@ -213,6 +222,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
         e.setCancelled(true)
         WeaponUI.openMainUI(player)
       } else if (getType == Material.CHEST && e.getAction == Action.RIGHT_CLICK_BLOCK) {
+        /*
         block match {
           case chest: Chest =>
             Chests.getLoot(chest.getLocation) match {
@@ -225,6 +235,7 @@ class PlayerListener(val plugin: WarsCore) extends Listener {
                 player.sendMessage(error)
             }
         }
+         */
       }
     }
   }
