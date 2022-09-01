@@ -327,7 +327,33 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param offset 取得を始める番号
    * @return (type, name, amount, use)の組
    */
-  override def getOriginalItem(uuid: String, offset: Int): List[(String, String, Int, Boolean)] = {
+  override def getOriginalItem(uuid: String, offset: Int): List[WeaponDB.OriginalItemSet] = {
+    var list = List.empty[WeaponDB.OriginalItemSet]
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      val rs = s.executeQuery(s"SELECT type, name, amount, use FROM weapon WHERE uuid='$uuid' LIMIT 45 OFFSET $offset")
+      while (rs.next()) {
+        list :+= new WeaponDB.OriginalItemSet(
+          `type` = rs.getString("type"),
+          name = rs.getString("name"),
+          amount = rs.getInt("amount"),
+          use = rs.getBoolean("use")
+        )
+      }
+      rs.close()
+      list
+    }.getOrElse(list)
+  }
+
+  /**
+   * 旧getOriginalItemの互換性対応版
+   * @param uuid
+   * @param offset
+   * @return
+   */
+  @Deprecated
+  override def getOriginalItemLegacy(uuid: String, offset: Int): List[(String, String, Int, Boolean)] = {
     var list = List.empty[(String, String, Int, Boolean)]
     Using.Manager { use =>
       val c = use(hikari.getConnection)
@@ -349,7 +375,34 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param `type` アイテムのタイプ
    * @return (name, amount, use)の組
    */
-  override def getOriginalItem(uuid: String, offset: Int, `type`: String): List[(String, Int, Boolean)] = {
+  override def getOriginalItem(uuid: String, offset: Int, `type`: String): List[WeaponDB.OriginalItemSet] = {
+    var list = List.empty[WeaponDB.OriginalItemSet]
+    Using.Manager { use =>
+      val c = use(hikari.getConnection)
+      val s = use(c.createStatement())
+      val rs = s.executeQuery(s"SELECT name, amount, use FROM weapon WHERE uuid='$uuid' and type='${`type`}' LIMIT 45 OFFSET $offset")
+      while (rs.next()) {
+        list :+= new WeaponDB.OriginalItemSet(
+          `type` = null,
+          name = rs.getString("name"),
+          amount = rs.getInt("amount"),
+          use = rs.getBoolean("use")
+        )
+      }
+      rs.close()
+      list
+    }.getOrElse(list)
+  }
+
+  /**
+   * 旧getOriginalItemの互換性版
+   * @param uuid
+   * @param offset
+   * @param weaponType
+   * @return
+   */
+  @Deprecated
+  override def getOriginalItemLegacy(uuid: String, offset: Int, `type`: String): List[(String, Int, Boolean)] = {
     var list = List.empty[(String, Int, Boolean)]
     Using.Manager { use =>
       val c = use(hikari.getConnection)
@@ -362,7 +415,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
       list
     }.getOrElse(list)
   }
-
   /**
    * データベースからアイテムの数字を取得する
    *
@@ -428,7 +480,7 @@ class SQLite(private val plugin: WarsCore) extends Database {
    * @param uuid 対象のUUID
    * @return 武器のタプル(メイン, サブ, 近接, アイテム)
    */
-  override def getActiveWeapon(uuid: String): (String, String, String, String, String) = {
+  override def getActiveWeapon(uuid: String): WeaponDB.ActiveWeaponSet = {
     Using.Manager { use =>
       val c = use(hikari.getConnection)
       val ps = use(c.prepareStatement("SELECT name FROM weapon WHERE use=? and uuid=? and type=?"))
@@ -445,8 +497,9 @@ class SQLite(private val plugin: WarsCore) extends Database {
       val grenade = gr(ps.executeQuery())
       ps.setString(3, WeaponDB.HEAD)
       val head = gr(ps.executeQuery())
-      (primary, secondary, melee, grenade, head)
-    }.getOrElse(("", "", "", "", ""))
+      // (primary, secondary, melee, grenade, head)
+      new WeaponDB.ActiveWeaponSet(primary, secondary, melee, grenade, head)
+    }.getOrElse(new WeaponDB.ActiveWeaponSet("", "", "", "", ""))
   }
 
 

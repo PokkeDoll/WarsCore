@@ -129,11 +129,11 @@ object WeaponUI {
           i.setItemMeta(m)
           i
         }
-        inv.setItem(1, weaponIcon(ItemUtil.getItem(weapons._1).getOrElse(EMPTY)))
-        inv.setItem(2, weaponIcon(ItemUtil.getItem(weapons._2).getOrElse(EMPTY)))
-        inv.setItem(3, weaponIcon(ItemUtil.getItem(weapons._3).getOrElse(EMPTY)))
-        inv.setItem(4, weaponIcon(ItemUtil.getItem(weapons._4).getOrElse(EMPTY)))
-        inv.setItem(5, weaponIcon(ItemUtil.getItem(weapons._5).getOrElse(EMPTY)))
+        inv.setItem(1, weaponIcon(ItemUtil.getItem(weapons.main).getOrElse(EMPTY)))
+        inv.setItem(2, weaponIcon(ItemUtil.getItem(weapons.sub).getOrElse(EMPTY)))
+        inv.setItem(3, weaponIcon(ItemUtil.getItem(weapons.melee).getOrElse(EMPTY)))
+        inv.setItem(4, weaponIcon(ItemUtil.getItem(weapons.item).getOrElse(EMPTY)))
+        inv.setItem(5, weaponIcon(ItemUtil.getItem(weapons.head).getOrElse(EMPTY)))
       }
     }.runTask(WarsCore.instance)
   }
@@ -200,19 +200,19 @@ object WeaponUI {
           header ++
             db.getOriginalItem(player.getUniqueId.toString, offset)
               .map(data => {
-                val item = ItemUtil.getItem(data._2).getOrElse(EMPTY).clone()
+                val item = ItemUtil.getItem(data.name).getOrElse(EMPTY).clone()
                 val meta = item.getItemMeta
                 val lore = new util.ArrayList[String](java.util.Arrays.asList(
                   ChatColor.WHITE + "【情報】",
-                  ChatColor.GRAY + "" + ChatColor.BOLD + "タイプ: " + ChatColor.GREEN + data._1,
-                  ChatColor.GRAY + "" + ChatColor.BOLD + "所持数: " + ChatColor.GREEN + data._3,
+                  ChatColor.GRAY + "" + ChatColor.BOLD + "タイプ: " + ChatColor.GREEN + data.`type`,
+                  ChatColor.GRAY + "" + ChatColor.BOLD + "所持数: " + ChatColor.GREEN + data.amount,
                   " ",
                   ChatColor.WHITE + "【説明】"
                 ))
                 if (meta.hasLore) lore.addAll(meta.getLore)
                 meta.setLore(lore)
                 item.setItemMeta(meta)
-                if (data._4) {
+                if (data.use) {
                   item.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 0)
                   item.addItemFlags(ItemFlag.HIDE_ENCHANTS)
                 }
@@ -245,18 +245,18 @@ object WeaponUI {
           header ++
             db.getOriginalItem(player.getUniqueId.toString, offset, `type`)
               .map(data => {
-                val item = ItemUtil.getItem(data._1).getOrElse(EMPTY).clone()
+                val item = ItemUtil.getItem(data.name).getOrElse(EMPTY).clone()
                 val meta = item.getItemMeta
                 val lore = new util.ArrayList[String](java.util.Arrays.asList(
                   ChatColor.WHITE + "【情報】",
-                  ChatColor.GRAY + "" + ChatColor.BOLD + "所持数: " + ChatColor.GREEN + data._2,
+                  ChatColor.GRAY + "" + ChatColor.BOLD + "所持数: " + ChatColor.GREEN + data.amount,
                   " ",
                   ChatColor.WHITE + "【説明】"
                 ))
                 if (meta.hasLore) lore.addAll(meta.getLore)
                 meta.setLore(lore)
                 item.setItemMeta(meta)
-                if (data._3) {
+                if (data.use) {
                   item.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 0)
                   item.addItemFlags(ItemFlag.HIDE_ENCHANTS)
                 }
