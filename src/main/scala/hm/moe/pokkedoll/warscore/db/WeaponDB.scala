@@ -1,7 +1,9 @@
 package hm.moe.pokkedoll.warscore.db
 
 import hm.moe.pokkedoll.warscore.utils.Item
+import org.jetbrains.annotations.Nullable
 
+import java.sql.SQLException
 import scala.util.Try
 
 trait WeaponDB {
@@ -12,7 +14,16 @@ trait WeaponDB {
    * @param offset 取得を始める番号
    * @return (type, name, amount, use)の組
    */
-  def getOriginalItem(uuid: String, offset: Int): List[(String, String, Int, Boolean)]
+  def getOriginalItem(uuid: String, offset: Int): List[WeaponDB.OriginalItemSet]
+
+  /**
+   * 旧getOriginalItemの互換性対応版
+   * @param uuid
+   * @param offset
+   * @return
+   */
+  @Deprecated
+  def getOriginalItemLegacy(uuid: String, offset: Int): List[(String, String, Int, Boolean)]
 
   /**
    * データベースから未加工のデータを取得する
@@ -22,7 +33,17 @@ trait WeaponDB {
    * @param weaponType アイテムのタイプ
    * @return (name, amount, use)の組
    */
-  def getOriginalItem(uuid: String, offset: Int, weaponType: String): List[(String, Int, Boolean)]
+  def getOriginalItem(uuid: String, offset: Int, weaponType: String): List[WeaponDB.OriginalItemSet]
+
+  /**
+   * 旧getOriginalItemの互換性版
+   * @param uuid
+   * @param offset
+   * @param weaponType
+   * @return
+   */
+  @Deprecated
+  def getOriginalItemLegacy(uuid: String, offset: Int, weaponType: String): List[(String, Int, Boolean)]
 
   /**
    * データベースからアイテムの数字を取得する
@@ -44,13 +65,15 @@ trait WeaponDB {
    */
   def getWeapons(uuid: String, weaponType: String, sortType: Int = 0): Seq[Item]
 
+  def getWeapons4J(uuid: String, weaponType: String, sortType: Int = 0): java.util.List[Item]
+
   /**
    * 現在設定されている武器のリストを取得する
    *
    * @param uuid 対象のUUID
    * @return 武器のタプル(メイン, サブ, 近接, アイテム)
    */
-  def getActiveWeapon(uuid: String): (String, String, String, String, String)
+  def getActiveWeapon(uuid: String): WeaponDB.ActiveWeaponSet
 
   /**
    * 武器をセットする
@@ -69,6 +92,8 @@ trait WeaponDB {
    * @param name       武器のデータ
    */
   def addWeapon(uuid: String, weaponType: String, name: String, amount: Int): Try[Unit]
+
+  def addWeapon4J(uuid: String, weaponType: String, name: String, amount: Int): Boolean
 
   /**
    * アイテムを追加する。タイプはitemに固定される。さらに非同期！
@@ -105,4 +130,11 @@ object WeaponDB {
   val HEAD = "head"
 
   def is(string: String): Boolean = Array(PRIMARY, SECONDARY, MELEE, GRENADE, ITEM, HEAD).contains(string)
+
+  /**
+   * データベースから取得するアクティブ武器のセット(タプルの代わり)
+   */
+  class ActiveWeaponSet(val main: String, val sub: String, val melee: String, val item: String, val head: String)
+
+  class OriginalItemSet(@Nullable val `type`: String, val name: String, val amount: Int, val use: Boolean)
 }

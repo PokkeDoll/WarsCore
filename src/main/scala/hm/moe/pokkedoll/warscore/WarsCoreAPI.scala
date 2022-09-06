@@ -332,17 +332,17 @@ object WarsCoreAPI {
     val get = (key: String, default: String) => ItemUtil.getItem(key).getOrElse(ItemUtil.getItem(default).get)
     player.getInventory.setContents(
       Array(
-        get(weapons._1, "ak-47"),
-        get(weapons._2, "m92"),
-        get(weapons._3, "knife"),
-        get(weapons._4, "grenade"),
+        get(weapons.main, "ak-47"),
+        get(weapons.sub, "m92"),
+        get(weapons.melee, "knife"),
+        get(weapons.item, "grenade"),
         new ItemStack(Material.AIR),
         new ItemStack(Material.AIR),
         new ItemStack(Material.AIR),
         new ItemStack(Material.AIR),
         new ItemStack(Material.CLOCK)
       ))
-    player.getInventory.setHelmet(ItemUtil.getItem(weapons._5).getOrElse(new ItemStack(Material.AIR)))
+    player.getInventory.setHelmet(ItemUtil.getItem(weapons.head).getOrElse(new ItemStack(Material.AIR)))
   }
 
   /**
