@@ -3,6 +3,7 @@ package hm.moe.pokkedoll.warscore.db
 import hm.moe.pokkedoll.warscore.utils.Item
 import org.jetbrains.annotations.Nullable
 
+import java.sql.SQLException
 import scala.util.Try
 
 trait WeaponDB {
@@ -64,6 +65,8 @@ trait WeaponDB {
    */
   def getWeapons(uuid: String, weaponType: String, sortType: Int = 0): Seq[Item]
 
+  def getWeapons4J(uuid: String, weaponType: String, sortType: Int = 0): java.util.List[Item]
+
   /**
    * 現在設定されている武器のリストを取得する
    *
@@ -89,6 +92,8 @@ trait WeaponDB {
    * @param name       武器のデータ
    */
   def addWeapon(uuid: String, weaponType: String, name: String, amount: Int): Try[Unit]
+
+  def addWeapon4J(uuid: String, weaponType: String, name: String, amount: Int): Boolean
 
   /**
    * アイテムを追加する。タイプはitemに固定される。さらに非同期！

@@ -86,10 +86,10 @@ object WeaponUI {
     i
   }
 
-  val MAIN: String = ChatColor.translateAlternateColorCodes('&', "&e&lMain")
-  val SUB: String = ChatColor.translateAlternateColorCodes('&', "&e&lSub")
-  val MELEE: String = ChatColor.translateAlternateColorCodes('&', "&e&lMelee")
-  val ITEM: String = ChatColor.translateAlternateColorCodes('&', "&e&lItem")
+  // val MAIN: String = ChatColor.translateAlternateColorCodes('&', "&e&lMain")
+  // val SUB: String = ChatColor.translateAlternateColorCodes('&', "&e&lSub")
+  // val MELEE: String = ChatColor.translateAlternateColorCodes('&', "&e&lMelee")
+  // val ITEM: String = ChatColor.translateAlternateColorCodes('&', "&e&lItem")
 
   val MAIN_UI_TITLE: String = ChatColor.of("#000080") + "" + ChatColor.BOLD + "Weapon Setting Menu"
 
