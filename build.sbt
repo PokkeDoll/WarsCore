@@ -1,8 +1,8 @@
 name := "WarsCore"
 
-version := "2.5"
+version := "3.0.0"
 
-scalaVersion := "2.13.7"
+scalaVersion := "3.2.0"
 
 organization := "hm.moe.pokkedoll"
 
@@ -14,15 +14,14 @@ resolvers += "dmulloy2-repo" at "https://repo.dmulloy2.net/nexus/repository/publ
 resolvers += "sk89q-repo" at "https://maven.enginehub.org/repo/"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "3.2.9" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.12" % Test,
   "io.papermc.paper" % "paper-api" % "1.17.1-R0.1-SNAPSHOT" % Provided,
-  "com.zaxxer" % "HikariCP" % "5.0.0" % Provided,
-  // "com.sk89q.worldguard" % "worldguard-bukkit" % "7.0.5" % Compile
+  "com.zaxxer" % "HikariCP" % "5.0.1" % Provided
 )
 
 val libs = Seq(
-  "lib/scala-library-2.13.7.jar",
-  "lib/HikariCP-5.0.0.jar",
+  "lib/scala-library-3.2.0.jar",
+  "lib/HikariCP-5.0.1.jar",
   "lib/CrackShotPP-lib.jar"
 )
 
@@ -31,8 +30,3 @@ Compile / packageBin / packageOptions +=
   Package.ManifestAttributes("Class-Path" -> libs.mkString(" "))
 
 // artifactName :={(sv: ScalaVersion,module: ModuleID, artifact: Artifact) => "WarsCore-" + module.revision + "." + artifact.extension}
-
-// publish
-githubOwner := "PokkeDoll"
-githubRepository := "WarsCore"
-githubTokenSource := TokenSource.GitConfig("github.token")
