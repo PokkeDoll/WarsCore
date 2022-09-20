@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
 )
 
 val libs = Seq(
-  "lib/scala-library-3.2.0.jar",
+  "lib/scala3-library_3-3.2.0.jar",
   "lib/HikariCP-5.0.1.jar",
   "lib/CrackShotPP-lib.jar"
 )

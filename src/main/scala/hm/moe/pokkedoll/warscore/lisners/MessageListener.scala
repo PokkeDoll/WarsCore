@@ -3,6 +3,8 @@ package hm.moe.pokkedoll.warscore.lisners
 import com.google.common.io.ByteStreams
 import hm.moe.pokkedoll.warscore.{WarsCore, WarsCoreAPI}
 import hm.moe.pokkedoll.warscore.utils.ItemUtil
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
 import org.bukkit.plugin.messaging.PluginMessageListener
 import org.bukkit.{Bukkit, ChatColor, Sound}
@@ -11,6 +13,9 @@ import org.bukkit.{Bukkit, ChatColor, Sound}
  * BungeeCordにお問い合わせしてクライアントのバージョンを得る
  */
 class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
+  
+  private val getVp = Component.text("VP一つ消費しました\nポールクリスタルを一つ獲得しました").color(NamedTextColor.BLUE)
+  private val notGetVp = Component.text("VP が足りません！").color(NamedTextColor.RED)
 
   override def onPluginMessageReceived(channel: String, player: Player, message: Array[Byte]): Unit = {
     if (!channel.equalsIgnoreCase(WarsCore.MODERN_TORUS_CHANNEL)) return
@@ -20,17 +25,17 @@ class MessageListener(val plugin: WarsCore) extends PluginMessageListener {
     subChannel match {
       case "TakeVotePoint" =>
         if (in.readBoolean()) {
-          player.sendMessage(ChatColor.BLUE + "VP一つ消費しました\nポールクリスタルを一つ獲得しました")
+          player.sendMessage(getVp)
           ItemUtil.getItem("vote").foreach(player.getInventory.addItem(_))
           player.playSound(player.getLocation, Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f)
         } else {
-          player.sendMessage(ChatColor.RED + "VP が足りません！")
+          player.sendMessage(notGetVp)
           player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
         }
     }
   }
 
-  val versionMap = Map(
+  val versionMap: Map[Int, (String, Int)] = Map(
     107 -> ("1.9", 2),
     110 -> ("1.9.3 ~ 1.9.4", 2),
     210 -> ("1.10 ~ 1.10.2", 2),

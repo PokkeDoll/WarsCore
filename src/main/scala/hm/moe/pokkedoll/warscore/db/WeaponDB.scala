@@ -82,7 +82,7 @@ trait WeaponDB {
    * @param weaponType 武器のタイプ
    * @param name       武器のデータ
    */
-  def setWeapon(uuid: String, weaponType: String, name: String)
+  def setWeapon(uuid: String, weaponType: String, name: String): Unit
 
   /**
    * 武器を追加する
@@ -101,7 +101,7 @@ trait WeaponDB {
    * @param uuid 対象のUUID
    * @param item アイテム
    */
-  def addItem(uuid: String, item: Array[Item])
+  def addItem(uuid: String, item: Array[Item]): Unit
 
   /**
    * 武器を削除する
@@ -109,7 +109,7 @@ trait WeaponDB {
    * @param uuid  対象のUUID
    * @param price 価格
    */
-  def delWeapon(uuid: String, price: Array[Item])
+  def delWeapon(uuid: String, price: Array[Item]): Unit
 
   /**
    * 実際にプレイやーが所持しているアイテムを付け加えて返す。非同期で使う

@@ -1,8 +1,7 @@
 package hm.moe.pokkedoll.warscore.db
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import hm.moe.pokkedoll.warscore.games.TeamDeathMatch
-import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil, ShopUtil}
+import hm.moe.pokkedoll.warscore.utils.{Item, ItemUtil}
 import hm.moe.pokkedoll.warscore.{Callback, WPlayer, WarsCore, WarsCoreAPI}
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.Material
@@ -65,96 +64,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
     }.isSuccess
   }
 
-  override def getRankData(uuid: String): Option[(Int, Int)] = {
-    Using.Manager { use =>
-      val c = use(hikari.getConnection())
-      val ps = use(c.prepareStatement("SELECT id, exp FROM rank WHERE uuid=?"))
-      ps.setString(1, uuid)
-      val rs = ps.executeQuery()
-      if (rs.next()) {
-        Some(rs.getInt("id"), rs.getInt("exp"))
-      } else {
-        None
-      }
-    }.getOrElse(None)
-  }
-
-  override def setRankData(uuid: String, data: (Int, Int)): Unit = {
-    Using.Manager { use =>
-      val c = use(hikari.getConnection())
-      val ps = use(c.prepareStatement("UPDATE rank SET id=?, exp=? WHERE uuid=?"))
-      ps.setInt(1, data._1)
-      ps.setInt(2, data._2)
-      ps.setString(3, uuid)
-      ps.executeUpdate()
-    }
-  }
-
-  override def updateTDM(game: TeamDeathMatch): Boolean = {
-    Using.Manager { use =>
-      val c = use(hikari.getConnection())
-      val ps = use(c.prepareStatement("UPDATE tdm SET kill=kill+?, death=death+?, assist=assist+?, damage=damage+?, damaged=damaged+?, win=win+?, play=play+1 WHERE uuid=?"))
-      game.data.map(f => (f._1.getUniqueId.toString, f._2)).foreach(f => {
-        ps.setInt(1, f._2.kill)
-        ps.setInt(2, f._2.death)
-        ps.setInt(3, f._2.assist)
-        ps.setInt(4, f._2.damage.toInt)
-        ps.setInt(5, f._2.damaged.toInt)
-        ps.setInt(6, if (f._2.win) 1 else 0)
-        ps.setString(7, f._1)
-        ps.executeUpdate()
-      })
-    }.isSuccess
-  }
-
-  /**
-   * ゲームのログを設定する
-   * @param game ゲームID
-   * @param reason 記録される理由
-   * @param message 内容
-   */
-  override def gameLog(game: String, reason: String, message: String): Try[Unit] = {
-    Using.Manager { use =>
-      val c = use(hikari.getConnection())
-      val s = use(c.createStatement())
-      s.executeUpdate(s"INSERT INTO gamelog VALUES(date(), '$game', '$reason', '$message')")
-    }
-  }
-
-
-  /**
-   * 仮想インベントリを読み込む
-   *
-   * @param wp
-   * @param col normalまたはgame
-   */
-  override def getVInventory(wp: WPlayer, col: String): Unit = {
-    val c = hikari.getConnection
-    val ps = c.prepareStatement("SELECT ? FROM `vinv` WHERE `uuid`=?")
-    try {
-      ps.setString(1, col)
-      ps.setString(2, wp.player.getUniqueId.toString)
-      val rs = ps.executeQuery()
-      if (rs.next()) {
-        rs.getString(col)
-      }
-    } catch {
-      case e: SQLException =>
-        e.printStackTrace()
-    } finally {
-      ps.close()
-      c.close()
-    }
-  }
-
-  /**
-   * 仮想インベントリをセーブする
-   *
-   * @param wp
-   * @param col normalまたはgame
-   */
-  override def setVInventory(wp: WPlayer, col: String): Unit = ???
-
   /**
    * WPプレイヤーの保存データを読み込む
    *
@@ -207,94 +116,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
 
 
   override def close(): Unit = hikari.close()
-
-  /**
-   * 仮のインベントリ(ロビーのインベントリを取得する
-   *
-   * @version v1.3.15
-   * @param uuid     対象のUUID
-   * @param callback (スロット番号, シリアライズされたアイテムスタック)のタプル
-   */
-  override def getVInv(uuid: String, callback: Callback[mutable.Buffer[(Int, Array[Byte])]]): Unit = {
-    new BukkitRunnable {
-      override def run(): Unit = {
-        val c = hikari.getConnection
-        val ps = c.prepareStatement("SELECT slot, data FROM vinv WHERE uuid=?")
-        try {
-          ps.setString(1, uuid)
-          val rs = ps.executeQuery()
-          var buffer = mutable.Buffer.empty[(Int, Array[Byte])]
-          while (rs.next()) {
-            buffer.+=((rs.getInt("slot"), rs.getBytes("data")))
-          }
-          new BukkitRunnable {
-            override def run(): Unit = {
-              callback.success(buffer)
-            }
-          }.runTask(plugin)
-        } catch {
-          case e: SQLException =>
-            new BukkitRunnable {
-              override def run(): Unit = {
-                callback.failure(e)
-              }
-            }.runTask(plugin)
-        } finally {
-          ps.close()
-          c.close()
-        }
-      }
-    }.runTaskAsynchronously(plugin)
-  }
-
-  /**
-   * ロビーのインベントリを退避する
-   *
-   * @version v1.3.15
-   * @param uuid
-   * @param contents
-   */
-  override def setVInv(uuid: String, contents: Array[ItemStack], callback: Callback[Unit]): Unit = {
-    if (contents.isEmpty) {
-      callback.success()
-    } else {
-      new BukkitRunnable {
-        override def run(): Unit = {
-          val c = hikari.getConnection
-          val s = c.createStatement()
-          val ps = c.prepareStatement("INSERT INTO vinv VALUES(?, ?, ?)")
-          try {
-            s.executeUpdate(s"DELETE FROM vinv WHERE uuid='$uuid'")
-            ps.setString(1, uuid)
-            contents.indices.map(f => (f, contents(f)))
-              .filterNot(f => f._2 == null || f._2.getType == Material.AIR)
-              .foreach(f => {
-                ps.setInt(2, f._1)
-                ps.setBytes(3, f._2.serializeAsBytes())
-                ps.addBatch()
-              })
-            ps.executeBatch()
-            new BukkitRunnable {
-              override def run(): Unit = {
-                callback.success()
-              }
-            }.runTask(plugin)
-          } catch {
-            case e: SQLException =>
-              new BukkitRunnable {
-                override def run(): Unit = {
-                  callback.failure(e)
-                }
-              }.runTask(plugin)
-          } finally {
-            s.close()
-            ps.close()
-            c.close()
-          }
-        }
-      }.runTaskAsynchronously(plugin)
-    }
-  }
 
   /**
    * 試合中に切断した場合(Gameインスタンスが設定している場合)にtrueにする
@@ -578,18 +399,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
     }.runTaskAsynchronously(plugin)
   }
 
-  def buylWeapon(uuid: String, weaponType: String, shop: ShopUtil.Shop, callback: Callback[String]): Unit = {
-    Using.Manager { use =>
-      val c = use(hikari.getConnection)
-      val s = use(c.createStatement())
-      val text = shop.price.map(shopItem => s"(name='${shopItem.name}' AND amount>=${shopItem.amount})").mkString(" OR ")
-      val rs = s.executeQuery(s"SELECT CASE WHEN $text THEN 1 ELSE 0 FROM weapon WHERE uuid='$uuid'")
-      if (rs.next() && rs.getBoolean(1)) {
-        addWeapon(uuid, shop.`type`, shop.product.name, shop.product.amount)
-        delWeapon(uuid, shop.price)
-      }
-    }
-  }
 
   /**
    * 武器を削除する
@@ -685,24 +494,6 @@ class SQLite(private val plugin: WarsCore) extends Database {
       val rs = use(s.executeQuery("SELECT * FROM item"))
       while (rs.next()) {
         seq :+= (rs.getString("name"), rs.getString("displayname"), ItemStack.deserializeBytes(rs.getBytes("data")))
-      }
-      seq
-    }
-  }
-
-  /**
-   * すべてのタグを取得する
-   *
-   * @return
-   */
-  override def getTags: Try[Seq[(String, String)]] = {
-    Using.Manager { use =>
-      val c = use(hikari.getConnection)
-      val s = use(c.createStatement())
-      var seq = Seq.empty[(String, String)]
-      val rs = use(s.executeQuery("SELECT * FROM tag"))
-      while (rs.next()) {
-        seq :+= (rs.getString("id"), rs.getString("title"))
       }
       seq
     }

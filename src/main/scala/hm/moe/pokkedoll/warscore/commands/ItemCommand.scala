@@ -5,15 +5,16 @@ import org.bukkit.command.{Command, CommandExecutor, CommandSender}
 import org.bukkit.entity.Player
 import org.bukkit.{ChatColor, Material}
 
+import scala.collection.mutable
+
 class ItemCommand extends CommandExecutor {
   override def onCommand(sender: CommandSender, command: Command, label: String, args: Array[String]): Boolean = {
     sender match {
       case player: Player =>
-        player.sendMessage(ChatColor.GRAY + "Wars互換モード: false [since v0.26.1]")
         val v0 = if (args.length == 0) "" else args(0)
         if (v0.equalsIgnoreCase("list")) {
           val param = if(args.length > 1) args(1) else ""
-          val s = new StringBuilder(s"アイテム一覧 (パラメーター: $param\n")
+          val s = new mutable.StringBuilder(s"アイテム一覧 (パラメーター: $param\n")
           if(param == "-w") {
             ItemUtil.cache
               .filter(pred => pred._2.getType == Material.IRON_HOE ||

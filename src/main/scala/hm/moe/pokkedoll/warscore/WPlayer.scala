@@ -1,7 +1,5 @@
 package hm.moe.pokkedoll.warscore
 
-import hm.moe.pokkedoll.warscore.games.Game
-import hm.moe.pokkedoll.warscore.wplayer.WPlayerState
 import net.kyori.adventure.text.Component
 import net.md_5.bungee.api.chat.BaseComponent
 import org.bukkit.ChatColor
@@ -12,15 +10,8 @@ import org.bukkit.entity.Player
  * パッケージ名がhm.moe.pokkedoll.warscore.wplayer.WPlayerになるよ
  * WarsCoreのキャッシュを保存するクラス
  */
+@Deprecated("次更新で削除")
 class WPlayer(val player: Player) {
-
-  var game: Option[Game] = None
-
-  /**
-   * ゲームインスタンスを取得する
-   * @return ゲームに参加していないならnull。必ずチェックすること！
-   */
-  def getGameAsJava: Game = game.orNull
 
   var changeInventory = true
 
@@ -61,6 +52,4 @@ class WPlayer(val player: Player) {
   }
 
   var disconnect: Boolean = false
-
-  var state: WPlayerState = WPlayerState.ONLINE
 }

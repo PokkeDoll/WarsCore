@@ -3,12 +3,13 @@ package hm.moe.pokkedoll.warscore.utils
 import java.io.{DataOutputStream, File, FileOutputStream, IOException}
 import java.nio.file.{Files, Path}
 import java.util.zip.ZipFile
-
 import hm.moe.pokkedoll.warscore.{Callback, WarsCore}
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Bukkit, World, WorldCreator}
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
+import reflect.Selectable.reflectiveSelectable
+import scala.language.reflectiveCalls
 
 /**
  * Warsから持ってきた.<br>
@@ -16,6 +17,7 @@ import scala.jdk.CollectionConverters._
  *
  * @author Emorard
  */
+@Deprecated("")
 object WorldLoader {
 
   private def load(name: String): World = {
@@ -48,7 +50,7 @@ object WorldLoader {
   }
 
 
-  def using[T <: {def close()}, U](resource: T)(block: T => U): U = {
+  def using[T <: {def close(): Unit}, U](resource: T)(block: T => U): U = {
     try {
       block(resource)
     } finally {

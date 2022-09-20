@@ -27,7 +27,7 @@ object ItemUtil {
   var configFile: File = _
   var config: FileConfiguration = _
 
-
+ 
   def reloadItem(): String = {
     plugin.database.getItems match {
       case Success(value) =>
